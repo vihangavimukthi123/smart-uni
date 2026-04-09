@@ -164,6 +164,17 @@ const ResourceHub = () => {
     }
   };
 
+  const getFileTypeClass = (type) => {
+    switch ((type || "").toUpperCase()) {
+      case "PDF": return "rs-card__icon--pdf";
+      case "DOCX": return "rs-card__icon--docx";
+      case "PPT": return "rs-card__icon--ppt";
+      case "IMAGE": return "rs-card__icon--image";
+      case "LINK": return "rs-card__icon--link";
+      default: return "rs-card__icon--default";
+    }
+  };
+
 
   return (
     <main className="resource-content rs-page">
@@ -233,7 +244,7 @@ const ResourceHub = () => {
             <div className="rs-recommendations__grid">
               {recommendations.map((r) => (
                 <div key={`rec-${r._id}`} className="rs-card rs-card--recommended" onClick={() => setViewingResource(r)}>
-                  <div className="rs-card__icon">
+                  <div className={`rs-card__icon ${getFileTypeClass(r.fileType)}`}>
                     <span className="material-symbols-outlined">{getFileIcon(r.fileType)}</span>
                   </div>
                   <div className="rs-card__content">
@@ -262,7 +273,7 @@ const ResourceHub = () => {
               const displayAuthor = isOwnResource ? (preferredAuthorName || r.author || "Unknown author") : (r.author || "Unknown author");
               return (
             <div key={r._id} className="rs-card" onClick={() => setViewingResource(r)}>
-              <div className="rs-card__icon">
+              <div className={`rs-card__icon ${getFileTypeClass(r.fileType)}`}>
                 <span className="material-symbols-outlined">{getFileIcon(r.fileType)}</span>
               </div>
               <div className="rs-card__content">
