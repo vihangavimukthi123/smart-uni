@@ -3,7 +3,8 @@ import { useAuth } from '../../context/AuthContext';
 import {
   MdDashboard, MdMeetingRoom, MdEvent, MdCalendarMonth,
   MdBarChart, MdNotifications, MdPeople, MdLogout,
-  MdChevronLeft, MdChevronRight, MdSchool, MdChat, MdPerson, MdAnalytics, MdHistory
+  MdChevronLeft, MdChevronRight, MdSchool, MdChat, MdPerson, MdAnalytics, MdHistory,
+  MdTaskAlt, MdLibraryBooks
 } from 'react-icons/md';
 
 const adminNav = [
@@ -22,8 +23,8 @@ const adminNav = [
   ]},
   { section: 'Learning Admin', items: [
     { label: 'Dashboard', to: '/learning', icon: <MdSchool /> },
-    { label: 'Resources', to: '/learning/resources', icon: <MdSchool /> },
-    { label: 'Task Board', to: '/learning/tasks', icon: <MdSchool /> },
+    { label: 'Resources', to: '/learning/resources', icon: <MdLibraryBooks /> },
+    { label: 'Task Board', to: '/learning/tasks', icon: <MdTaskAlt /> },
     { label: 'Peers', to: '/learning/peers', icon: <MdPeople /> },
   ]},
   { section: 'Momentum', items: [
@@ -45,10 +46,11 @@ const studentNav = [
     { label: 'Order History', to: '/rental/history', icon: <MdHistory /> },
   ]},
   { section: 'Learning Hub', items: [
-    { label: 'Learning Dash', to: '/learning', icon: <MdSchool /> },
+    { label: 'Learning Dash', to: '/learning', icon: <MdDashboard /> },
     { label: 'Find Peers', to: '/learning/peers', icon: <MdPeople /> },
-    { label: 'Tasks', to: '/learning/tasks', icon: <MdSchool /> },
-    { label: 'Resources', to: '/learning/resources', icon: <MdSchool /> },
+    { label: 'Tasks', to: '/learning/tasks', icon: <MdTaskAlt /> },
+    { label: 'Resources', to: '/learning/resources', icon: <MdLibraryBooks /> },
+    { label: 'My Activity', to: '/learning/activity', icon: <MdHistory /> },
   ]},
   { section: 'Momentum', items: [
     { label: 'Momentum Dash', to: '/momentum', icon: <MdSchool /> },

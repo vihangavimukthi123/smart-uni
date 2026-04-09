@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import "./Dashboard.css";
 import { Link } from "react-router-dom";
 import api from "../../../api/axios";
-import Navbar from "../../../components/layout/Navbar";
-import Sidebar from "../../../components/layout/Sidebar";
 
 // --- Feature Cards Data ---
 const features = [
@@ -423,11 +421,7 @@ export default function Dashboard() {
   }, [selectedYear, selectedSemester]);
 
   return (
-    <div className="lms-layout">
-      <Navbar />
-      <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
-        <main className="main">
+    <main className="main">
         {/* ── Hero Section ── */}
         <section className="hero-card">
           <div className="hero-card__content">
@@ -649,8 +643,6 @@ export default function Dashboard() {
           ))}
         </div>
       </main>
-      </div>
-    </div>
   );
 }
 

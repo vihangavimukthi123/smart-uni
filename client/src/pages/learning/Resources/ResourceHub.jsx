@@ -1,65 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import "./ResourceHub.css";
 import api from "../../../api/axios";
-import Navbar from "../../../components/layout/Navbar";
-import Sidebar from "../../../components/layout/Sidebar";
+import { useAuth } from "../../../context/AuthContext";
 
 const CATEGORIES = ["Notes", "Past Papers", "Tutorials", "Assignments", "YouTube Links"];
 
-const hardcodedResources = [
-  {
-    _id: "h1",
-    title: "Introduction to Project Management",
-    subject: "React Logic",
-    module: "Computer Science 101",
-    category: "Notes",
-    fileType: "PDF",
-    fileUrl: "#",
-    author: "Dr. Smith",
-    userId: "prof1",
-    createdAt: new Date().toISOString()
-  },
-  {
-    _id: "h2",
-    title: "Human Computer Interaction",
-    subject: "Neural Networks",
-    module: "Machine Learning",
-    category: "YouTube Links",
-    fileType: "LINK",
-    fileUrl: "https://youtube.com",
-    author: "Josh Miller",
-    userId: "prof2",
-    createdAt: new Date().toISOString()
-  },
-  {
-    _id: "h3",
-    title: "Figma Typography Guide",
-    subject: "Visual Design",
-    module: "UI/UX Design",
-    category: "Notes",
-    fileType: "DOCX",
-    fileUrl: "#",
-    author: "Elena Grant",
-    userId: "prof3",
-    createdAt: new Date().toISOString()
-  },
-  {
-    _id: "h4",
-    title: "Integration & Derivation",
-    subject: "Advanced Calculus",
-    module: "Calculus II",
-    category: "Past Papers",
-    fileType: "PDF",
-    fileUrl: "#",
-    author: "John Doe",
-    userId: "JD123",
-    createdAt: new Date().toISOString()
-  }
-];
-
 const ResourceHub = () => {
+  const { user, loading: authLoading } = useAuth();
+  const currentUserId = user?._id ? String(user._id) : "";
 
-  const [resources, setResources] = useState(hardcodedResources);
+  const [resources, setResources] = useState([]);
   const [search, setSearch] = useState("");
   const [filterCat, setFilterCat] = useState("All");
   const [showUpload, setShowUpload] = useState(false);
@@ -75,11 +25,24 @@ const ResourceHub = () => {
     return saved ? JSON.parse(saved) : { skills: [], selectedModules: [], moduleLabels: [] };
   };
 
+  // Keep upload modules aligned with Learning Dashboard selections.
+  const profile = useMemo(() => getProfile(), [showUpload]);
+  const moduleOptions = useMemo(() => {
+    const rawModules = (profile.moduleLabels && profile.moduleLabels.length > 0)
+      ? profile.moduleLabels
+      : (profile.selectedModules || []);
+    return [...new Set(rawModules.map((m) => String(m).trim()).filter(Boolean))];
+  }, [profile]);
+  const defaultModule = moduleOptions[0] || "General";
+
+  const profileName = (profile?.name || "").trim();
+  const preferredAuthorName = profileName || user?.name || "";
+
   // Upload Form State
   const [newRes, setNewRes] = useState({
     title: "",
     subject: "",
-    module: "Web Development",
+    module: defaultModule,
     category: "Notes",
     description: "",
     fileUrl: "",
@@ -91,19 +54,20 @@ const ResourceHub = () => {
     try {
       const res = await api.get("/learning/resources");
       const fetchedData = Array.isArray(res.data) ? res.data : [];
-      setResources([...hardcodedResources, ...fetchedData]);
-      fetchRecommendations();
+      setResources(fetchedData);
+      if (currentUserId) fetchRecommendations();
     } catch (err) {
       console.error("Error fetching resources:", err);
-      setResources(hardcodedResources);
+      setResources([]);
     }
   };
 
   const fetchRecommendations = async () => {
+    if (!currentUserId) return;
     try {
       const profile = getProfile();
       const modulesQuery = (profile.moduleLabels || profile.selectedModules || []).join(",");
-      const res = await api.get(`/learning/resources/recommend/JD123?modules=${modulesQuery}`);
+      const res = await api.get(`/learning/resources/recommend/${currentUserId}?modules=${modulesQuery}`);
       setRecommendations(res.data.recommendations || []);
       if (res.data.recommendations?.length > 0) setShowRecommendations(true);
     } catch (err) {
@@ -112,9 +76,9 @@ const ResourceHub = () => {
   };
 
   const trackSearch = async (query) => {
-    if (!query) return;
+    if (!query || !currentUserId) return;
     try {
-      await api.post("/learning/resources/history", { userId: "JD123", query });
+      await api.post("/learning/resources/history", { userId: currentUserId, query });
     } catch (err) {
       console.error("Error tracking search:", err);
     }
@@ -130,12 +94,24 @@ const ResourceHub = () => {
   };
 
   useEffect(() => {
-    fetchResources();
-  }, []);
+    if (!authLoading) fetchResources();
+  }, [authLoading, currentUserId]);
+
+  useEffect(() => {
+    setNewRes((prev) => {
+      if (prev.module && moduleOptions.includes(prev.module)) return prev;
+      return { ...prev, module: defaultModule };
+    });
+  }, [defaultModule, moduleOptions]);
 
   const handleUpload = async (e) => {
     e.preventDefault();
     setError("");
+
+    if (!currentUserId) {
+      setError("Please login first to upload a resource.");
+      return;
+    }
 
     // Validation
     if (!newRes.fileUrl) {
@@ -145,11 +121,15 @@ const ResourceHub = () => {
 
     setLoading(true);
     try {
-      const res = await api.post("/learning/resources", newRes);
+      const res = await api.post("/learning/resources", {
+        ...newRes,
+        author: preferredAuthorName,
+        userId: currentUserId,
+      });
       if (res.status === 200 || res.status === 201) {
         setShowUpload(false);
         fetchResources();
-        setNewRes({ title: "", subject: "", category: "Notes", description: "", fileUrl: "", fileType: "PDF" });
+        setNewRes({ title: "", subject: "", module: defaultModule, category: "Notes", description: "", fileUrl: "", fileType: "PDF" });
         setError("");
       } else {
         setError("Failed to upload resource. Please try again.");
@@ -170,12 +150,12 @@ const ResourceHub = () => {
     
     const matchesSearch = titleMatch || subjectMatch;
     const matchesCat = filterCat === "All" || r.category === filterCat;
-    const matchesView = viewMode === "all" || r.userId === "JD123"; // Mock user
+    const matchesView = viewMode === "all" || (currentUserId && String(r.userId || "") === currentUserId);
     return matchesSearch && matchesCat && matchesView;
   });
 
   const getFileIcon = (type) => {
-    switch (type.toUpperCase()) {
+    switch ((type || "").toUpperCase()) {
       case "PDF": return "picture_as_pdf";
       case "IMAGE": return "image";
       case "PPT": return "slideshow";
@@ -186,11 +166,7 @@ const ResourceHub = () => {
 
 
   return (
-    <div className="lms-layout">
-      <Navbar />
-      <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
-        <main className="main-content rs-page">
+    <main className="resource-content rs-page">
         {/* Header */}
         <div className="rs-header">
           <div>
@@ -281,6 +257,10 @@ const ResourceHub = () => {
         {/* Resources Grid */}
         <div className="rs-grid">
           {filtered.map((r) => (
+            (() => {
+              const isOwnResource = currentUserId && String(r.userId || "") === currentUserId;
+              const displayAuthor = isOwnResource ? (preferredAuthorName || r.author || "Unknown author") : (r.author || "Unknown author");
+              return (
             <div key={r._id} className="rs-card" onClick={() => setViewingResource(r)}>
               <div className="rs-card__icon">
                 <span className="material-symbols-outlined">{getFileIcon(r.fileType)}</span>
@@ -291,7 +271,7 @@ const ResourceHub = () => {
                     {r.category}
                   </span>
                   <div className="rs-card__actions">
-                    {r.userId === "JD123" && (
+                    {currentUserId && String(r.userId || "") === currentUserId && (
                       <button className="rs-icon-btn rs-icon-btn--danger" onClick={(e) => handleDelete(r._id, e)}>
                         <span className="material-symbols-outlined">delete</span>
                       </button>
@@ -305,12 +285,14 @@ const ResourceHub = () => {
                 <div className="rs-card__footer">
                   <span className="rs-uploader">
                     <span className="material-symbols-outlined">person</span>
-                    {r.author}
+                    {displayAuthor}
                   </span>
                   <span className="rs-date">{new Date(r.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
             </div>
+              );
+            })()
           ))}
         </div>
 
@@ -369,11 +351,13 @@ const ResourceHub = () => {
                         value={newRes.module} 
                         onChange={(e) => setNewRes({...newRes, module: e.target.value})}
                       >
-                         <option value="Computer Science 101">Computer Science 101</option>
-                         <option value="Data Structures">Data Structures</option>
-                         <option value="UI/UX Design">UI/UX Design</option>
-                         <option value="Machine Learning">Machine Learning</option>
-                         <option value="Calculus II">Calculus II</option>
+                        {moduleOptions.length > 0 ? (
+                          moduleOptions.map((moduleName) => (
+                            <option key={moduleName} value={moduleName}>{moduleName}</option>
+                          ))
+                        ) : (
+                          <option value="General">General</option>
+                        )}
                       </select>
                     </div>
                     <div className="rs-form-group">
@@ -488,7 +472,7 @@ const ResourceHub = () => {
                     </div>
                     <div className="rs-detail-item">
                       <label>Uploaded By</label>
-                      <p><strong>{viewingResource.author}</strong></p>
+                      <p><strong>{currentUserId && String(viewingResource.userId || "") === currentUserId ? (preferredAuthorName || viewingResource.author || "Unknown author") : (viewingResource.author || "Unknown author")}</strong></p>
                     </div>
                     <div className="rs-detail-item">
                       <label>Module</label>
@@ -508,9 +492,7 @@ const ResourceHub = () => {
             </div>
           </div>
         )}
-        </main>
-      </div>
-    </div>
+    </main>
   );
 };
 
