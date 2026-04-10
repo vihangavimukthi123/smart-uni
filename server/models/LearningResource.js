@@ -18,6 +18,8 @@ const resourceSchema = new mongoose.Schema(
     userId: { type: String, default: "JD123" },
     downloads: { type: Number, default: 0 },
     likes: { type: Number, default: 0 },
+    year: { type: Number, min: 1, max: 4 }, // For filtering by study year
+    semester: { type: Number, min: 1, max: 2 }, // For filtering by semester
   },
   { timestamps: true }
 );

@@ -47,6 +47,8 @@ const ResourceHub = () => {
     description: "",
     fileUrl: "",
     fileType: "PDF",
+    year: profile.year || null,
+    semester: profile.semester || null,
   });
   const [error, setError] = useState("");
 
@@ -67,7 +69,16 @@ const ResourceHub = () => {
     try {
       const profile = getProfile();
       const modulesQuery = (profile.moduleLabels || profile.selectedModules || []).join(",");
-      const res = await api.get(`/learning/resources/recommend/${currentUserId}?modules=${modulesQuery}`);
+      const year = profile.year ? String(profile.year) : "";
+      const semester = profile.semester ? String(profile.semester) : "";
+      const skills = (profile.skills || []).join(",");
+      
+      let url = `/learning/resources/recommend/${currentUserId}?modules=${modulesQuery}`;
+      if (year) url += `&year=${year}`;
+      if (semester) url += `&semester=${semester}`;
+      if (skills) url += `&skills=${skills}`;
+      
+      const res = await api.get(url);
       setRecommendations(res.data.recommendations || []);
       if (res.data.recommendations?.length > 0) setShowRecommendations(true);
     } catch (err) {
@@ -125,11 +136,13 @@ const ResourceHub = () => {
         ...newRes,
         author: preferredAuthorName,
         userId: currentUserId,
+        year: newRes.year ? Number(newRes.year) : null,
+        semester: newRes.semester ? Number(newRes.semester) : null,
       });
       if (res.status === 200 || res.status === 201) {
         setShowUpload(false);
         fetchResources();
-        setNewRes({ title: "", subject: "", module: defaultModule, category: "Notes", description: "", fileUrl: "", fileType: "PDF" });
+        setNewRes({ title: "", subject: "", module: defaultModule, category: "Notes", description: "", fileUrl: "", fileType: "PDF", year: profile.year || null, semester: profile.semester || null });
         setError("");
       } else {
         setError("Failed to upload resource. Please try again.");
