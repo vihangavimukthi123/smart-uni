@@ -96,8 +96,8 @@ export default function SupplierOrdersPage() {
                          style={{ 
                            padding: "4px 8px", borderRadius: "6px", border: "1px solid #D1D5DB", 
                            fontSize: "12px", fontWeight: "700", cursor: "pointer",
-                           backgroundColor: item.status === "Delivered" ? "#DCFCE7" : item.status === "Processing" ? "#DBEAFE" : "#FFF9DB",
-                           color: item.status === "Delivered" ? "#166534" : item.status === "Processing" ? "#1E40AF" : "#854D0E"
+                           backgroundColor: item.status === "Delivered" ? "#DCFCE7" : item.status === "Processing" ? "#DBEAFE" : item.status === "Cancelled" ? "#FEE2E2" : "#FFF9DB",
+                           color: item.status === "Delivered" ? "#166534" : item.status === "Processing" ? "#1E40AF" : item.status === "Cancelled" ? "#B91C1C" : "#854D0E"
                          }}
                        >
                          <option value="Pending">Pending</option>
@@ -113,7 +113,7 @@ export default function SupplierOrdersPage() {
               <div style={{ padding: "16px 24px", backgroundColor: "#fff", borderTop: "1px solid #F3F4F6", display: "flex", justifyContent: "space-between" }}>
                   <div style={{ fontSize: "13px", color: "#4B5563" }}><strong>Customer:</strong> {order.contactInfo?.organizer}</div>
                   <div style={{ fontSize: "13px", color: "#4B5563" }}><strong>Delivery:</strong> {order.deliveryDetails?.campus === "sliit" ? "Kandy Campus" : "Other"}</div>
-                  <div style={{ fontSize: "13px", color: "#1E40AF", fontWeight: "700" }}>Rental Start: {new Date(order.rentalDates?.pickup).toLocaleDateString()}</div>
+                  <div style={{ fontSize: "13px", color: "#1E40AF", fontWeight: "700" }}>Rental Start: {new Date(order.rentalDates?.pickup).toLocaleDateString()} at {order.rentalDates?.pickupTime || "09:00"}</div>
               </div>
             </div>
           ))}
@@ -170,7 +170,7 @@ function ManageOrderModal({ order, onClose, onUpdate }) {
           <div style={{ marginBottom: "32px", backgroundColor: "#EFF6FF", padding: "12px 16px", borderRadius: "10px", border: "1px solid #DBEAFE" }}>
              <label style={{ fontSize: "11px", fontWeight: "800", color: "#1E40AF", display: "block", marginBottom: "6px", letterSpacing: "0.05em" }}>RENTAL PERIOD</label>
              <div style={{ fontSize: "15px", fontWeight: "800", color: "#1E3A8A" }}>
-                {new Date(order.rentalDates?.pickup).toLocaleDateString()} — {new Date(order.rentalDates?.return).toLocaleDateString()}
+                {new Date(order.rentalDates?.pickup).toLocaleDateString()} at {order.rentalDates?.pickupTime || "09:00"} — {new Date(order.rentalDates?.return).toLocaleDateString()}
              </div>
           </div>
 

@@ -1,7 +1,7 @@
-//supplierReviewsPage.jsx
 import React, { useState, useEffect } from "react";
 import api from "../../../api/axios";
 import toast from "react-hot-toast";
+import { useAuth } from "../../../context/AuthContext";
 
 const StarIcon = ({ filled = true }) => (
   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -16,19 +16,21 @@ const Stars = ({ rating }) => (
 );
 
 export default function SupplierReviewsPage() {
+  const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("company");
 
   useEffect(() => {
-    fetchReviews();
-  }, []);
+    if (user?.email) {
+      fetchReviews();
+    }
+  }, [user]);
 
   const fetchReviews = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const decoded = JSON.parse(atob(token.split(".")[1]));
-      const res = await api.get(`/rental/reviews/supplier/${decoded.email}`);
+      setLoading(true);
+      const res = await api.get(`/rental/reviews/supplier/${user.email}`);
       setReviews(res.data);
     } catch (err) {
       console.error(err);
@@ -46,8 +48,8 @@ export default function SupplierReviewsPage() {
   const currentReviews = activeTab === "company" ? companyReviews : productReviews;
 
   return (
-    <div style={{ padding: "32px" }}>
-      <div style={{ marginBottom: "24px" }}>
+    <div style={{ padding: "2px" }}>
+      <div style={{ marginBottom: "24px" }} >
         <h1 style={{ fontSize: "24px", fontWeight: "800", color: "#111827", margin: 0 }}>Review Management</h1>
         <p style={{ color: "#6B7280", fontSize: "14px", marginTop: "4px" }}>Monitor both your company profile and individual product performance.</p>
       </div>

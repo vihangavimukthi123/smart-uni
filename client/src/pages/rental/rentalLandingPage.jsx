@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Footer from "./components/footer";
-import HeadNavbar from "./components/nav2";
+// import Footer from "../components/footer";
+// import HeadNavbar from "../components/nav2";
 
 export default function UniRent() {
   const navigate = useNavigate();
@@ -52,28 +52,28 @@ export default function UniRent() {
   }, []);
 
   return (
-    <div className="bg-[#f6f6f8] font-[Inter] -900">
+    <div className="bg-[#f6f6f8] font-[Inter] text-slate-900">
       <div className="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
         <div className="layout-container flex h-full grow flex-col">
           {/* Header */}
-          <HeadNavbar />
+          {/* <HeadNavbar /> */}
 
           <main className="flex-1">
             {/* Hero Section */}
             <section className="max-w-[1280px] mx-auto px-6 py-12 md:py-20 lg:px-10">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-center">
-                <div className="flex-col gap-4">
-                  <div className="flex-col gap-4">
-                    <span className="text-[#1152d4] tracking-widest uppercase">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div className="flex flex-col gap-8">
+                  <div className="flex flex-col gap-4">
+                    <span className="text-[#1152d4] font-bold tracking-widest uppercase text-xs">
                       Premium Equipment Rentals
                     </span>
-                    <h1 className="-900 md: leading-[1.1] tracking-tight">
+                    <h1 className="text-slate-900 text-5xl md:text-6xl font-black leading-[1.1] tracking-tight">
                       The Equipment You Need for Your{" "}
                       <span className="text-[#1152d4]">
                         Next University Event
                       </span>
                     </h1>
-                    <p className="-600 leading-relaxed max-w-lg">
+                    <p className="text-slate-600 text-lg leading-relaxed max-w-lg">
                       Rent high-quality event gear in minutes. From staging and
                       AV equipment to seating and furniture, we connect campus
                       organizers with the best local item suppliers.
@@ -81,8 +81,8 @@ export default function UniRent() {
                   </div>
                   <div className="flex flex-wrap gap-4">
                     <button
-                      onClick={() => navigate("/itemlist")}
-                      className="flex min-w-[180px] cursor-pointer flex-center card-rounded h-14 px-8 bg-[#1152d4] tracking-wide card-shadow card-shadow-500/20 hover:scale-[1.02] transition-transform"
+                      onClick={() => navigate("/rental/items")}
+                      className="flex min-w-[180px] cursor-pointer items-center justify-center rounded-lg h-14 px-8 bg-[#1152d4] text-white text-base font-bold tracking-wide shadow-lg shadow-blue-500/20 hover:scale-[1.02] transition-transform"
                     >
                       Start Renting
                     </button>
@@ -90,25 +90,25 @@ export default function UniRent() {
                 </div>
                 <div className="relative">
                   <div
-                    className="w-full aspect-[4/3] bg-slate-200 card-rounded overflow-hidden card-shadow"
+                    className="w-full aspect-[4/3] bg-slate-200 rounded-2xl overflow-hidden shadow-2xl"
                     style={{
                       backgroundImage: "url('/images/land_img.jpg')",
                       backgroundSize: "cover",
                       backgroundPosition: "center",
                     }}
                   />
-                  <div className="absolute -bottom-4 -left-6 bg-white p-4 card-rounded card-shadow hidden md:block">
-                    <div className="flex items-center gap-4">
-                      <div className="bg-[#1152d4]/10 p-4 card-rounded">
+                  <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-xl border border-slate-100 hidden md:block">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-[#1152d4]/10 p-2 rounded-lg">
                         <span className="material-symbols-outlined text-[#1152d4]">
                           local_shipping
                         </span>
                       </div>
                       <div>
-                        <p className="-900">
+                        <p className="text-sm font-bold text-slate-900">
                           Direct Campus Delivery
                         </p>
-                        <p className="-500">
+                        <p className="text-xs text-slate-500">
                           To any building or quad
                         </p>
                       </div>
@@ -120,29 +120,29 @@ export default function UniRent() {
 
             {/* AI Generator Section */}
             <section className="bg-[#1152d4] py-20 px-6 lg:px-10">
-              <div className="max-w-[1100px] mx-auto mb-12">
-                <h2 className="md: mb-4">
+              <div className="max-w-[1100px] mx-auto text-center mb-12">
+                <h2 className="text-white text-4xl md:text-5xl font-black mb-4">
                   AI Item List Generator
                 </h2>
-                <p className="opacity-90 max-w-2xl mx-auto">
+                <p className="text-white text-lg opacity-90 max-w-2xl mx-auto">
                   Not sure what gear you need? Describe your event and our AI
                   will generate a complete list of required items—from chairs to
                   AV—and match them with local suppliers.
                 </p>
               </div>
-              <div className="max-w-[960px] mx-auto bg-white card-rounded card-shadow overflow-hidden p-4 md:p-4">
-                <div className="flex-col gap-4">
+              <div className="max-w-[960px] mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden p-8 md:p-12">
+                <div className="flex flex-col gap-8">
                   {/* <div className="relative flex-1">
-                    <div className="flex w-full items-stretch card-rounded h-16 md:h-20 card-shadow border-2 overflow-hidden">
+                    <div className="flex w-full items-stretch rounded-xl h-16 md:h-20 shadow-sm border-2 border-slate-100 overflow-hidden">
                       <input
-                        className="flex-1 px-6 -900 focus:outline-none border-none placeholder:-400"
+                        className="flex-1 px-6 text-slate-900 focus:outline-none border-none text-lg placeholder:text-slate-400"
                         placeholder="Describe your event (e.g., Outdoor career fair for 1000 students)..."
                       />
-                      <button className="bg-[#1152d4] px-8 transition-colors flex items-center gap-4">
+                      <button className="bg-[#1152d4] text-white px-8 font-bold text-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
                         <span className="material-symbols-outlined">
                           auto_awesome
                         </span>
-                        <span onClick={() => navigate("/kit-generator")}>
+                        <span onClick={() => navigate("/rental/kit-generator")}>
                           Generate List
                         </span>
                       </button>
@@ -150,8 +150,8 @@ export default function UniRent() {
                   </div> */}
                   <div className="relative flex-1 flex justify-center items-center">
                     <button
-                      onClick={() => navigate("/gen_kit")}
-                      className="bg-[#1152d4] px-8 transition-colors flex items-center gap-4 card-rounded h-12"
+                      onClick={() => navigate("/rental/kit-generator")}
+                      className="bg-[#1152d4] text-white px-8 font-bold text-lg hover:bg-blue-700 transition-colors flex items-center gap-2 rounded-lg h-12"
                     >
                       <span className="material-symbols-outlined">
                         auto_awesome
@@ -160,7 +160,7 @@ export default function UniRent() {
                     </button>
                   </div>
                   <div className="space-y-6">
-                    <h3 className="-900 flex items-center gap-4">
+                    <h3 className="text-slate-900 text-xl font-bold flex items-center gap-2">
                       <span className="material-symbols-outlined text-[#1152d4]">
                         checklist
                       </span>
@@ -195,22 +195,22 @@ export default function UniRent() {
                       ].map((item) => (
                         <div
                           key={item.name}
-                          className="p-4 card-rounded bg-slate-50 hover:border-[#1152d4]/30 group"
+                          className="p-4 rounded-xl border border-slate-100 bg-slate-50 hover:border-[#1152d4]/30 transition-all group"
                         >
                           <div
-                            className="w-full aspect-square bg-slate-200 card-rounded mb-4 overflow-hidden"
+                            className="w-full aspect-square bg-slate-200 rounded-lg mb-4 overflow-hidden"
                             style={{
                               backgroundImage: `url("${item.img}")`,
                               backgroundSize: "cover",
                             }}
                           />
-                          <p className="-900">
+                          <p className="text-slate-900 font-bold">
                             {item.name}
                           </p>
-                          <p className="-500">
+                          <p className="text-slate-500 text-sm">
                             {item.detail}
                           </p>
-                          <div className="mt-2 text-[#1152d4]">
+                          <div className="mt-2 text-xs font-semibold text-[#1152d4]">
                             Supplier: {item.supplier}
                           </div>
                         </div>
@@ -224,16 +224,16 @@ export default function UniRent() {
             {/* Rental Solutions */}
             <section className="py-24 px-6 lg:px-10 bg-white">
               <div className="max-w-[1280px] mx-auto">
-                <div className="mb-16">
-                  <h2 className="-900 mb-4">
+                <div className="text-center mb-16">
+                  <h2 className="text-slate-900 text-4xl font-black mb-4">
                     Rental Solutions
                   </h2>
-                  <p className="-500">
+                  <p className="text-slate-500 text-lg">
                     We provide the hardware so you can focus on the event
                     experience.
                   </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                   {[
                     {
                       icon: "inventory_2",
@@ -253,17 +253,17 @@ export default function UniRent() {
                   ].map((card) => (
                     <div
                       key={card.title}
-                      className="flex-col items-center p-4 card-rounded bg-slate-50 border-transparent hover:border-[#1152d4]"
+                      className="flex flex-col items-center text-center p-8 rounded-2xl bg-slate-50 border border-transparent hover:border-[#1152d4] transition-all"
                     >
-                      <div className="w-16 h-16 bg-[#1152d4]/10 card-rounded flex flex-center mb-6">
-                        <span className="material-symbols-outlined text-[#1152d4]">
+                      <div className="w-16 h-16 bg-[#1152d4]/10 rounded-full flex items-center justify-center mb-6">
+                        <span className="material-symbols-outlined text-[#1152d4] text-3xl">
                           {card.icon}
                         </span>
                       </div>
-                      <h3 className="mb-3 -900">
+                      <h3 className="text-xl font-bold mb-3 text-slate-900">
                         {card.title}
                       </h3>
-                      <p className="-600">{card.desc}</p>
+                      <p className="text-slate-600">{card.desc}</p>
                     </div>
                   ))}
                 </div>
@@ -273,10 +273,10 @@ export default function UniRent() {
             {/* Testimonials */}
             <section className="py-20 px-6 lg:px-10 bg-[#f6f6f8]">
               <div className="max-w-[1280px] mx-auto">
-                <h2 className="-900 mb-12">
+                <h2 className="text-slate-900 text-3xl font-black mb-12 text-center">
                   Trusted by University Organizers
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                   {[
                     {
                       stars: 5,
@@ -308,9 +308,9 @@ export default function UniRent() {
                   ].map((t) => (
                     <div
                       key={t.name}
-                      className="bg-white p-4 card-rounded card-shadow"
+                      className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100"
                     >
-                      <div className="flex gap-4 -400 mb-4">
+                      <div className="flex gap-1 text-yellow-400 mb-4">
                         {Array.from({ length: t.stars }).map((_, i) => (
                           <span
                             key={i}
@@ -325,20 +325,20 @@ export default function UniRent() {
                           </span>
                         )}
                       </div>
-                      <p className="-700 italic mb-6">{t.text}</p>
-                      <div className="flex items-center gap-4">
+                      <p className="text-slate-700 italic mb-6">{t.text}</p>
+                      <div className="flex items-center gap-3">
                         <div
-                          className="w-10 h-10 card-rounded bg-slate-300"
+                          className="w-10 h-10 rounded-full bg-slate-300"
                           style={{
                             backgroundImage: `url("${t.avatar}")`,
                             backgroundSize: "cover",
                           }}
                         />
                         <div>
-                          <p className="-900">
+                          <p className="text-sm font-bold text-slate-900">
                             {t.name}
                           </p>
-                          <p className="-500 uppercase tracking-tighter">
+                          <p className="text-xs text-slate-500 uppercase tracking-tighter">
                             {t.role}
                           </p>
                         </div>
@@ -351,10 +351,9 @@ export default function UniRent() {
           </main>
 
           {/* Footer */}
-          <Footer />
+          {/* <Footer /> */}
         </div>
       </div>
     </div>
   );
 }
-

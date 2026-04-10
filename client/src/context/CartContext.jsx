@@ -82,6 +82,21 @@ export function CartProvider({ children }) {
     setCartItems(items);
   };
 
+  const reorderIntoCart = (order) => {
+    setEditingOrderId(null);
+    setOrderMetadata(null); // Clear all metadata so user must fill details again
+    const items = order.items.map(item => ({
+      id: item.productId,
+      name: item.name,
+      pricePerDay: item.price,
+      qty: item.qty,
+      total: item.price * item.qty,
+      image: item.image,
+      supplierEmail: item.supplierEmail,
+    }));
+    setCartItems(items);
+  };
+
   return (
     <CartContext.Provider value={{ 
       cartItems, 
@@ -91,7 +106,8 @@ export function CartProvider({ children }) {
       clearCart, 
       editingOrderId, 
       orderMetadata,
-      loadOrderIntoCart 
+      loadOrderIntoCart,
+      reorderIntoCart
     }}>
       {children}
     </CartContext.Provider>

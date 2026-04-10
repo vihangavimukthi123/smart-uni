@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import Navbar from "../../components/layout/Navbar";
-import Sidebar from "../../components/layout/Sidebar";
+// import Navbar from "../../components/layout/Navbar";
+// import Sidebar from "../../components/layout/Sidebar";
 
 // ── Mini Calendar Dropdown ───────────────────────────────────────────────────
 const MiniCalendar = ({ selectedDate, onSelect, onClose }) => {
@@ -284,23 +284,7 @@ export default function WriteReview() {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "100vh",
-        fontFamily: "'Segoe UI', sans-serif",
-        backgroundColor: "#F3F4F6",
-      }}
-    >
-      <Navbar />
-
-      {/* Body */}
-      <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
-
-        {/* Main */}
-        <div style={{ flex: 1, padding: "40px 48px" }}>
+    <div style={{ flex: 1, padding: "40px 48px" }}>
           <h1
             style={{
               fontSize: "26px",
@@ -613,10 +597,6 @@ export default function WriteReview() {
               </button>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* <Footer /> */}
     </div>
   );
 }

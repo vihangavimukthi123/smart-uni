@@ -1,8 +1,8 @@
 //itemList.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import Navbar from "../../../components/layout/Navbar";
-import Sidebar from "../../../components/layout/Sidebar";
+// import Navbar from "../../../components/layout/Navbar";
+// import Sidebar from "../../../components/layout/Sidebar";
 import api from "../../../api/axios";
 
 const PRIMARY = "#1a4fd6";
@@ -119,7 +119,7 @@ function ProductCard({ product }) {
 
         {/* Button */}
         <button
-          onClick={() => navigate(`/itemdetails/${product.id}`)}
+          onClick={() => navigate(`/rental/items/${product.id}`)}
           style={{
             marginTop: 12,
             background: PRIMARY,
@@ -177,20 +177,8 @@ export default function ItemList() {
   }, [activePage]);
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "#f3f4f6",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <Navbar />
-
-      <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
-
-        <main style={{ flex: 1, padding: "28px 32px 40px" }}>
+    <div>
+      <main style={{ flex: 1 }}>
           {/* Count */}
           <p style={{ marginBottom: 22 }}>
             <strong>{products.length}</strong> items available for your campus
@@ -317,9 +305,6 @@ export default function ItemList() {
             </button>
           </div>
         </main>
-      </div>
-
-      {/* <Footer /> */}
     </div>
   );
 }

@@ -20,13 +20,18 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  const login = useCallback(async (email, password) => {
-    const { data } = await api.post('/auth/login', { email, password });
+  const login = useCallback(async (email, password, type = 'user') => {
+    const endpoint = type === 'supplier' ? '/rental/suppliers/login' : '/auth/login';
+    const { data } = await api.post(endpoint, { email, password });
+    
     localStorage.setItem('accessToken', data.data.accessToken);
     localStorage.setItem('refreshToken', data.data.refreshToken);
+    localStorage.setItem('role', data.data.user.role); // Helpful for persistent role checks
+    
     setUser(data.data.user);
     return data.data.user;
   }, []);
+
 
   const register = useCallback(async (payload) => {
     const { data } = await api.post('/auth/register', payload);

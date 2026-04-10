@@ -1,6 +1,6 @@
 import { useState } from "react"
 import toast from "react-hot-toast"
-import axios from "axios";
+import api from "../../../api/axios";
 
 export default function ProductDeleteButton(props){
 
@@ -11,61 +11,86 @@ export default function ProductDeleteButton(props){
 
     async function handleDelete() {
         setIsDeleting(true);
-        const token = localStorage.getItem("token");
-        axios.delete(
-          import.meta.env.VITE_BACKEND_URL + "/products/" + productID,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        )
-        .then(() => {
-          toast.success("Product deleted successfully");
-          setIsDeleting(false);
-          setIsMessageOpen(false);
-          reload()
-        }).catch(()=>{
-            toast.error("Failed to delete product")
-            setIsDeleting(false)
-        })
+        try {
+            await api.delete("/rental/products/" + productID);
+            toast.success("Product deleted successfully");
+            setIsDeleting(false);
+            setIsMessageOpen(false);
+            reload();
+        } catch (error) {
+            toast.error("Failed to delete product");
+            setIsDeleting(false);
+        }
     }
 
     return(
         <>
-            <button onClick={()=>{setIsMessageOpen(true)}} className="text-white rounded-full cursor-pointer hover:bg-red-400 bg-red-800 justify-center items-center font-medium transition h-[30px] w-[100px]">
+            <button 
+              onClick={() => setIsMessageOpen(true)} 
+              className="btn btn-danger btn-sm"
+              style={{ width: '100px' }}
+            >
                 Delete
             </button>
             {isMessageOpen && (
-                <div className="fixed top-0 left-0 w-[100vw] h-screen bg-black/70 z-50 flex items-center justify-center">
-                    <div className="w-[500px] h-[210px] bg-primary rounded-2xl relative flex flex-col items-center justify-center">
-                        <button 
-                            onClick={()=>{setIsMessageOpen(false);
-                            }} 
-                            className="w-[35px] h-[35px] bg-red-800 rounded-full text-white text-xl font-bold cursor-pointer hover:bg-red-600 absolute right-[-20px] top-[-20px]">
-                                X
-                        </button>
+                <div className="modal-overlay">
+                    <div className="modal anim-scaleIn" style={{ maxWidth: '400px' }}>
+                        <div className="modal-header">
+                            <h2 className="gradient-text" style={{ fontSize: '1.25rem' }}>Confirm Deletion</h2>
+                            <button 
+                                onClick={() => setIsMessageOpen(false)} 
+                                className="btn btn-ghost btn-sm"
+                                style={{ borderRadius: '50%', width: '32px', height: '32px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                            >
+                                <svg style={{ width: '18px', height: '18px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
 
-                        <h1 className="text-2xl text-center mb-6">Are sure you want to delete product {productID}?</h1>
+                        <div className="modal-body flex flex-col items-center gap-md" style={{ padding: 'var(--space-xl)' }}>
+                            <div 
+                                className="flex items-center justify-center"
+                                style={{ 
+                                    width: '56px', 
+                                    height: '56px', 
+                                    borderRadius: '50%', 
+                                    background: 'rgba(239, 68, 68, 0.1)', 
+                                    color: 'var(--rose)',
+                                    fontSize: '1.5rem',
+                                    fontWeight: 'bold',
+                                    marginBottom: 'var(--space-sm)'
+                                }}
+                            >
+                                !
+                            </div>
+                            <p style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+                                Are you sure you want to delete <br/>
+                                <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{productID}</span>?
+                            </p>
+                            <p className="text-xs" style={{ color: 'var(--rose)', textAlign: 'center' }}>
+                                This action is permanent and cannot be undone.
+                            </p>
+                        </div>
 
-                        <div className="w-full flex justify-center gap-10">
+                        <div className="modal-footer">
+                            <button
+                                onClick={() => setIsMessageOpen(false)}
+                                className="btn btn-secondary"
+                            >
+                                Cancel
+                            </button>
                             <button
                                 disabled={isDeleting}
-                                onClick={handleDelete} className="bg-red-800 text-white px-4 py-2 rounded hover:bg-red-600 transition">
-                                    Delete
-                            </button>
-
-                            <button
-                                onClick={()=>{
-                                    setIsMessageOpen(false);
-                                }}
-                                className="bg-slate-600 text-white px-4 py-2 rounded hover:bg-slate-500 transition">
-                                    Cancel
+                                onClick={handleDelete} 
+                                className="btn btn-danger"
+                            >
+                                {isDeleting ? 'Deleting...' : 'Delete Product'}
                             </button>
                         </div>
                     </div>
-                
-                </div>)}
+                </div>
+            )}
         </>
     )
 }

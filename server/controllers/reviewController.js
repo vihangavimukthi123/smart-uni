@@ -1,14 +1,18 @@
 //reviewController.js
 const Review = require('../models/Review');
 
+// @POST /api/rental/reviews
 async function createReview(req, res) {
   try {
-    // Identity from token (student or any logged in user can review per user request)
-    const user = req.student;
+    // Enable all authenticated users to post reviews
+    const user = req.user;
+    console.log(`[REVIEW] Creating review for user: ${user?.email || 'unknown'}`);
     
-    if (!user || user.role !== "student") {
-      return res.status(401).json({ message: "Only students are authorized to post reviews." });
+    if (!user) {
+
+      return res.status(401).json({ message: "You must be logged in to post a review." });
     }
+
 
     const { supplierEmail, rating, comment, productID, productName } = req.body;
 

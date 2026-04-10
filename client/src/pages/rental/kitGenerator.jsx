@@ -1,6 +1,6 @@
 import { useState } from "react";
-import Navbar from "../../components/layout/Navbar";
-import Sidebar from "../../components/layout/Sidebar";
+// import Navbar from "../../components/layout/Navbar";
+// import Sidebar from "../../components/layout/Sidebar";
 
 const initialItems = [
   {
@@ -282,27 +282,12 @@ export default function EventKitGenerator() {
   };
 
   return (
-    <div
-      style={{
-        fontFamily: "'Segoe UI', sans-serif",
-        background: "#f0f2f5",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <Navbar />
-
-      <div style={{ display: "flex", flex: 1, alignItems: "stretch" }}>
-        <Sidebar />
-
-        {/* Right side: content + bottom bar + footer stacked */}
+    <div>
         <div
           style={{
             flex: 1,
             display: "flex",
             flexDirection: "column",
-            background: "#f0f2f5",
           }}
         >
           {/* Scrollable main content */}
@@ -841,9 +826,6 @@ export default function EventKitGenerator() {
 
           
         </div>
-
-      </div>
-      {/* <Footer /> */}
     </div>
   );
 }
