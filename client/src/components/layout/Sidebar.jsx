@@ -27,8 +27,12 @@ const adminNav = [
     { label: 'Peers', to: '/learning/peers', icon: <MdPeople /> },
   ]},
   { section: 'Momentum', items: [
-    { label: 'Study Tracker', to: '/momentum/tracker', icon: <MdSchool /> },
-    { label: 'Workplans', to: '/momentum/workplan', icon: <MdEvent /> },
+    { label: "Dashboard", to: "/momentum", icon: <MdDashboard /> },
+    { label: "Study Tracker", to: "/momentum/tracker", icon: <MdBarChart /> },
+    { label: "Learning Journal", to: "/momentum/learning-journal", icon: <MdChat /> },
+    { label: "Generate Workplan", to: "/momentum/workplan", icon: <MdEvent /> },
+    { label: "Academic Vault", to: "/momentum/vault", icon: <MdSchool /> },
+    { label: "FAQs", to: "/momentum/faqs", icon: <MdHistory /> },
   ]}
 ];
 
@@ -51,9 +55,12 @@ const studentNav = [
     { label: 'Resources', to: '/learning/resources', icon: <MdSchool /> },
   ]},
   { section: 'Momentum', items: [
-    { label: 'Momentum Dash', to: '/momentum', icon: <MdSchool /> },
-    { label: 'Study Tracker', to: '/momentum/tracker', icon: <MdSchool /> },
-    { label: 'Planner Vault', to: '/momentum/vault', icon: <MdDashboard /> },
+    { label: "Dashboard", to: "/momentum", icon: <MdDashboard /> },
+    { label: "Study Tracker", to: "/momentum/tracker", icon: <MdBarChart /> },
+    { label: "Learning Journal", to: "/momentum/learning-journal", icon: <MdChat /> },
+    { label: "Generate Workplan", to: "/momentum/workplan", icon: <MdEvent /> },
+    { label: "Academic Vault", to: "/momentum/vault", icon: <MdSchool /> },
+    { label: "FAQs", to: "/momentum/faqs", icon: <MdHistory /> },
   ]}
 ];
 
