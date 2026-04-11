@@ -43,18 +43,7 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Layout Fix */
-.lms-layout {
-  display: flex;
-  min-height: 100vh;
-}
-
-.main-content {
-  flex: 1;
-  margin-left: 250px; /* adjust based on sidebar width */
-  display: flex;
-  flex-direction: column;
-}
+/* Layout wrappers are provided by the shared app layout. */
 
 a {
   text-decoration: none;
@@ -72,111 +61,6 @@ input,
 select {
   font-family: inherit;
   outline: none;
-}
-
-/* ============================================================
-   NAVBAR
-   ============================================================ */
-.navbar {
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  padding: 0 40px;
-  height: 60px;
-}
-
-.navbar__inner {
-  max-width: 1280px;
-  margin: 0 auto;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  gap: 32px;
-}
-
-.navbar__brand {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.navbar__logo {
-  background: var(--primary);
-  color: #fff;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.navbar__logo .material-symbols-outlined {
-  font-size: 20px;
-}
-
-.navbar__title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-heading);
-  white-space: nowrap;
-}
-
-.navbar__nav {
-  display: flex;
-  align-items: center;
-  gap: 32px;
-  flex: 1;
-  justify-content: center;
-}
-
-.navbar__link {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text-body);
-  transition: color 0.2s;
-  white-space: nowrap;
-}
-
-.navbar__link:hover {
-  color: var(--primary);
-}
-
-.navbar__link--active {
-  color: var(--primary);
-  font-weight: 600;
-  border-bottom: 2px solid var(--primary);
-  padding-bottom: 2px;
-}
-
-.navbar__actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
-.navbar__icon-btn {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-muted);
-  transition: background 0.2s, color 0.2s;
-}
-
-.navbar__icon-btn:hover {
-  background: #f1f5f9;
-  color: var(--text-heading);
-}
-
-.navbar__icon-btn .material-symbols-outlined {
-  font-size: 24px;
 }
 
 /* ============================================================

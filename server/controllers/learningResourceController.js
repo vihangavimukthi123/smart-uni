@@ -69,8 +69,13 @@ const trackHistory = async (req, res) => {
 const getRecommendedLearningResources = async (req, res) => {
   try {
     const { userId } = req.params;
-    const { modules } = req.query; // Expecting comma separated values, e.g., ?modules=Web Development,Data Science
-    const selectedModules = modules ? modules.split(",") : [];
+    const { modules, year, semester, skills } = req.query;
+    
+    // Parse query parameters
+    const selectedModules = modules ? modules.split(",").map(m => m.trim()) : [];
+    const userYear = year ? Number(year) : null;
+    const userSemester = semester ? Number(semester) : null;
+    const userSkills = skills ? skills.split(",").map(s => s.trim().toLowerCase()) : [];
 
     // 1. Fetch all resources
     const allLearningResources = await LearningResource.find();
@@ -85,7 +90,7 @@ const getRecommendedLearningResources = async (req, res) => {
       const reasons = [];
 
       // A. Module Match Score (+40)
-      const moduleMatch = selectedModules.some(m => resource.module.toLowerCase().includes(m.toLowerCase()));
+      const moduleMatch = selectedModules.some(m => resource.module && resource.module.toLowerCase().includes(m.toLowerCase()));
       if (moduleMatch) {
         score += 40;
         reasons.push(`Matches your selected module (${resource.module})`);
@@ -101,7 +106,29 @@ const getRecommendedLearningResources = async (req, res) => {
          reasons.push("Related to your recent search interest");
       }
 
-      // C. Popularity Score (+20) - Normalized
+      // C. Year/Semester Match Score (+25) - NEW
+      let yearSemesterMatch = false;
+      if (userYear && resource.year === userYear) {
+        score += 25;
+        yearSemesterMatch = true;
+        reasons.push(`For your year (Year ${userYear})`);
+      }
+      if (userSemester && resource.semester === userSemester && !yearSemesterMatch) {
+        score += 15;
+        reasons.push(`For your semester (Sem ${userSemester})`);
+      }
+
+      // D. Skill Match Score (+20) - NEW
+      if (userSkills.length > 0) {
+        const resourceText = (resource.title + " " + resource.description + " " + (resource.subject || "")).toLowerCase();
+        const skillMatch = userSkills.some(skill => resourceText.includes(skill));
+        if (skillMatch) {
+          score += 20;
+          reasons.push("Matches your skills");
+        }
+      }
+
+      // E. Popularity Score (+20)
       if (resource.downloads > 50) {
         score += 20;
         reasons.push("Highly popular among students");
@@ -110,7 +137,7 @@ const getRecommendedLearningResources = async (req, res) => {
         reasons.push("Trending resource");
       }
 
-      // D. Recency Score (+10) 
+      // F. Recency Score (+10) 
       const oneMonthAgo = new Date();
       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
       if (resource.createdAt > oneMonthAgo) {
@@ -126,14 +153,20 @@ const getRecommendedLearningResources = async (req, res) => {
     });
 
     // 4. Filter & Rank
-    // Only return those with a significant score or just sort everything
+    // Return those with significant score, or all if user is new
     const recommendations = scoredLearningResources
       .filter(r => r.recommendationScore > 0)
       .sort((a, b) => b.recommendationScore - a.recommendationScore)
       .slice(0, 10);
 
+    // If very few recommendations, fill with trending/recent resources
     const alternatives = scoredLearningResources
       .filter(r => r.recommendationScore === 0)
+      .sort((a, b) => {
+        // Sort by downloads then recency
+        if (b.downloads !== a.downloads) return b.downloads - a.downloads;
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      })
       .slice(0, 5);
 
     res.json({
