@@ -57,10 +57,12 @@ const EMPTY_FORM = {
   title: "",
   course: "",
   subject: "",
+  timeTracked: "",
   timeGoal: "",
   prodScore: "",
   status: "Pending",
   icon: "📘",
+  taskDate: new Date().toISOString().split('T')[0],
 };
 
 const iconOptions = ["📘", "🖥️", "✏️", "🔬", "📐", "📊", "🧪", "📝"];
@@ -76,7 +78,7 @@ function ProgressBar({ value, max }) {
 }
 
 // ─── Task Row ─────────────────────────────────────────────────────────────────
-function TaskRow({ task, onDelete }) {
+function TaskRow({ task, onDelete, onEdit }) {
   return (
     <div style={styles.taskRow}>
       <div style={styles.taskIconWrap}>{task.icon}</div>
@@ -119,7 +121,11 @@ function TaskRow({ task, onDelete }) {
       </span>
 
       <div style={styles.taskActions}>
-        <button style={styles.iconBtn} title="Edit">
+        <button
+          style={styles.iconBtn}
+          title="Edit"
+          onClick={() => onEdit(task)}
+        >
           <svg
             width="15"
             height="15"
@@ -156,22 +162,25 @@ function TaskRow({ task, onDelete }) {
   );
 }
 
-// ─── Add Task Modal ───────────────────────────────────────────────────────────
-function AddTaskModal({ onClose, onAdd }) {
-  const [form, setForm] = useState(EMPTY_FORM);
+// ─── Task Modal (Add/Edit) ───────────────────────────────────────────────────
+function TaskModal({ onClose, onSave, task }) {
+  const [form, setForm] = useState(task || EMPTY_FORM);
   const [errors, setErrors] = useState({});
 
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   const validate = () => {
     const e = {};
-    if (!form.title.trim()) e.title = "Task title is required";
-    if (!form.course.trim()) e.course = "Course code is required";
-    if (!form.subject.trim()) e.subject = "Subject is required";
+    if (!form.title?.trim()) e.title = "Task title is required";
+    if (!form.course?.trim()) e.course = "Course code is required";
+    if (!form.subject?.trim()) e.subject = "Subject is required";
+    if (form.timeTracked === "" || isNaN(form.timeTracked) || +form.timeTracked < 0)
+      e.timeTracked = "Enter valid worked time";
     if (!form.timeGoal || isNaN(form.timeGoal) || +form.timeGoal <= 0)
-      e.timeGoal = "Enter a valid time goal (minutes)";
+      e.timeGoal = "Enter valid estimated goal";
+    if (!form.taskDate) e.taskDate = "Session date is required";
     if (
-      !form.prodScore ||
+      form.prodScore === undefined ||
       isNaN(form.prodScore) ||
       +form.prodScore < 0 ||
       +form.prodScore > 100
@@ -183,15 +192,16 @@ function AddTaskModal({ onClose, onAdd }) {
   const handleSubmit = () => {
     const e = validate();
     if (Object.keys(e).length) return setErrors(e);
-    onAdd({
+    onSave({
       ...form,
-      id: Date.now(),
-      timeTracked: 0,
+      timeTracked: +form.timeTracked,
       timeGoal: +form.timeGoal,
       prodScore: +form.prodScore,
     });
     onClose();
   };
+
+  const isEdit = Boolean(task);
 
   return (
     <div style={styles.overlay} onClick={onClose}>
@@ -199,9 +209,9 @@ function AddTaskModal({ onClose, onAdd }) {
         {/* Header */}
         <div style={styles.modalHeader}>
           <div>
-            <div style={styles.modalTitle}>Add New Task</div>
+            <div style={styles.modalTitle}>{isEdit ? "Edit Task" : "Add New Task"}</div>
             <div style={styles.modalSub}>
-              Fill in the details for your micro-task
+              {isEdit ? "Modify your study task details" : "Fill in the details for your micro-task"}
             </div>
           </div>
           <button style={styles.closeBtn} onClick={onClose}>
@@ -244,6 +254,21 @@ function AddTaskModal({ onClose, onAdd }) {
           {errors.title && <span style={styles.errorMsg}>{errors.title}</span>}
         </div>
 
+        {/* Date Row */}
+        <div style={styles.fieldGroup}>
+          <label style={styles.label}>Session Date *</label>
+          <input
+            type="date"
+            style={{
+              ...styles.input,
+              ...(errors.taskDate ? styles.inputError : {}),
+            }}
+            value={form.taskDate ? new Date(form.taskDate).toISOString().split('T')[0] : ""}
+            onChange={(e) => set("taskDate", e.target.value)}
+          />
+          {errors.taskDate && <span style={styles.errorMsg}>{errors.taskDate}</span>}
+        </div>
+
         {/* Course + Subject */}
         <div style={styles.row2}>
           <div style={styles.fieldGroup}>
@@ -278,10 +303,26 @@ function AddTaskModal({ onClose, onAdd }) {
           </div>
         </div>
 
-        {/* Time Goal + Prod Score */}
+        {/* Time Tracking Row */}
         <div style={styles.row2}>
           <div style={styles.fieldGroup}>
-            <label style={styles.label}>Time Goal (minutes) *</label>
+            <label style={styles.label}>Worked Time (mins) *</label>
+            <input
+              style={{
+                ...styles.input,
+                ...(errors.timeTracked ? styles.inputError : {}),
+              }}
+              placeholder="e.g. 45"
+              type="number"
+              value={form.timeTracked}
+              onChange={(e) => set("timeTracked", e.target.value)}
+            />
+            {errors.timeTracked && (
+              <span style={styles.errorMsg}>{errors.timeTracked}</span>
+            )}
+          </div>
+          <div style={styles.fieldGroup}>
+            <label style={styles.label}>Estimated Goal (mins) *</label>
             <input
               style={{
                 ...styles.input,
@@ -296,22 +337,24 @@ function AddTaskModal({ onClose, onAdd }) {
               <span style={styles.errorMsg}>{errors.timeGoal}</span>
             )}
           </div>
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>Productivity Score (0–100) *</label>
-            <input
-              style={{
-                ...styles.input,
-                ...(errors.prodScore ? styles.inputError : {}),
-              }}
-              placeholder="e.g. 92"
-              type="number"
-              value={form.prodScore}
-              onChange={(e) => set("prodScore", e.target.value)}
-            />
-            {errors.prodScore && (
-              <span style={styles.errorMsg}>{errors.prodScore}</span>
-            )}
-          </div>
+        </div>
+
+        {/* Productivity Score Row */}
+        <div style={styles.fieldGroup}>
+          <label style={styles.label}>Productivity Score (0–100) *</label>
+          <input
+            style={{
+              ...styles.input,
+              ...(errors.prodScore ? styles.inputError : {}),
+            }}
+            placeholder="e.g. 92"
+            type="number"
+            value={form.prodScore}
+            onChange={(e) => set("prodScore", e.target.value)}
+          />
+          {errors.prodScore && (
+            <span style={styles.errorMsg}>{errors.prodScore}</span>
+          )}
         </div>
 
         {/* Status */}
@@ -340,7 +383,7 @@ function AddTaskModal({ onClose, onAdd }) {
             Cancel
           </button>
           <button style={styles.submitBtn} onClick={handleSubmit}>
-            + Add Task
+            {isEdit ? "Save Changes" : "+ Add Task"}
           </button>
         </div>
       </div>
@@ -353,6 +396,7 @@ export default function StudyTracker() {
   const [tasks, setTasks] = useState([]);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
 
   useEffect(() => {
     fetchTasks();
@@ -376,16 +420,29 @@ export default function StudyTracker() {
 
   const handleAdd = async (taskData) => {
     try {
-      const payload = { ...taskData };
-      delete payload.id;
-      const res = await api.post('/momentum/study-tasks', payload);
+      const res = await api.post('/momentum/study-tasks', taskData);
       setTasks(prev => [res.data.data, ...prev]);
     } catch(e) { 
       console.error("Add Task Error:", e);
     }
   };
+
+  const handleUpdate = async (taskData) => {
+    try {
+      const res = await api.put(`/momentum/study-tasks/${taskData._id}`, taskData);
+      setTasks(prev => prev.map(t => t._id === taskData._id ? res.data.data : t));
+    } catch(e) { 
+      console.error("Update Task Error:", e);
+    }
+  };
+
+  const handleEditClick = (task) => {
+    setEditingTask(task);
+    setShowModal(true);
+  };
   
   const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this task?")) return;
     try {
        await api.delete(`/momentum/study-tasks/${id}`);
        setTasks((prev) => prev.filter((t) => (t._id || t.id) !== id));
@@ -406,7 +463,7 @@ export default function StudyTracker() {
       
 
       <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
+        
         
         <div style={styles.page}>
           {/* Hero */}
@@ -452,7 +509,7 @@ export default function StudyTracker() {
           <div style={styles.taskList}>
             {filtered.length > 0 ? (
               filtered.map((t) => (
-                <TaskRow key={t._id || t.id} task={t} onDelete={handleDelete} />
+                <TaskRow key={t._id || t.id} task={t} onDelete={handleDelete} onEdit={handleEditClick} />
               ))
             ) : (
               <div style={styles.emptyState}>
@@ -468,9 +525,13 @@ export default function StudyTracker() {
 
           {/* Modal */}
           {showModal && (
-            <AddTaskModal
-              onClose={() => setShowModal(false)}
-              onAdd={handleAdd}
+            <TaskModal
+              onClose={() => {
+                setShowModal(false);
+                setEditingTask(null);
+              }}
+              onSave={editingTask ? handleUpdate : handleAdd}
+              task={editingTask}
             />
           )}
         </div>
