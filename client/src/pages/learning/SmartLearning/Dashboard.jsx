@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "./Dashboard.css";
 import { Link } from "react-router-dom";
 import api from "../../../api/axios";
+import { useAuth } from "../../../context/AuthContext";
 
 // --- Feature Cards Data ---
 const features = [
@@ -287,6 +288,7 @@ function SavedProfileCard({ profile, onRemoveModule }) {
 
 // --- Main Dashboard Component ---
 export default function Dashboard() {
+  const { user } = useAuth();
   const savedProfile = getSavedProfile();
 
   const [name, setName] = useState(savedProfile.name || "");
@@ -304,6 +306,9 @@ export default function Dashboard() {
       ? savedProfile
       : null
   );
+
+  const authName = (user?.name || "").trim();
+  const authEmail = (user?.email || "").trim().toLowerCase();
 
   const filteredModules = MODULE_OPTIONS.filter(
     (m) => m.year === parseInt(selectedYear) && m.semester === parseInt(selectedSemester)
@@ -419,6 +424,29 @@ export default function Dashboard() {
     // Keep only modules that belong to the currently selected year/semester.
     setSelectedModules((prev) => prev.filter((val) => allowedModuleValues.has(val)));
   }, [selectedYear, selectedSemester]);
+
+  useEffect(() => {
+    if (!authEmail) return;
+
+    // Always reflect currently logged-in identity in profile form.
+    setName(authName || "");
+    setEmail(authEmail);
+
+    const currentSaved = getSavedProfile();
+    const savedEmail = (currentSaved.email || "").trim().toLowerCase();
+    if (savedEmail !== authEmail) {
+      const alignedProfile = {
+        ...currentSaved,
+        name: authName || "",
+        email: authEmail,
+      };
+      localStorage.setItem("studentProfile", JSON.stringify(alignedProfile));
+
+      if (alignedProfile.skills.length > 0 || alignedProfile.selectedModules?.length > 0) {
+        setDisplayedProfile(alignedProfile);
+      }
+    }
+  }, [authName, authEmail]);
 
   return (
     <main className="main">
