@@ -12,14 +12,15 @@ const { protect } = require('../middleware/authMiddleware.js');
 
 const orderRouter = express.Router();
 
-orderRouter.post("/", protect, createOrder);
+// Specific routes first
+orderRouter.put("/:id/cancel", protect, cancelOrder);
 orderRouter.get("/student", protect, getStudentOrders);
 orderRouter.get("/supplier", protect, getSupplierOrders);
 orderRouter.put("/item-status", protect, updateOrderItemStatus);
 
-// Edit and Cancel
+// Generic and POST routes
+orderRouter.post("/", protect, createOrder);
 orderRouter.put("/:id", protect, updateOrder);
-orderRouter.patch("/:id/cancel", protect, cancelOrder);
 
 module.exports = orderRouter;
 

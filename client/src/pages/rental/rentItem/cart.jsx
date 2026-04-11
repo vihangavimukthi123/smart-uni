@@ -2,8 +2,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCart } from "../../../context/CartContext";
-import Sidebar from "../../../components/layout/Sidebar";
-import Navbar from "../../../components/layout/Navbar";
+// import Sidebar from "../../../components/layout/Sidebar";
+// import Navbar from "../../../components/layout/Navbar";
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const GridIcon = () => (
@@ -242,37 +242,20 @@ export default function CartPage() {
   const navigate = useNavigate();
 
   const subtotal = cartItems.reduce((s, i) => s + i.total, 0);
-  const delivery = 15.0;
-  const tax = +(subtotal * 0.0547).toFixed(2);
+  const delivery = 500.0;
+  const tax = +(subtotal * 0.02).toFixed(2);
   const total = +(subtotal + delivery + tax).toFixed(2);
 
   return (
     <div
       style={{
         display: "flex",
-        flexDirection: "column",
-        minHeight: "100vh",
-        fontFamily: "'Segoe UI', sans-serif",
-        backgroundColor: "#F3F4F6",
+        gap: "24px",
+        alignItems: "flex-start",
       }}
     >
-      <Navbar />
-      <div style={{ display: "flex", flex: 1 }}>
-        {/* ── Sidebar ── */}
-        <Sidebar />
-
-        {/* ── Main ── */}
-        <div
-          style={{
-            flex: 1,
-            padding: "32px 28px",
-            display: "flex",
-            gap: "24px",
-            alignItems: "flex-start",
-          }}
-        >
-          {/* LEFT */}
-          <div style={{ flex: 1, minWidth: 0 }}>
+      {/* LEFT */}
+      <div style={{ flex: 1, minWidth: 0 }}>
             <h1
               style={{
                 fontSize: "26px",
@@ -729,17 +712,18 @@ export default function CartPage() {
             </div>
 
             <button
-              onClick={() => navigate(`/checkout`)}
+              onClick={() => cartItems.length > 0 && navigate(`/rental/checkout`)}
+              disabled={cartItems.length === 0}
               style={{
                 width: "100%",
                 padding: "13px 0",
-                backgroundColor: "#1152D4",
+                backgroundColor: cartItems.length === 0 ? "#E5E7EB" : "#1152D4",
                 border: "none",
                 borderRadius: "9px",
-                color: "#FFFFFF",
+                color: cartItems.length === 0 ? "#9CA3AF" : "#FFFFFF",
                 fontSize: "15px",
                 fontWeight: "700",
-                cursor: "pointer",
+                cursor: cartItems.length === 0 ? "not-allowed" : "pointer",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -753,7 +737,7 @@ export default function CartPage() {
 
             <div style={{ textAlign: "center", marginBottom: "18px" }}>
               <button
-                onClick={() => navigate(`/itemlist`)}
+                onClick={() => navigate(`/rental/items`)}
                 style={{
                   width: "100%",
                   padding: "13px 0",
@@ -804,7 +788,5 @@ export default function CartPage() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
+      );
+    }

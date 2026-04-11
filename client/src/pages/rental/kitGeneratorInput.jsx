@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import Navbar from "../../components/layout/Navbar";
-import Sidebar from "../../components/layout/Sidebar";
+// import Navbar from "../../components/layout/Navbar";
+// import Sidebar from "../../components/layout/Sidebar";
 import { useNavigate } from "react-router-dom";
 
 // ── Sidebar icons ─────────────────────────────────────────────────────────────
@@ -95,16 +95,7 @@ export default function EventKitGeneratorPage() {
 const navigate = useNavigate();
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", backgroundColor: "#F3F4F6" }}>
-
-      <Navbar />
-
-      <div style={{ display: "flex", flex: 1 }}>
-
-        <Sidebar />
-
-        {/* ── Main ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto" }}>
 
           {/* ── Hero band ── */}
           <div style={{
@@ -290,8 +281,6 @@ const navigate = useNavigate();
 
           </div>
 
-        </div>
-      </div>
     </div>
   );
 }

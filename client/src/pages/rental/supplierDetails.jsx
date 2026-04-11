@@ -1,7 +1,5 @@
 //supplierDetails.jsx
 import React, { useState, useEffect } from "react";
-import Navbar from "../../components/layout/Navbar";
-import Sidebar from "../../components/layout/Sidebar";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
@@ -79,7 +77,7 @@ export default function SupplierDetails() {
 
   const fetchSupplierDetails = async () => {
     try {
-      const res = await api.get(`/rental/supplier/details/${email}`);
+      const res = await api.get(`/rental/suppliers/${email}`);
       setData(res.data);
     } catch (err) {
       console.error(err);
@@ -120,19 +118,14 @@ export default function SupplierDetails() {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex flex-center bg-slate-50"><p className="-600 animate-pulse">Loading Supplier Info...</p></div>;
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-slate-50"><p className="text-blue-600 animate-pulse font-bold">Loading Supplier Info...</p></div>;
 
   const { supplier, products } = data;
-  if (!supplier) return <div className="min-h-screen flex flex-center">Supplier not found</div>;
+  if (!supplier) return <div className="min-h-screen flex items-center justify-center">Supplier not found</div>;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", backgroundColor: "#F3F4F6" }}>
-      <Navbar />
-
-      <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
-
-        <div style={{ flex: 1, padding: "24px 32px" }}>
+    <div style={{ flex: 1 }}>
           
           {/* Header */}
           <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", padding: "24px", marginBottom: "20px", boxShadow: "0 1px 3px rgba(0,0,0,0.08)" }}>
@@ -209,11 +202,6 @@ export default function SupplierDetails() {
              </div>
           </div>
 
-        </div>
-      </div>
     </div>
   );
 }
-
-
-

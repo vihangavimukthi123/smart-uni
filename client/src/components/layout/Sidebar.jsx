@@ -16,9 +16,9 @@ const adminNav = [
     { label: 'User Mgt', to: '/admin/users', icon: <MdPeople /> },
   ]},
   { section: 'Rental Admin', items: [
-    { label: 'Rental Home', to: '/rental', icon: <MdDashboard /> },
-    { label: 'Items', to: '/rental/items', icon: <MdDashboard /> },
-    { label: 'Suppliers', to: '/rental/suppliers', icon: <MdPeople /> },
+    { label: 'Products', to: '/supplier', icon: <MdPeople /> },
+    { label: 'Orders', to: '/supplier/orders', icon: <MdHistory /> },
+    { label: 'Reviews', to: '/supplier/reviews', icon: <MdBarChart /> },
   ]},
   { section: 'Learning Admin', items: [
     { label: 'Dashboard', to: '/learning', icon: <MdSchool /> },
@@ -45,7 +45,7 @@ const studentNav = [
   { section: 'Rental Store', items: [
     { label: 'Browse Rentals', to: '/rental', icon: <MdDashboard /> },
     { label: 'My Cart', to: '/rental/cart', icon: <MdDashboard /> },
-    { label: 'Kit Generator', to: '/rental/kit-generator', icon: <MdDashboard /> },
+    { label: 'Kit Generator', to: '/rental/kit-generator/input', icon: <MdDashboard /> },
     { label: 'Order History', to: '/rental/history', icon: <MdHistory /> },
   ]},
   { section: 'Learning Hub', items: [
@@ -66,9 +66,10 @@ const studentNav = [
 
 const supplierNav = [
   { section: 'Supplier Portal', items: [
-    { label: 'My Dashboard', to: '/supplier', icon: <MdDashboard />, end: true },
-    { label: 'My Products', to: '/supplier/products', icon: <MdDashboard /> },
-    { label: 'Orders received', to: '/supplier/orders', icon: <MdEvent /> },
+    { label: 'My Products', to: '/supplier', icon: <MdDashboard />, end: true },
+    { label: 'Manage Orders', to: '/supplier/orders', icon: <MdHistory /> },
+    { label: 'Reviews', to: '/supplier/reviews', icon: <MdBarChart /> },
+    { label: 'Profile Settings', to: '/supplier/users', icon: <MdPerson /> },
   ]}
 ];
 
@@ -76,8 +77,13 @@ export default function Sidebar({ collapsed, onToggle }) {
   const { user, logout, isAdmin, isSupplier, isAdminOrScheduler } = useAuth();
   
   let navSections = studentNav;
-  if (isAdminOrScheduler) navSections = adminNav;
-  if (isSupplier) navSections = supplierNav;
+  if (isAdminOrScheduler) {
+    navSections = adminNav;
+  } else if (isSupplier) {
+    // Only allow access to 'Rental Admin' sections as requested
+    navSections = adminNav.filter(section => section.section === 'Rental Admin');
+  }
+
 
   return (
     <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>

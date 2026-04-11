@@ -11,6 +11,7 @@ import Layout from './components/layout/Layout';
 // Auth Pages (Unified)
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
+import SupplierRegisterPage from './pages/auth/SupplierRegisterPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -81,6 +82,7 @@ function AppContent() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register-supplier" element={<SupplierRegisterPage />} />
 
         <Route path="/" element={<Layout />}>
           {/* Admin / Scheduler Routes */}
@@ -100,17 +102,17 @@ function AppContent() {
           <Route path="profile" element={<ProtectedRoute allowedRoles={['student', 'user', 'scheduler', 'admin', 'supplier']}><UserProfilePage /></ProtectedRoute>} />
           
           {/* Smart Rental System Routes */}
-          <Route path="rental" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><RentalLandingPage /></ProtectedRoute>} />
-          <Route path="rental/items" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><ItemList /></ProtectedRoute>} />
-          <Route path="rental/items/:id" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><ItemDetails /></ProtectedRoute>} />
-          <Route path="rental/suppliers" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><SupplierList /></ProtectedRoute>} />
-          <Route path="rental/suppliers/:id" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><SupplierDetails /></ProtectedRoute>} />
-          <Route path="rental/kit-generator" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><KitGenerator /></ProtectedRoute>} />
-          <Route path="rental/kit-generator/input" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><KitGeneratorInput /></ProtectedRoute>} />
-          <Route path="rental/cart" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><CartPage /></ProtectedRoute>} />
-          <Route path="rental/checkout" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><CheckoutPage /></ProtectedRoute>} />
-          <Route path="rental/history" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><HistoryPage /></ProtectedRoute>} />
-          <Route path="rental/review" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><WriteReview /></ProtectedRoute>} />
+          <Route path="rental" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><RentalLandingPage /></ProtectedRoute>} />
+          <Route path="rental/items" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><ItemList /></ProtectedRoute>} />
+          <Route path="rental/items/:id" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><ItemDetails /></ProtectedRoute>} />
+          <Route path="rental/suppliers" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><SupplierList /></ProtectedRoute>} />
+          <Route path="rental/supplier-details" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><SupplierDetails /></ProtectedRoute>} />
+          <Route path="rental/kit-generator" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><KitGenerator /></ProtectedRoute>} />
+          <Route path="rental/kit-generator/input" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><KitGeneratorInput /></ProtectedRoute>} />
+          <Route path="rental/cart" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><CartPage /></ProtectedRoute>} />
+          <Route path="rental/checkout" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><CheckoutPage /></ProtectedRoute>} />
+          <Route path="rental/history" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><HistoryPage /></ProtectedRoute>} />
+          <Route path="rental/review" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><WriteReview /></ProtectedRoute>} />
           <Route path="supplier/*" element={<ProtectedRoute allowedRoles={['supplier', 'admin']}><SupplierPage /></ProtectedRoute>} />
 
           {/* SmartLearningHub Routes */}
