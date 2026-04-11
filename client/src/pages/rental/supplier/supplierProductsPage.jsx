@@ -48,7 +48,7 @@ export default function SupplierProductsPage() {
         </div>
       </div>
 
-      <div className="table-wrapper" style={{ background: '#ffffff', border: '1px solid var(--border)' }}>
+      <div className="table-wrapper" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
         {loaded ? (
           <table className="data-table">
             <thead>
@@ -66,7 +66,7 @@ export default function SupplierProductsPage() {
               </tr>
             </thead>
 
-            <tbody style={{ color: 'var(--bg-base)' }}>
+            <tbody style={{ color: 'var(--text-primary)' }}>
               {products.map((item) => (
                 <tr key={item.productID}>
                   <td>
@@ -83,15 +83,15 @@ export default function SupplierProductsPage() {
                     />
                   </td>
 
-                  <td style={{ color: 'var(--bg-base)' }}><code className="text-xs font-bold">{item.productID}</code></td>
-                  <td className="font-semibold" style={{ color: 'var(--bg-base)' }}>{item.name}</td>
+                  <td><code className="text-xs font-bold">{item.productID}</code></td>
+                  <td className="font-semibold">{item.name}</td>
                   <td>
-                    <span className="font-bold" style={{ color: 'var(--bg-base)' }}>Rs. {item.price.toLocaleString()}</span>
+                    <span className="font-bold">Rs. {item.price.toLocaleString()}</span>
                   </td>
                   <td><span className="badge badge-indigo">{item.category}</span></td>
-                  <td style={{ color: 'var(--bg-base)' }}>{item.brand}</td>
-                  <td style={{ color: 'var(--bg-base)' }}>{item.model}</td>
-                  <td style={{ color: 'var(--bg-base)' }}>{item.stock}</td>
+                  <td>{item.brand}</td>
+                  <td>{item.model}</td>
+                  <td>{item.stock}</td>
 
                   <td>
                     <span className={`badge ${item.isAvailable ? 'badge-success' : 'badge-danger'}`}>
@@ -104,7 +104,7 @@ export default function SupplierProductsPage() {
                       <button
                         onClick={() => navigate("/supplier/update-product", { state: item })}
                         className="btn btn-secondary btn-sm"
-                        style={{ color: 'var(--bg-base)', width: '100px' }}
+                        style={{ width: '100px' }}
                       >
                         Edit
                       </button>
@@ -121,7 +121,7 @@ export default function SupplierProductsPage() {
           </table>
         ) : (
           <div className="flex justify-center py-10">
-             <Loader />
+            <Loader />
           </div>
         )}
       </div>

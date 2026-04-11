@@ -55,14 +55,14 @@ export default function SupplierReviewsPage() {
       </div>
 
       <div style={{ display: "flex", gap: "4px", marginBottom: "20px", background: "#F3F4F6", padding: "4px", borderRadius: "10px", width: "fit-content" }}>
-        <button 
-          onClick={() => setActiveTab("company")} 
+        <button
+          onClick={() => setActiveTab("company")}
           style={{ padding: "8px 16px", border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: "700", cursor: "pointer", background: activeTab === "company" ? "#fff" : "transparent", color: activeTab === "company" ? "#111827" : "#6B7280", boxShadow: activeTab === "company" ? "0 1px 3px rgba(0,0,0,0.1)" : "none" }}
         >
           Company Feedback ({companyReviews.length})
         </button>
-        <button 
-          onClick={() => setActiveTab("product")} 
+        <button
+          onClick={() => setActiveTab("product")}
           style={{ padding: "8px 16px", border: "none", borderRadius: "8px", fontSize: "14px", fontWeight: "700", cursor: "pointer", background: activeTab === "product" ? "#fff" : "transparent", color: activeTab === "product" ? "#111827" : "#6B7280", boxShadow: activeTab === "product" ? "0 1px 3px rgba(0,0,0,0.1)" : "none" }}
         >
           Product Feedback ({productReviews.length})
