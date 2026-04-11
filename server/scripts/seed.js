@@ -40,6 +40,30 @@ const seed = async () => {
     console.log('✅ Standard user created: user@campus.edu / User@1234');
   }
 
+  // Create Shanilka user
+  const existingShanilka = await User.findOne({ email: 'shanilka.samarakoon@campus.edu' });
+  if (!existingShanilka) {
+    await User.create({
+      name: 'Shanilka Samarakoon',
+      email: 'shanilka.samarakoon@campus.edu',
+      password: 'shani@1234',
+      role: 'student',
+    });
+    console.log('✅ Student user created: shanilka.samarakoon@campus.edu / shani@1234');
+  }
+
+  // Create Dinusha user
+  const existingDinusha = await User.findOne({ email: 'dinusha.fernando@campus.edu' });
+  if (!existingDinusha) {
+    await User.create({
+      name: 'Dinusha Fernando',
+      email: 'dinusha.fernando@campus.edu',
+      password: 'dinu@1234',
+      role: 'student',
+    });
+    console.log('✅ Student user created: dinusha.fernando@campus.edu / dinu@1234');
+  }
+
   // Create sample rooms
   const rooms = [
     { name: 'Hall A-101', capacity: 120, equipment: ['projector', 'whiteboard', 'microphone', 'AC'], type: 'lecture_hall', building: 'Block A', floor: 1 },
