@@ -53,6 +53,11 @@ import MomentumDashboard from './pages/momentum/MomentumDashboard/MoDash';
 import StudyTracker from './pages/momentum/study tracker/studyTracker';
 import GenerateWorkplan from './pages/momentum/workplanGenerate/planGenerate';
 import Planner from './pages/momentum/myPlans/myPlans';
+import FAQManager from "./pages/momentum/faqManager/faqManager";
+import FAQPublic from "./pages/momentum/faqPublic/faqPublic";
+import LearningJournal from "./pages/momentum/learningJournal/learningJournal";
+import NotificationManager from "./pages/momentum/notificationManager/notificationManager";
+
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -120,6 +125,11 @@ function AppContent() {
           <Route path="momentum/tracker" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><StudyTracker /></ProtectedRoute>} />
           <Route path="momentum/workplan" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><GenerateWorkplan /></ProtectedRoute>} />
           <Route path="momentum/vault" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><Planner /></ProtectedRoute>} />
+          <Route path="momentum/learning-journal" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><LearningJournal /></ProtectedRoute>} />
+          <Route path="momentum/learning-channel" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><Navigate to="/momentum/learning-journal" /></ProtectedRoute>} />
+          <Route path="momentum/faqs" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><FAQPublic /></ProtectedRoute>} />
+          <Route path="momentum/faq" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><FAQManager /></ProtectedRoute>} />
+          <Route path="momentum/notification-manager" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><NotificationManager /></ProtectedRoute >} />
           
           <Route path="*" element={<Navigate to={user?.role === 'admin' ? '/admin' : '/dashboard'} replace />} />
         </Route>

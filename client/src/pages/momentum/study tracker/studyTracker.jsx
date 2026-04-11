@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../../../components/layout/Navbar";
 import Sidebar from "../../../components/layout/Sidebar";
+import api from "../../../api/axios";
 
 const PRIMARY = "#1152D4";
 
@@ -134,7 +135,7 @@ function TaskRow({ task, onDelete }) {
         <button
           style={styles.iconBtn}
           title="Delete"
-          onClick={() => onDelete(task.id)}
+          onClick={() => onDelete(task._id || task.id)}
         >
           <svg
             width="15"
@@ -349,20 +350,49 @@ function AddTaskModal({ onClose, onAdd }) {
 
 // ─── Main Study Tracker ───────────────────────────────────────────────────────
 export default function StudyTracker() {
-  const [tasks, setTasks] = useState(initialTasks);
+  const [tasks, setTasks] = useState([]);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
 
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const fetchTasks = async () => {
+    try {
+      const res = await api.get('/momentum/study-tasks');
+      setTasks(res.data.data || []);
+    } catch (err) {
+      console.error("Fetch Tasks Error:", err);
+    }
+  };
+
   const filtered = tasks.filter(
     (t) =>
-      t.title.toLowerCase().includes(search.toLowerCase()) ||
-      t.course.toLowerCase().includes(search.toLowerCase()) ||
-      t.subject.toLowerCase().includes(search.toLowerCase()),
+      t.title?.toLowerCase().includes(search.toLowerCase()) ||
+      t.course?.toLowerCase().includes(search.toLowerCase()) ||
+      t.subject?.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const handleAdd = (task) => setTasks((prev) => [task, ...prev]);
-  const handleDelete = (id) =>
-    setTasks((prev) => prev.filter((t) => t.id !== id));
+  const handleAdd = async (taskData) => {
+    try {
+      const payload = { ...taskData };
+      delete payload.id;
+      const res = await api.post('/momentum/study-tasks', payload);
+      setTasks(prev => [res.data.data, ...prev]);
+    } catch(e) { 
+      console.error("Add Task Error:", e);
+    }
+  };
+  
+  const handleDelete = async (id) => {
+    try {
+       await api.delete(`/momentum/study-tasks/${id}`);
+       setTasks((prev) => prev.filter((t) => (t._id || t.id) !== id));
+    } catch(e) {
+      console.error("Delete Task Error:", e);
+    }
+  };
 
   return (
     <div
@@ -373,7 +403,7 @@ export default function StudyTracker() {
         backgroundColor: "#F3F4F6",
       }}
     >
-      <Navbar />
+      
 
       <div style={{ display: "flex", flex: 1 }}>
         <Sidebar />
@@ -422,7 +452,7 @@ export default function StudyTracker() {
           <div style={styles.taskList}>
             {filtered.length > 0 ? (
               filtered.map((t) => (
-                <TaskRow key={t.id} task={t} onDelete={handleDelete} />
+                <TaskRow key={t._id || t.id} task={t} onDelete={handleDelete} />
               ))
             ) : (
               <div style={styles.emptyState}>
@@ -453,16 +483,24 @@ export default function StudyTracker() {
 const styles = {
   page: {
     flex: 1,
+    minWidth: 0,
+    width: "100%",
+    boxSizing: "border-box",
     display: "flex",
     flexDirection: "column",
     fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
     background: "#f5f7fc",
     overflowY: "auto",
+    overflowX: "hidden",
   },
   hero: {
-    background: `linear-gradient(120deg, ${PRIMARY} 0%, #0e3ea8 100%)`,
+    background: `linear-gradient(120deg, rgba(17,82,212,0.85) 0%, rgba(14,62,168,0.95) 100%), url('/tracker_banner.png')`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
     borderRadius: "0 0 20px 20px",
     padding: "28px 32px",
+    width: "100%",
+    boxSizing: "border-box",
     color: "#fff",
     display: "flex",
     justifyContent: "space-between",

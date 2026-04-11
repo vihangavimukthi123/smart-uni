@@ -1,6 +1,6 @@
 import { useState } from "react";
-import Navbar from "../../../components/layout/Navbar";
-import Sidebar from "../../../components/layout/Sidebar";
+import Sidebar from "../sidebar/sidebar";
+import "./planGenerate.css";
 
 const PRIMARY = "#1152D4";
 const ERROR_COLOR = "#ef4444";
@@ -251,38 +251,38 @@ export default function GenerateWorkplan() {
         display: "flex",
         flexDirection: "column",
         minHeight: "100vh",
+        fontFamily: "'Segoe UI', sans-serif",
         backgroundColor: "#F3F4F6",
       }}
     >
-      <Navbar />
+      {/*<Navbar />*/}
 
       <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
         
-        <div style={S.page}>
+        <div className="page">
           {/* Hero */}
-          <div style={S.hero}>
-            <h1 style={S.heroTitle}>AI Workplan Generator</h1>
-            <p style={S.heroSub}>
+          <div className="hero">
+            <h1 className="hero-title">AI Workplan Generator</h1>
+            <p className="hero-sub">
               Let's build a work plan that fits your time and helps you stay
               consistent.
             </p>
           </div>
 
           {/* Card */}
-          <div style={S.card}>
-            <div style={S.cardHeader}>
-              <div style={S.cardTitle}>Let's Build Your Work Plan</div>
-              <div style={S.cardSub}>
+          <div className="card">
+            <div className="card-header">
+              <div className="card-title">Let's Build Your Work Plan</div>
+              <div className="card-sub">
                 Customize your study hours and tasks to optimize your academic
                 momentum.
               </div>
             </div>
 
             {/* ===== Weekday Availability ===== */}
-            <section style={S.section}>
-              <div style={S.sectionHeader}>
-                <div style={S.sectionTitle}>
+            <section className="section">
+              <div className="section-header">
+                <div className="section-title">
                   <span>📅</span> Weekdays Availability
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -304,13 +304,13 @@ export default function GenerateWorkplan() {
                 </div>
               </div>
 
-              <div style={S.presetGrid}>
+              <div className="preset-grid">
                 {weekdayPresets.map((p, i) => (
                   <button
                     key={i}
                     onClick={() => setSelectedPreset(i)}
+                    className="preset-btn"
                     style={{
-                      ...S.presetBtn,
                       background:
                         selectedPreset === i ? PRIMARY + "12" : "#f9fafb",
                       border:
@@ -331,9 +331,9 @@ export default function GenerateWorkplan() {
 
               {/* Custom Hours - only shown when toggle ON */}
               {customizeWeekday && (
-                <div style={S.customBox}>
-                  <div style={S.customBoxLabel}>CUSTOM WEEKDAY HOURS</div>
-                  <div style={S.timeRow}>
+                <div className="custom-box">
+                  <div className="custom-box-label">CUSTOM WEEKDAY HOURS</div>
+                  <div className="time-row">
                     <TimeInput
                       label="Start Time"
                       value={customStart}
@@ -358,10 +358,10 @@ export default function GenerateWorkplan() {
               )}
             </section>
 
-            <div style={S.divider} />
+            <div className="divider" />
 
             {/* ===== Weekend ===== */}
-            <section style={S.section}>
+            <section className="section">
               <div
                 style={{
                   display: "grid",
@@ -370,7 +370,7 @@ export default function GenerateWorkplan() {
                 }}
               >
                 <div>
-                  <div style={S.sectionTitle}>
+                  <div className="section-title">
                     <span>📅</span> Saturday
                   </div>
                   <div
@@ -391,7 +391,7 @@ export default function GenerateWorkplan() {
                   </div>
                 </div>
                 <div>
-                  <div style={S.sectionTitle}>
+                  <div className="section-title">
                     <span>📅</span> Sunday
                   </div>
                   <div
@@ -414,15 +414,15 @@ export default function GenerateWorkplan() {
               </div>
             </section>
 
-            <div style={S.divider} />
+            <div className="divider" />
 
             {/* ===== Tasks ===== */}
-            <section style={S.section}>
-              <div style={S.sectionTitle}>
+            <section className="section">
+              <div className="section-title">
                 <span>📋</span> Current Tasks &amp; Projects
               </div>
-              <div style={S.taskBox}>
-                <div style={S.taskHeader}>
+              <div className="task-box">
+                <div className="task-header">
                   <span style={{ flex: 2 }}>TASK NAME</span>
                   <span style={{ flex: 1 }}>DEADLINE</span>
                   <span style={{ flex: 1 }}>PRIORITY</span>
@@ -442,8 +442,8 @@ export default function GenerateWorkplan() {
                         }}
                       >
                         <input
+                          className="task-input"
                           style={{
-                            ...S.taskInput,
                             borderColor: errors["task_" + t.id + "_name"]
                               ? ERROR_COLOR
                               : "#e5e7eb",
@@ -468,8 +468,8 @@ export default function GenerateWorkplan() {
                         <input
                           type="date"
                           min={todayStr}
+                          className="task-input"
                           style={{
-                            ...S.taskInput,
                             borderColor: errors["task_" + t.id + "_deadline"]
                               ? ERROR_COLOR
                               : "#e5e7eb",
@@ -483,7 +483,7 @@ export default function GenerateWorkplan() {
                       </div>
                       <div style={{ flex: 1 }}>
                         <select
-                          style={S.taskInput}
+                          className="task-input"
                           value={t.priority}
                           onChange={(e) =>
                             updateTask(t.id, "priority", e.target.value)
@@ -495,7 +495,7 @@ export default function GenerateWorkplan() {
                         </select>
                       </div>
                       <button
-                        style={S.deleteTaskBtn}
+                        className="delete-task-btn"
                         onClick={() => removeTask(t.id)}
                       >
                         <svg
@@ -521,21 +521,21 @@ export default function GenerateWorkplan() {
                     {errors.tasksGlobal}
                   </span>
                 )}
-                <button style={S.addTaskBtn} onClick={addTask}>
+                <button className="add-task-btn" onClick={addTask}>
                   + Add Another Task
                 </button>
               </div>
             </section>
 
-            <div style={S.divider} />
+            <div className="divider" />
 
             {/* ===== Sleep Schedule ===== */}
-            <section style={S.section}>
-              <div style={S.sectionTitle}>
+            <section className="section">
+              <div className="section-title">
                 <span>🌙</span> Sleep Schedule
               </div>
-              <div style={S.customBox}>
-                <div style={S.timeRow}>
+              <div className="custom-box">
+                <div className="time-row">
                   <TimeInput
                     label="Bedtime"
                     value={bedtime}
@@ -559,11 +559,11 @@ export default function GenerateWorkplan() {
               </div>
             </section>
 
-            <div style={S.divider} />
+            <div className="divider" />
 
             {/* ===== Study Blocks ===== */}
-            <section style={S.section}>
-              <div style={S.sectionTitle}>
+            <section className="section">
+              <div className="section-title">
                 <span>⏱️</span> Preferred Study Blocks
               </div>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -628,7 +628,7 @@ export default function GenerateWorkplan() {
             )}
 
             {/* Generate Button */}
-            <button style={S.generateBtn} onClick={handleGenerate}>
+            <button className="generate-btn" onClick={handleGenerate}>
               Generate My Workplan
             </button>
           </div>
@@ -637,151 +637,3 @@ export default function GenerateWorkplan() {
     </div>
   );
 }
-
-// ---- Styles ----
-const S = {
-  page: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
-    background: "#f5f7fc",
-    overflowY: "auto",
-  },
-  hero: {
-    background: "linear-gradient(120deg, " + PRIMARY + " 0%, #0e3ea8 100%)",
-    borderRadius: "0 0 20px 20px",
-    padding: "28px 32px 40px",
-    color: "#fff",
-    marginBottom: -20,
-  },
-  heroTitle: {
-    fontSize: 24,
-    fontWeight: 800,
-    margin: "0 0 8px",
-    letterSpacing: "-0.5px",
-  },
-  heroSub: { fontSize: 13.5, opacity: 0.85, margin: 0 },
-  card: {
-    background: "#fff",
-    borderRadius: 20,
-    margin: "0 28px 32px",
-    padding: "28px 32px",
-    boxShadow: "0 4px 24px rgba(0,0,0,0.08)",
-    display: "flex",
-    flexDirection: "column",
-    gap: 0,
-  },
-  cardHeader: { textAlign: "center", marginBottom: 24 },
-  cardTitle: { fontSize: 18, fontWeight: 800, color: "#111", marginBottom: 6 },
-  cardSub: { fontSize: 13, color: "#6b7280" },
-  section: { padding: "20px 0" },
-  sectionHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    fontWeight: 700,
-    fontSize: 15,
-    color: "#111",
-    marginBottom: 12,
-  },
-  presetGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(3, 1fr)",
-    gap: 12,
-  },
-  presetBtn: {
-    borderRadius: 12,
-    padding: "12px 16px",
-    cursor: "pointer",
-    textAlign: "center",
-    transition: "all 0.15s",
-  },
-  customBox: {
-    background: "#f9fafb",
-    border: "1px solid #e5e7eb",
-    borderRadius: 12,
-    padding: "16px 20px",
-    marginTop: 14,
-  },
-  customBoxLabel: {
-    fontSize: 10,
-    fontWeight: 700,
-    color: "#9ca3af",
-    letterSpacing: "0.8px",
-    marginBottom: 14,
-  },
-  timeRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 },
-  divider: { height: 1, background: "#f3f4f6", margin: "0 -32px" },
-  taskBox: {
-    background: "#f9fafb",
-    border: "1px solid #e5e7eb",
-    borderRadius: 12,
-    padding: "16px 18px",
-    display: "flex",
-    flexDirection: "column",
-    gap: 10,
-  },
-  taskHeader: {
-    display: "flex",
-    gap: 12,
-    fontSize: 10,
-    fontWeight: 700,
-    color: "#9ca3af",
-    letterSpacing: "0.6px",
-    paddingBottom: 4,
-  },
-  taskInput: {
-    width: "100%",
-    border: "1.5px solid #e5e7eb",
-    borderRadius: 8,
-    padding: "8px 12px",
-    fontSize: 13,
-    color: "#111",
-    background: "#fff",
-    outline: "none",
-    fontFamily: "inherit",
-    boxSizing: "border-box",
-  },
-  deleteTaskBtn: {
-    width: 30,
-    height: 30,
-    border: "none",
-    background: "#fef2f2",
-    borderRadius: 8,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  addTaskBtn: {
-    border: "none",
-    background: "transparent",
-    color: PRIMARY,
-    fontSize: 13.5,
-    fontWeight: 600,
-    cursor: "pointer",
-    textAlign: "center",
-    padding: "6px 0",
-  },
-  generateBtn: {
-    marginTop: 24,
-    width: "100%",
-    padding: "14px 0",
-    background: PRIMARY,
-    color: "#fff",
-    border: "none",
-    borderRadius: 14,
-    fontWeight: 800,
-    fontSize: 15,
-    cursor: "pointer",
-    letterSpacing: "-0.2px",
-  },
-};
