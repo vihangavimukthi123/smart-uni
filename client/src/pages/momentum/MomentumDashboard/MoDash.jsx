@@ -170,7 +170,7 @@ export default function MomentumDashboard() {
         const weekMap = { MON: 0, TUE: 0, WED: 0, THU: 0, FRI: 0, SAT: 0, SUN: 0 };
         
         tasks.forEach(t => {
-          const d = new Date(t.createdAt).getDay();
+          const d = new Date(t.taskDate || t.createdAt).getDay();
           weekMap[days[d]] += (t.timeTracked || 0) / 60;
         });
         
