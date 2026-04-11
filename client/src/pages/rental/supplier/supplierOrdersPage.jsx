@@ -50,8 +50,8 @@ export default function SupplierOrdersPage() {
 
       {orders.length === 0 ? (
         <div style={{ backgroundColor: "#fff", padding: "80px 40px", borderRadius: "16px", textAlign: "center", border: "1px dotted #D1D5DB" }}>
-           <p style={{ fontSize: "16px", color: "#4B5563", fontWeight: "600" }}>No customer orders found</p>
-           <p style={{ color: "#9CA3AF", fontSize: "14px" }}>Active rentals will appear here once placed by students.</p>
+          <p style={{ fontSize: "16px", color: "#4B5563", fontWeight: "600" }}>No customer orders found</p>
+          <p style={{ color: "#9CA3AF", fontSize: "14px" }}>Active rentals will appear here once placed by students.</p>
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
@@ -63,7 +63,7 @@ export default function SupplierOrdersPage() {
                     <span style={{ fontSize: "11px", fontWeight: "800", color: "#9CA3AF", letterSpacing: "0.05em" }}>ORDER ID</span>
                     <div style={{ fontSize: "14px", fontWeight: "700", color: "#111827" }}>#{order.orderId || order._id?.slice(-8)}</div>
                   </div>
-                  <span style={{ 
+                  <span style={{
                     fontSize: "10px", fontWeight: "900", padding: "4px 10px", borderRadius: "20px",
                     background: order.status === "Completed" ? "#DCFCE7" : order.status === "Cancelled" ? "#FEE2E2" : "#DBEAFE",
                     color: order.status === "Completed" ? "#166534" : order.status === "Cancelled" ? "#991B1B" : "#1E40AF",
@@ -72,7 +72,7 @@ export default function SupplierOrdersPage() {
                     {(order.status || "Pending").toUpperCase()}
                   </span>
                 </div>
-                <button 
+                <button
                   onClick={() => setSelectedOrder(order)}
                   style={{ padding: "8px 20px", background: "#1E40AF", color: "#fff", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: "700", cursor: "pointer" }}
                 >
@@ -89,31 +89,31 @@ export default function SupplierOrdersPage() {
                       <div style={{ fontSize: "13px", color: "#6B7280" }}>Quantity: {item.qty} · Rs.{item.price}/day</div>
                     </div>
                     <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "6px" }}>
-                       <span style={{ fontSize: "10px", fontWeight: "800", color: "#9CA3AF" }}>QUICK UPDATE</span>
-                       <select 
-                         value={item.status || "Pending"}
-                         onChange={(e) => handleUpdateItem(order._id, item.productId, e.target.value, item.supplierNote)}
-                         style={{ 
-                           padding: "4px 8px", borderRadius: "6px", border: "1px solid #D1D5DB", 
-                           fontSize: "12px", fontWeight: "700", cursor: "pointer",
-                           backgroundColor: item.status === "Delivered" ? "#DCFCE7" : item.status === "Processing" ? "#DBEAFE" : item.status === "Cancelled" ? "#FEE2E2" : "#FFF9DB",
-                           color: item.status === "Delivered" ? "#166534" : item.status === "Processing" ? "#1E40AF" : item.status === "Cancelled" ? "#B91C1C" : "#854D0E"
-                         }}
-                       >
-                         <option value="Pending">Pending</option>
-                         <option value="Processing">Processing</option>
-                         <option value="Delivered">Delivered</option>
-                         <option value="Cancelled">Cancelled</option>
-                       </select>
+                      <span style={{ fontSize: "10px", fontWeight: "800", color: "#9CA3AF" }}>QUICK UPDATE</span>
+                      <select
+                        value={item.status || "Pending"}
+                        onChange={(e) => handleUpdateItem(order._id, item.productId, e.target.value, item.supplierNote)}
+                        style={{
+                          padding: "4px 8px", borderRadius: "6px", border: "1px solid #D1D5DB",
+                          fontSize: "12px", fontWeight: "700", cursor: "pointer",
+                          backgroundColor: item.status === "Delivered" ? "#DCFCE7" : item.status === "Processing" ? "#DBEAFE" : item.status === "Cancelled" ? "#FEE2E2" : "#FFF9DB",
+                          color: item.status === "Delivered" ? "#166534" : item.status === "Processing" ? "#1E40AF" : item.status === "Cancelled" ? "#B91C1C" : "#854D0E"
+                        }}
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                      </select>
                     </div>
                   </div>
                 ))}
               </div>
 
               <div style={{ padding: "16px 24px", backgroundColor: "#fff", borderTop: "1px solid #F3F4F6", display: "flex", justifyContent: "space-between" }}>
-                  <div style={{ fontSize: "13px", color: "#4B5563" }}><strong>Customer:</strong> {order.contactInfo?.organizer}</div>
-                  <div style={{ fontSize: "13px", color: "#4B5563" }}><strong>Delivery:</strong> {order.deliveryDetails?.campus === "sliit" ? "Kandy Campus" : "Other"}</div>
-                  <div style={{ fontSize: "13px", color: "#1E40AF", fontWeight: "700" }}>Rental Start: {new Date(order.rentalDates?.pickup).toLocaleDateString()} at {order.rentalDates?.pickupTime || "09:00"}</div>
+                <div style={{ fontSize: "13px", color: "#4B5563" }}><strong>Customer:</strong> {order.contactInfo?.organizer}</div>
+                <div style={{ fontSize: "13px", color: "#4B5563" }}><strong>Delivery:</strong> {order.deliveryDetails?.campus === "sliit" ? "Kandy Campus" : "Other"}</div>
+                <div style={{ fontSize: "13px", color: "#1E40AF", fontWeight: "700" }}>Rental Start: {new Date(order.rentalDates?.pickup).toLocaleDateString()} at {order.rentalDates?.pickupTime || "09:00"}</div>
               </div>
             </div>
           ))}
@@ -121,9 +121,9 @@ export default function SupplierOrdersPage() {
       )}
 
       {selectedOrder && (
-        <ManageOrderModal 
-          order={selectedOrder} 
-          onClose={() => setSelectedOrder(null)} 
+        <ManageOrderModal
+          order={selectedOrder}
+          onClose={() => setSelectedOrder(null)}
           onUpdate={handleUpdateItem}
         />
       )}
@@ -154,24 +154,24 @@ function ManageOrderModal({ order, onClose, onUpdate }) {
         <div style={{ padding: "32px" }}>
           {/* Order Details Grid */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "20px" }}>
-             <div>
-                <label style={{ fontSize: "11px", fontWeight: "800", color: "#9CA3AF", display: "block", marginBottom: "6px" }}>STUDENT CONTACT</label>
-                <div style={{ fontSize: "14px", fontWeight: "700", color: "#111827" }}>{order.contactInfo?.organizer}</div>
-                <div style={{ fontSize: "13px", color: "#6B7280" }}>{order.contactInfo?.phone}</div>
-                <div style={{ fontSize: "12px", color: "#1E40AF" }}>{order.contactInfo?.email}</div>
-             </div>
-             <div>
-                <label style={{ fontSize: "11px", fontWeight: "800", color: "#9CA3AF", display: "block", marginBottom: "6px" }}>DELIVERY LOCATION</label>
-                <div style={{ fontSize: "14px", fontWeight: "700", color: "#111827" }}>{order.deliveryDetails?.campus === "sliit" ? "SLIIT Kandy Uni" : "Other Location"}</div>
-                <p style={{ fontSize: "12px", color: "#6B7280", margin: "4px 0 0 0" }}>{order.deliveryDetails?.location}</p>
-             </div>
+            <div>
+              <label style={{ fontSize: "11px", fontWeight: "800", color: "#9CA3AF", display: "block", marginBottom: "6px" }}>STUDENT CONTACT</label>
+              <div style={{ fontSize: "14px", fontWeight: "700", color: "#111827" }}>{order.contactInfo?.organizer}</div>
+              <div style={{ fontSize: "13px", color: "#6B7280" }}>{order.contactInfo?.phone}</div>
+              <div style={{ fontSize: "12px", color: "#1E40AF" }}>{order.contactInfo?.email}</div>
+            </div>
+            <div>
+              <label style={{ fontSize: "11px", fontWeight: "800", color: "#9CA3AF", display: "block", marginBottom: "6px" }}>DELIVERY LOCATION</label>
+              <div style={{ fontSize: "14px", fontWeight: "700", color: "#111827" }}>{order.deliveryDetails?.campus === "sliit" ? "SLIIT Kandy Uni" : "Other Location"}</div>
+              <p style={{ fontSize: "12px", color: "#6B7280", margin: "4px 0 0 0" }}>{order.deliveryDetails?.location}</p>
+            </div>
           </div>
 
           <div style={{ marginBottom: "32px", backgroundColor: "#EFF6FF", padding: "12px 16px", borderRadius: "10px", border: "1px solid #DBEAFE" }}>
-             <label style={{ fontSize: "11px", fontWeight: "800", color: "#1E40AF", display: "block", marginBottom: "6px", letterSpacing: "0.05em" }}>RENTAL PERIOD</label>
-             <div style={{ fontSize: "15px", fontWeight: "800", color: "#1E3A8A" }}>
-                {new Date(order.rentalDates?.pickup).toLocaleDateString()} at {order.rentalDates?.pickupTime || "09:00"} — {new Date(order.rentalDates?.return).toLocaleDateString()}
-             </div>
+            <label style={{ fontSize: "11px", fontWeight: "800", color: "#1E40AF", display: "block", marginBottom: "6px", letterSpacing: "0.05em" }}>RENTAL PERIOD</label>
+            <div style={{ fontSize: "15px", fontWeight: "800", color: "#1E3A8A" }}>
+              {new Date(order.rentalDates?.pickup).toLocaleDateString()} at {order.rentalDates?.pickupTime || "09:00"} — {new Date(order.rentalDates?.return).toLocaleDateString()}
+            </div>
           </div>
 
           {/* Itemized Summary */}
@@ -198,30 +198,30 @@ function ManageOrderModal({ order, onClose, onUpdate }) {
 
           {/* Action Form */}
           <div style={{ marginBottom: "24px" }}>
-             <label style={{ fontSize: "13px", fontWeight: "700", color: "#374151", display: "block", marginBottom: "8px" }}>Update Item Status</label>
-             <select 
-               value={status} 
-               onChange={(e) => setStatus(e.target.value)}
-               style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #D1D5DB", outline: "none", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}
-             >
-                <option value="Pending">Pending Audit</option>
-                <option value="Processing">Processing Order</option>
-                <option value="Delivered">Successfully Delivered</option>
-                <option value="Cancelled">Decline/Cancel</option>
-             </select>
+            <label style={{ fontSize: "13px", fontWeight: "700", color: "#374151", display: "block", marginBottom: "8px" }}>Update Item Status</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #D1D5DB", outline: "none", fontSize: "14px", fontWeight: "600", cursor: "pointer" }}
+            >
+              <option value="Pending">Pending Audit</option>
+              <option value="Processing">Processing Order</option>
+              <option value="Delivered">Successfully Delivered</option>
+              <option value="Cancelled">Decline/Cancel</option>
+            </select>
           </div>
 
           <div style={{ marginBottom: "32px" }}>
-             <label style={{ fontSize: "13px", fontWeight: "700", color: "#374151", display: "block", marginBottom: "8px" }}>Message to Student</label>
-             <textarea 
-               value={note}
-               onChange={(e) => setNote(e.target.value)}
-               placeholder="Write a message (e.g., 'Pickup at Gate 3')..."
-               style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #D1D5DB", outline: "none", fontSize: "14px", height: "100px", fontFamily: "inherit", resize: "none" }}
-             />
+            <label style={{ fontSize: "13px", fontWeight: "700", color: "#374151", display: "block", marginBottom: "8px" }}>Message to Student</label>
+            <textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="Write a message (e.g., 'Pickup at Gate 3')..."
+              style={{ width: "100%", padding: "12px", borderRadius: "10px", border: "1px solid #D1D5DB", outline: "none", fontSize: "14px", height: "100px", fontFamily: "inherit", resize: "none" }}
+            />
           </div>
 
-          <button 
+          <button
             onClick={handleSave}
             disabled={isUpdating}
             style={{ width: "100%", padding: "14px", background: "#1E40AF", color: "#fff", border: "none", borderRadius: "12px", fontWeight: "700", fontSize: "15px", cursor: "pointer", transition: "all 0.2s" }}
