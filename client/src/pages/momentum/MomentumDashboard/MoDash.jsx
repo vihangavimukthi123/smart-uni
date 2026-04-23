@@ -11,9 +11,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../sidebar/sidebar";
-
-
+// Sidebar is handled by Layout wrapper
 
 const PRIMARY = "#1152D4";
 
@@ -23,7 +21,7 @@ const quickLinks = [
     title: "Generate Work Plans",
     desc: "Dissect courses into actionable weekly milestones and plans.",
     btn: "Create Plan",
-    path: "/workplan",
+    path: "/momentum/workplan",
     dark: false,
   },
   {
@@ -31,7 +29,7 @@ const quickLinks = [
     title: "My Plans",
     desc: "Access your saved academic vaults and keep track of your roadmap.",
     btn: "View Vault",
-    path: "/vault",
+    path: "/momentum/vault",
     dark: true,
   },
   {
@@ -39,7 +37,7 @@ const quickLinks = [
     title: "Learning Journal",
     desc: "Reflect on your daily progress and jot down key academic insights.",
     btn: "Open Journal",
-    path: "/learning-journal",
+    path: "/momentum/learning-journal",
     dark: false,
   },
   {
@@ -47,7 +45,7 @@ const quickLinks = [
     title: "Study Tracker",
     desc: "Log deep focus hours, manage your micro-tasks, and analyze productivity.",
     btn: "Track Tasks",
-    path: "/tracker",
+    path: "/momentum/tracker",
     dark: true,
   },
 ];

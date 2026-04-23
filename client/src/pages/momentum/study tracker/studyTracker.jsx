@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import Navbar from "../../../components/layout/Navbar";
-import Sidebar from "../../../components/layout/Sidebar";
 import api from "../../../api/axios";
 
 const PRIMARY = "#1152D4";

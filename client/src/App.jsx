@@ -53,6 +53,7 @@ import MomentumDashboard from './pages/momentum/MomentumDashboard/MoDash';
 import StudyTracker from './pages/momentum/study tracker/studyTracker';
 import GenerateWorkplan from './pages/momentum/workplanGenerate/planGenerate';
 import Planner from './pages/momentum/myPlans/myPlans';
+import PlanView from './pages/momentum/myPlans/PlanView';
 import FAQManager from "./pages/momentum/faqManager/faqManager";
 import FAQPublic from "./pages/momentum/faqPublic/faqPublic";
 import LearningJournal from "./pages/momentum/learningJournal/learningJournal";
@@ -125,6 +126,8 @@ function AppContent() {
           <Route path="momentum/tracker" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><StudyTracker /></ProtectedRoute>} />
           <Route path="momentum/workplan" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><GenerateWorkplan /></ProtectedRoute>} />
           <Route path="momentum/vault" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><Planner /></ProtectedRoute>} />
+          <Route path="momentum/vault/:id" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><PlanView /></ProtectedRoute>} />
+          <Route path="academic-vault" element={<Navigate to="/momentum/vault" replace />} />
           <Route path="momentum/learning-journal" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><LearningJournal /></ProtectedRoute>} />
           <Route path="momentum/learning-channel" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><Navigate to="/momentum/learning-journal" /></ProtectedRoute>} />
           <Route path="momentum/faqs" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><FAQPublic /></ProtectedRoute>} />

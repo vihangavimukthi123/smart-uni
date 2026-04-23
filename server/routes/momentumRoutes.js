@@ -15,6 +15,13 @@ const {
   updateFaq,
   deleteFaq,
 } = require('../controllers/momentumController');
+const { 
+  generateWorkplan, 
+  getAllPlans, 
+  getSinglePlan,
+  updatePlan, 
+  deletePlan 
+} = require('../controllers/workPlanController');
 
 const router = express.Router();
 
@@ -37,5 +44,12 @@ router.post('/faqs/my-pending', getMyPendingFaqs);
 router.post('/faqs', createFaq);
 router.put('/faqs/:id', updateFaq);
 router.delete('/faqs/:id', deleteFaq);
+
+//uniqe
+router.post('/generate-plan', generateWorkplan);
+router.get('/workplans/:userId', getAllPlans);
+router.get('/workplans/single/:id', getSinglePlan);
+router.put('/workplans/:id', updatePlan);
+router.delete('/workplans/:id', deletePlan);
 
 module.exports = router;

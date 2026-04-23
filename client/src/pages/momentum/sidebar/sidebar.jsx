@@ -5,12 +5,12 @@ import { useNotifications } from "../../../context/NotificationContext";
 const PRIMARY = "#1a4fd6";
 
 const sidebarItems = [
-  { label: "Dashboard", path: "momentum/dashboard" },
-  { label: "Study Tracker", path: "momentum/tracker" },
-  { label: "Learning Journal", path: "momentum/learning-journal" },
-  { label: "Generate Workplan", path: "momentum/workplan" },
-  { label: "Academic Vault", path: "momentum/vault" },
-  { label: "FAQs", path: "momentum/faqs" },
+  { label: "Dashboard", path: "/momentum" },
+  { label: "Study Tracker", path: "/momentum/tracker" },
+  { label: "Learning Journal", path: "/momentum/learning-journal" },
+  { label: "Generate Workplan", path: "/momentum/workplan" },
+  { label: "Academic Vault", path: "/momentum/vault" },
+  { label: "FAQs", path: "/momentum/faqs" },
 ];
 
 
