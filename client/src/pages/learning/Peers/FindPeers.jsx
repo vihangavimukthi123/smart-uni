@@ -309,7 +309,7 @@ export default function FindPeers() {
     <div className="lms-layout">
       <Navbar />
       <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
+        
         <div className="main-content">
           {/* TOPBAR */}
           <div className="topbar">

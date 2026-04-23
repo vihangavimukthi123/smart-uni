@@ -358,7 +358,7 @@ export default function AcademicTask() {
     <div className="lms-layout">
       <Navbar />
       <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
+        
         <main className="main-content academic-page">
           <div className="main-header">
             <div>
