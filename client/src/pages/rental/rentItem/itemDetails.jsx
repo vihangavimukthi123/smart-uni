@@ -108,7 +108,6 @@ export default function ItemDetails() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", backgroundColor: "#f3f4f6" }}>
-      <Navbar />
 
       <div style={{ display: "flex", flex: 1 }}>
         <Sidebar />
@@ -143,12 +142,12 @@ export default function ItemDetails() {
                        <span style={{ padding: "8px 16px", fontWeight: "700" }}>{quantity}</span>
                        <button onClick={() => setQuantity(quantity + 1)} style={{ padding: "8px 16px", background: "#fff", border: "none", borderLeft: "1px solid #E5E7EB", cursor: "pointer" }}>+</button>
                     </div>
-                    <button onClick={() => { addToCart(product, quantity); navigate("/cart"); }} style={{ flex: 1, background: PRIMARY, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}>Add to Cart</button>
+                    <button onClick={() => { addToCart(product, quantity); navigate("/rental/cart"); }} style={{ flex: 1, background: PRIMARY, color: "#fff", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}>Add to Cart</button>
                  </div>
                  <p style={{ fontSize: "11px", color: "#9CA3AF", textAlign: "center", margin: 0 }}>University ID required for pickup.</p>
               </div>
 
-              <div onClick={() => navigate(`/supplierdetails?email=${product.supplierEmail}`)} style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "10px", padding: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
+              <div onClick={() => navigate(`/rental/supplier-details?email=${product.supplierEmail}`)} style={{ background: "#fff", border: "1px solid #E5E7EB", borderRadius: "10px", padding: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}>
                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                     <div style={{ width: "36px", height: "36px", background: "#EFF6FF", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px" }}>🏢</div>
                     <div>

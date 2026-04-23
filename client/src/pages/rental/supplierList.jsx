@@ -6,8 +6,8 @@ import {
   CheckCircle,
   Star,
 } from "lucide-react";
-import Sidebar from "../../components/layout/Sidebar";
-import Navbar from "../../components/layout/Navbar";
+// import Sidebar from "../../components/layout/Sidebar";
+// import Navbar from "../../components/layout/Navbar";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/axios";
 import toast from "react-hot-toast";
@@ -41,12 +41,7 @@ const SupplierList = () => {
   );
 
   return (
-    <div className="flex-col min-h-screen bg-slate-50 -900">
-      <Navbar />
-      <div className="flex flex-1">
-        <Sidebar />
-
-        <main className="flex-1 flex-col">
+    <main className="flex-1 flex-col">
           <div className="w-full px-16 py-10">
             <div className="flex justify-between items-start mb-10">
               <div className="max-w-xl">
@@ -152,7 +147,7 @@ const SupplierList = () => {
                           ))}
                         </div>
                         <button
-                          onClick={() => navigate(`/supplierDetails?email=${s.email}`)}
+                          onClick={() => navigate(`/rental/supplier-details?email=${s.email}`)}
                           className="bg-blue-600 px-5 py-2 card-rounded flex items-center gap-4 transition-colors"
                         >
                           View Profile & Items <ChevronRight size={14} />
@@ -164,9 +159,7 @@ const SupplierList = () => {
               )}
             </div>
           </div>
-        </main>
-      </div>
-    </div>
+    </main>
   );
 };
 

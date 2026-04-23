@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useCart } from "../../context/CartContext";
-import Navbar from "../../components/layout/Navbar";
-import Sidebar from "../../components/layout/Sidebar";
+// import Navbar from "../../components/layout/Navbar";
+// import Sidebar from "../../components/layout/Sidebar";
 import api from "../../api/axios";
 
 // ── Icon helpers ─────────────────────────────────────────────────────────────
@@ -25,6 +25,11 @@ const EditIcon = () => (
 const CancelIcon = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
     <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+  </svg>
+);
+const ReorderIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
   </svg>
 );
 const CloseIcon = () => (
@@ -50,14 +55,19 @@ function OrderDetailsModal({ order, onClose }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", marginBottom: "32px" }}>
             <div>
               <div style={{ fontSize: "11px", fontWeight: "800", color: "#9CA3AF", letterSpacing: "0.05em", marginBottom: "8px" }}>ORDER STATUS</div>
-              <span style={{ fontSize: "13px", fontWeight: "700", color: "#1E40AF", backgroundColor: "#EFF6FF", padding: "6px 14px", borderRadius: "20px" }}>
+              <span style={{ 
+                fontSize: "13px", fontWeight: "700", 
+                color: order.status === "Cancelled" ? "#991B1B" : "#1E40AF", 
+                backgroundColor: order.status === "Cancelled" ? "#FEE2E2" : "#EFF6FF", 
+                padding: "6px 14px", borderRadius: "20px" 
+              }}>
                 {(order.status || "PENDING").toUpperCase()}
               </span>
             </div>
             <div>
               <div style={{ fontSize: "11px", fontWeight: "800", color: "#9CA3AF", letterSpacing: "0.05em", marginBottom: "8px" }}>RENTAL PERIOD</div>
               <div style={{ fontSize: "14px", fontWeight: "600", color: "#374151" }}>
-                {new Date(order.rentalDates?.pickup).toLocaleDateString()} - {new Date(order.rentalDates?.return).toLocaleDateString()}
+                {new Date(order.rentalDates?.pickup).toLocaleDateString()} at {order.rentalDates?.pickupTime || "09:00"} - {new Date(order.rentalDates?.return).toLocaleDateString()}
               </div>
             </div>
           </div>
@@ -119,8 +129,9 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [cancelConfirmationId, setCancelConfirmationId] = useState(null);
   const navigate = useNavigate();
-  const { loadOrderIntoCart } = useCart();
+  const { loadOrderIntoCart, reorderIntoCart } = useCart();
 
   useEffect(() => {
     fetchOrders();
@@ -138,26 +149,55 @@ export default function HistoryPage() {
     }
   }
 
-  const handleCancelOrder = async (orderId) => {
-    if (!window.confirm("Are you sure you want to cancel this order? This action cannot be undone.")) return;
+  const handleCancelOrder = (orderId) => {
+    setCancelConfirmationId(orderId);
+  };
+
+  const confirmCancellation = async () => {
+    if (!cancelConfirmationId) return;
+    
     try {
-      await api.patch(`/rental/orders/${orderId}/cancel`);
+      await api.put(`/rental/orders/${cancelConfirmationId}`, { status: "Cancelled" });
       toast.success("Order cancelled");
+      setCancelConfirmationId(null);
       fetchOrders();
     } catch (err) {
+      console.error("CANCELLATION FAILED:", err);
       toast.error(err.response?.data?.message || "Failed to cancel order");
     }
   };
 
   const handleEditOrder = (order) => {
     loadOrderIntoCart(order);
-    navigate("/checkout");
+    navigate("/rental/checkout");
   };
 
   const isEditable = (pickupDate) => {
+    if (!pickupDate) return false;
     const pickup = new Date(pickupDate);
-    const diff = pickup.getTime() - new Date().getTime();
+    const now = new Date();
+    const diff = pickup.getTime() - now.getTime();
     return diff > (24 * 60 * 60 * 1000);
+  };
+
+  const canReorder = (order) => {
+    // Already delivered and complete or cancelled
+    if (order.status === "Cancelled" || order.status === "Completed") return true;
+    
+    // Day after returned date
+    if (order.rentalDates?.return) {
+      const returnDate = new Date(order.rentalDates.return);
+      const now = new Date();
+      // If now is strictly after the return date, it's considered finished
+      return now > returnDate;
+    }
+    return false;
+  };
+
+  const handleReorder = (order) => {
+    reorderIntoCart(order);
+    toast.success("Past items loaded into cart!");
+    navigate("/rental/cart");
   };
 
   const filteredOrders = orders.filter(o => 
@@ -166,11 +206,7 @@ export default function HistoryPage() {
   );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", backgroundColor: "#F3F4F6" }}>
-      <Navbar />
-      <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar/>
-        <div style={{ flex: 1, padding: "32px 36px", display: "flex", flexDirection: "column" }}>
+    <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
           
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
             <div>
@@ -213,8 +249,8 @@ export default function HistoryPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
                     <span style={{
                       fontSize: "11px", fontWeight: "700", letterSpacing: "0.5px",
-                      color: order.status === "Cancelled" ? "#991B1B" : "#1E40AF", 
-                      backgroundColor: order.status === "Cancelled" ? "#FEE2E2" : "#DBEAFE",
+                      color: order.status === "Cancelled" ? "#991B1B" : (order.status === "Completed") ? "#166534" : (order.status === "Active") ? "#1E40AF" : "#854D0E", 
+                      backgroundColor: order.status === "Cancelled" ? "#FEE2E2" : (order.status === "Completed") ? "#DCFCE7" : (order.status === "Active") ? "#DBEAFE" : "#FFF9DB",
                       padding: "3px 10px", borderRadius: "20px",
                     }}>
                       {(order.status || "PENDING").toUpperCase()}
@@ -242,7 +278,7 @@ export default function HistoryPage() {
                         <div style={{ width: "40px", height: "40px", border: "2px solid #FFF", borderRadius: "8px", backgroundColor: "#F9FAFB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "600", color: "#374151" }}>+{(order.items || []).length - 3}</div>
                       )}
                     </div>
-                    <span style={{ fontSize: "13px", color: "#6B7280" }}>{(order.items || []).length} items · {order.rentalDates?.pickup ? new Date(order.rentalDates.pickup).toLocaleDateString() : ""} to {order.rentalDates?.return ? new Date(order.rentalDates.return).toLocaleDateString() : ""}</span>
+                    <span style={{ fontSize: "13px", color: "#6B7280" }}>{(order.items || []).length} items · {order.rentalDates?.pickup ? `${new Date(order.rentalDates.pickup).toLocaleDateString()} at ${order.rentalDates.pickupTime || "09:00"}` : ""} to {order.rentalDates?.return ? new Date(order.rentalDates.return).toLocaleDateString() : ""}</span>
                   </div>
 
                   <div style={{ display: "flex", gap: "10px" }}>
@@ -253,30 +289,133 @@ export default function HistoryPage() {
                       <EyeIcon /> Details
                     </button>
 
-                    {order.status !== "Cancelled" && isEditable(order.rentalDates?.pickup) && (
+                    {order.status !== "Cancelled" && (
                       <>
                         <button 
-                          onClick={() => handleEditOrder(order)}
-                          style={{ height: "38px", padding: "0 14px", backgroundColor: "#E0E7FF", border: "1px solid #C7D2FE", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", color: "#4338CA", display: "flex", alignItems: "center", gap: "6px" }}
+                          onClick={() => {
+                            if (isEditable(order.rentalDates?.pickup)) {
+                              handleEditOrder(order);
+                            } else {
+                              toast.error("Deadline passed: Cannot edit order within 24 hours of rental start");
+                            }
+                          }}
+                          style={{ 
+                            height: "38px", padding: "0 14px", 
+                            backgroundColor: isEditable(order.rentalDates?.pickup) ? "#E0E7FF" : "#F3F4F6", 
+                            border: `1px solid ${isEditable(order.rentalDates?.pickup) ? "#C7D2FE" : "#E5E7EB"}`, 
+                            borderRadius: "8px", cursor: isEditable(order.rentalDates?.pickup) ? "pointer" : "not-allowed", 
+                            fontSize: "13px", fontWeight: "600", 
+                            color: isEditable(order.rentalDates?.pickup) ? "#4338CA" : "#9CA3AF", 
+                            display: "flex", alignItems: "center", gap: "6px" 
+                          }}
+                          title={!isEditable(order.rentalDates?.pickup) ? "Cannot edit within 24h of rental" : "Edit this order"}
                         >
                           <EditIcon /> Edit
                         </button>
                         <button 
                           onClick={() => handleCancelOrder(order._id)}
-                          style={{ height: "38px", padding: "0 14px", backgroundColor: "#FEF2F2", border: "1px solid #FECACA", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600", color: "#B91C1C", display: "flex", alignItems: "center", gap: "6px" }}
+                          style={{ 
+                            height: "38px", padding: "0 14px", 
+                            backgroundColor: isEditable(order.rentalDates?.pickup) ? "#FEF2F2" : "#F3F4F6", 
+                            border: `1px solid ${isEditable(order.rentalDates?.pickup) ? "#FECACA" : "#E5E7EB"}`, 
+                            borderRadius: "8px", cursor: isEditable(order.rentalDates?.pickup) ? "pointer" : "not-allowed", 
+                            fontSize: "13px", fontWeight: "600", 
+                            color: isEditable(order.rentalDates?.pickup) ? "#B91C1C" : "#9CA3AF", 
+                            display: "flex", alignItems: "center", gap: "6px",
+                            opacity: isEditable(order.rentalDates?.pickup) ? 1 : 0.6,
+                            pointerEvents: "auto"
+                          }}
+                          title={!isEditable(order.rentalDates?.pickup) ? "Cannot cancel within 24h of rental" : "Cancel this order"}
                         >
                           <CancelIcon /> Cancel
                         </button>
                       </>
+                    )}
+
+                    {canReorder(order) && (
+                      <button 
+                        onClick={() => handleReorder(order)}
+                        style={{ 
+                          height: "38px", padding: "0 14px", 
+                          backgroundColor: "#DBEAFE", 
+                          border: "1px solid #BFDBFE", 
+                          borderRadius: "8px", cursor: "pointer", 
+                          fontSize: "13px", fontWeight: "700", 
+                          color: "#1E40AF", 
+                          display: "flex", alignItems: "center", gap: "6px" 
+                        }}
+                      >
+                        <ReorderIcon /> Re-order
+                      </button>
                     )}
                   </div>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      </div>
       {selectedOrder && <OrderDetailsModal order={selectedOrder} onClose={() => setSelectedOrder(null)} />}
+      
+      {cancelConfirmationId && (
+        <div style={{
+          position: "fixed", inset: 0, 
+          backgroundColor: "rgba(15, 23, 42, 0.4)", 
+          backdropFilter: "blur(8px)", 
+          zIndex: 1000, 
+          display: "flex", alignItems: "center", justifyContent: "center", 
+          padding: "20px"
+        }}>
+          <div style={{
+            backgroundColor: "#fff", 
+            borderRadius: "20px", 
+            width: "100%", maxWidth: "400px", 
+            padding: "32px", 
+            boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)",
+            textAlign: "center"
+          }}>
+            <div style={{ 
+              width: "64px", height: "64px", 
+              backgroundColor: "#FEF2F2", 
+              color: "#EF4444", 
+              borderRadius: "50%", 
+              display: "flex", alignItems: "center", justifyContent: "center", 
+              margin: "0 auto 20px"
+            }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#111827", marginBottom: "12px" }}>Cancel Order?</h2>
+            <p style={{ fontSize: "14px", color: "#6B7280", lineHeight: "1.6", marginBottom: "28px" }}>
+              Are you sure you want to cancel this order? This action will release the items and cannot be undone.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <button 
+                onClick={confirmCancellation}
+                style={{ 
+                  width: "100%", padding: "12px", 
+                  backgroundColor: "#EF4444", color: "#fff", 
+                  border: "none", borderRadius: "12px", 
+                  fontWeight: "700", cursor: "pointer", 
+                  transition: "background-color 0.2s"
+                }}
+              >
+                Yes, Cancel Order
+              </button>
+              <button 
+                onClick={() => setCancelConfirmationId(null)}
+                style={{ 
+                  width: "100%", padding: "12px", 
+                  backgroundColor: "#F3F4F6", color: "#374151", 
+                  border: "none", borderRadius: "12px", 
+                  fontWeight: "600", cursor: "pointer"
+                }}
+              >
+                Keep My Order
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import { useState } from "react";
+import Sidebar from "../sidebar/sidebar";
 import "./planGenerate.css";
-import { useAuth } from "../../../context/AuthContext";
-import { useNavigate } from "react-router-dom";
 
 const PRIMARY = "#1152D4";
 const ERROR_COLOR = "#ef4444";
@@ -153,8 +152,6 @@ function ErrMsg({ msg }) {
 
 // ======= Main Component =======
 export default function GenerateWorkplan() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [customizeWeekday, setCustomizeWeekday] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState(0);
   const [customStart, setCustomStart] = useState("18:00");
@@ -237,53 +234,15 @@ export default function GenerateWorkplan() {
     return e;
   };
 
-  const handleGenerate = async () => {
+  const handleGenerate = () => {
+    setSuccess(false);
     const e = validate();
-    if (Object.keys(e).length > 0) {
-      setErrors(e);
-      return;
+    setErrors(e);
+    if (Object.keys(e).length === 0) {
+      setSuccess(true);
+      // TODO: call your backend API here
     }
-
-    try {
-        setSuccess(false);
-        console.log("AI Work Plan is being generated...");
-
-        const availabilityStr = customizeWeekday 
-          ? `${customStart} - ${customEnd}`
-          : weekdayPresets[selectedPreset].label;
-
-        const filteredTasks = tasks
-          .filter(t => t.name.trim())
-          .map(t => ({ title: t.name, priority: t.priority, deadline: t.deadline }));
-
-        const response = await fetch('http://localhost:5000/api/momentum/generate-plan', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                userId: user?._id || "64f1a2b3c4d5e6f7a8b9c0d1",
-                availability: availabilityStr, 
-                tasks: filteredTasks,
-                focusInterval: studyBlock,
-                bedtime: bedtime
-            }),
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-            setSuccess(true);
-            alert("Workplan created successfully!");
-            navigate("/momentum/vault");
-        } else {
-            alert(`Failed to create workplan: ${result.message || "Unknown error"}`);
-        }
-    } catch (error) {
-        console.error("Error:", error);
-        alert(`Failed to create workplan: ${error.message || "Connection error"}`);
-    }
-};
+  };
 
   // ---- Render ----
   return (

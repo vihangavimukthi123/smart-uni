@@ -215,12 +215,12 @@ function OrderModal({ success, onClose }) {
           {success ? <CheckCircle /> : <XCircle />}
         </div>
         <h2 style={{ fontSize: "20px", fontWeight: "800", color: "#111827", margin: "0 0 10px 0" }}>
-          {success ? "Order Placed Successfully!" : "Order Failed"}
+          {success ? "Success!" : "Action Failed"}
         </h2>
         <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 28px 0", lineHeight: "1.6" }}>
           {success
-            ? "Your rental has been confirmed. You'll receive a confirmation shortly."
-            : "Something went wrong while placing your order. Please try again."}
+            ? "Your request has been processed successfully."
+            : "Something went wrong. Please try again."}
         </p>
         <button
           onClick={onClose}
@@ -241,12 +241,14 @@ function ErrMsg({ msg }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default function CheckoutPage() {
   const navigate = useNavigate();
-  const { cartItems, clearCart } = useCart();
+  const { cartItems, clearCart, editingOrderId, orderMetadata } = useCart();
+  const { user } = useAuth();
 
   // ── Calendar state ──
   const [startKey, setStartKey] = useState(null);
   const [endKey, setEndKey] = useState(null);
   const [hoverKey, setHoverKey] = useState(null);
+  const [pickupTime, setPickupTime] = useState("09:00");
 
   function handleSelect(key) {
     if (!startKey || (startKey && endKey)) { setStartKey(key); setEndKey(null); }
@@ -269,21 +271,35 @@ export default function CheckoutPage() {
   // ── Validation errors ──
   const [errors, setErrors] = useState({});
 
-  // ── Auto-fill email from token ──
+  // ── Auto-fill email from auth ──
   useEffect(() => {
-    try {
-      const token = localStorage.getItem("token");
-      if (token) {
-        const payload = JSON.parse(atob(token.split(".")[1]));
-        // Auto-fill only if it's a student and we have an email
-        if (payload.role === "student" && payload.email) {
-          setEmail(payload.email);
-        }
-      }
-    } catch (err) {
-      console.error("Error decoding token for email auto-fill:", err);
+    if (user?.email && user?.role === "student") {
+        setEmail(user.email);
     }
-  }, []);
+  }, [user]);
+
+  // ── Populate if editing ──
+  useEffect(() => {
+    if (editingOrderId && orderMetadata) {
+      if (orderMetadata.rentalDates?.pickup) {
+        const d = new Date(orderMetadata.rentalDates.pickup);
+        setStartKey(toKey(d.getFullYear(), d.getMonth(), d.getDate()));
+      }
+      if (orderMetadata.rentalDates?.return) {
+        const d = new Date(orderMetadata.rentalDates.return);
+        setEndKey(toKey(d.getFullYear(), d.getMonth(), d.getDate()));
+      }
+      setPickupTime(orderMetadata.rentalDates?.pickupTime || "09:00");
+      setCampusChoice(orderMetadata.deliveryDetails?.campus || "sliit");
+      setOtherPlace(orderMetadata.deliveryDetails?.location !== "SLIIT Kandy Uni" ? orderMetadata.deliveryDetails?.location : "");
+      setInstructions(orderMetadata.deliveryDetails?.instructions || "");
+      setOrganizer(orderMetadata.contactInfo?.organizer || "");
+      setUniId(orderMetadata.contactInfo?.uniId || "");
+      setPhone(orderMetadata.contactInfo?.phone || "");
+      // setEmail already handled by auth but could be overridden by order info
+      if (orderMetadata.contactInfo?.email) setEmail(orderMetadata.contactInfo.email);
+    }
+  }, [editingOrderId, orderMetadata]);
 
   // ── Modal ──
   const [modal, setModal] = useState(null); // null | "success" | "fail"
@@ -291,8 +307,8 @@ export default function CheckoutPage() {
   // ── Pricing ──
   const safeItems = cartItems || [];
   const subtotal = safeItems.reduce((s, i) => s + (i.total || 0), 0);
-  const delivery = 15.00;
-  const tax = +(subtotal * 0.0547).toFixed(2);
+  const delivery = 500.00;
+  const tax = +(subtotal * 0.02).toFixed(2);
   const total = +(subtotal + delivery + tax).toFixed(2);
 
   // ── Validation ──────────────────────────────────────────────────────────────
@@ -344,8 +360,6 @@ export default function CheckoutPage() {
 
     // Simulate order — replace with real API call
     try {
-      const token = localStorage.getItem("token");
-
       const items = cartItems.map(item => ({
         productId: item.id || item._id,
         name: item.name,
@@ -361,6 +375,7 @@ export default function CheckoutPage() {
         items,
         rentalDates: {
           pickup: keyToDate(startKey),
+          pickupTime: pickupTime,
           return: keyToDate(endKey)
         },
         deliveryDetails: {
@@ -378,14 +393,13 @@ export default function CheckoutPage() {
 
       console.log("SENDING ORDER PAYLOAD:", orderPayload);
 
-      const response = await api.post(
-        "/rental/orders",
-        orderPayload
-      );
+      if (editingOrderId) {
+        await api.put(`/rental/orders/${editingOrderId}`, orderPayload);
+      } else {
+        await api.post("/rental/orders", orderPayload);
+      }
 
-      const newOrderId = response.data.order?._id;
       clearCart();
-      toast.success("Order placed successfully!");
       setModal("success");
     } catch (error) {
       console.error("ORDER SUBMISSION FAILED:", error.response?.data || error);
@@ -398,7 +412,7 @@ export default function CheckoutPage() {
 
   function handleModalClose() {
     if (modal === "success") {
-      navigate("/itemlist");
+      navigate("/rental/history");
     }
     setModal(null);
   }
@@ -420,19 +434,22 @@ export default function CheckoutPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", backgroundColor: "#F3F4F6" }}>
-      <Navbar />
+
       {/* Modal */}
       {modal && <OrderModal success={modal === "success"} onClose={handleModalClose} />}
 
       <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
 
         <div style={{ flex: 1, padding: "32px 28px", display: "flex", gap: "24px", alignItems: "flex-start" }}>
 
           {/* ── LEFT ── */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 style={{ fontSize: "28px", fontWeight: "900", color: "#111827", margin: "0 0 4px 0", letterSpacing: "-0.5px" }}>Checkout</h1>
-            <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 24px 0" }}>Please review your event details and complete the booking.</p>
+            <h1 style={{ fontSize: "28px", fontWeight: "900", color: "#111827", margin: "0 0 4px 0", letterSpacing: "-0.5px" }}>
+              {editingOrderId ? "Edit Order" : "Checkout"}
+            </h1>
+            <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 24px 0" }}>
+              {editingOrderId ? "Refine your order details and save the changes." : "Please review your event details and complete the booking."}
+            </p>
 
             {/* Section 1 — Rental Duration */}
             <div style={card}>
@@ -469,6 +486,20 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   {errors.endKey && <ErrMsg msg={errors.endKey} />}
+
+                  {/* Pickup Time */}
+                  <div style={{ border: `1px solid #E5E7EB`, borderRadius: "10px", padding: "12px 14px", display: "flex", alignItems: "center", gap: "10px", backgroundColor: "#fff" }}>
+                    <div style={{ width: "18px", height: "18px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px" }}>🕒</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: "10px", fontWeight: "700", color: "#9CA3AF", letterSpacing: "0.5px", marginBottom: "2px" }}>PICKUP TIME</div>
+                      <input 
+                        type="time" 
+                        value={pickupTime} 
+                        onChange={(e) => setPickupTime(e.target.value)} 
+                        style={{ border: "none", outline: "none", fontSize: "14px", fontWeight: "700", color: "#111827", width: "100%", background: "transparent" }}
+                      />
+                    </div>
+                  </div>
 
                   <p style={{ fontSize: "12px", color: startKey && !endKey ? "#1E40AF" : "#6B7280", margin: 0, lineHeight: "1.5", fontWeight: startKey && !endKey ? "500" : "400" }}>
                     {!startKey && "Click a start date to begin."}
@@ -595,12 +626,15 @@ export default function CheckoutPage() {
               <button
                 onClick={handleConfirm}
                 style={{ width: "100%", padding: "14px 0", backgroundColor: "#1E40AF", border: "none", borderRadius: "10px", color: "#FFFFFF", fontSize: "16px", fontWeight: "700", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", marginBottom: "12px" }}>
-                Confirm <LockIcon />
+                {editingOrderId ? "Update Order" : "Confirm Order"} <LockIcon />
               </button>
 
               <div style={{ textAlign: "center" }}>
-                <button onClick={() => navigate("/cart")} style={{ background: "none", border: "none", cursor: "pointer", fontSize: "13px", color: "#374151", display: "inline-flex", alignItems: "center", gap: "5px" }}>
-                  <ArrowLeft /> Back to Cart
+                <button 
+                  onClick={() => navigate(editingOrderId ? "/rental/history" : "/rental/cart")} 
+                  style={{ background: "none", border: "none", cursor: "pointer", fontSize: "13px", color: "#374151", display: "inline-flex", alignItems: "center", gap: "5px" }}
+                >
+                  <ArrowLeft /> {editingOrderId ? "Back" : "Back to Cart"}
                 </button>
               </div>
             </div>

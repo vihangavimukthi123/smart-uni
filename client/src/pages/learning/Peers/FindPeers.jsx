@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import "./FindPeers.css";
 import api from "../../../api/axios";
-import Navbar from "../../../components/layout/Navbar";
-import Sidebar from "../../../components/layout/Sidebar";
 
 
 // --- HELPERS ---
@@ -306,11 +304,8 @@ export default function FindPeers() {
   };
 
   return (
-    <div className="lms-layout">
-      <Navbar />
-      <div style={{ display: "flex", flex: 1 }}>
-        
-        <div className="main-content">
+    <>
+      <main className="peers-content">
           {/* TOPBAR */}
           <div className="topbar">
             <h1>Find Peers</h1>
@@ -400,8 +395,7 @@ export default function FindPeers() {
               )}
             </div>
           </div>
-        </div>
-      </div>
+      </main>
 
       {/* MODAL */}
       {showModal && selectedPeer && (
@@ -499,6 +493,6 @@ export default function FindPeers() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

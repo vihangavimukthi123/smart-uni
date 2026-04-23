@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "./Dashboard.css";
 import { Link } from "react-router-dom";
 import api from "../../../api/axios";
-import Navbar from "../../../components/layout/Navbar";
-import Sidebar from "../../../components/layout/Sidebar";
+import { useAuth } from "../../../context/AuthContext";
 
 // --- Feature Cards Data ---
 const features = [
@@ -289,6 +288,7 @@ function SavedProfileCard({ profile, onRemoveModule }) {
 
 // --- Main Dashboard Component ---
 export default function Dashboard() {
+  const { user } = useAuth();
   const savedProfile = getSavedProfile();
 
   const [name, setName] = useState(savedProfile.name || "");
@@ -306,6 +306,9 @@ export default function Dashboard() {
       ? savedProfile
       : null
   );
+
+  const authName = (user?.name || "").trim();
+  const authEmail = (user?.email || "").trim().toLowerCase();
 
   const filteredModules = MODULE_OPTIONS.filter(
     (m) => m.year === parseInt(selectedYear) && m.semester === parseInt(selectedSemester)
@@ -422,12 +425,31 @@ export default function Dashboard() {
     setSelectedModules((prev) => prev.filter((val) => allowedModuleValues.has(val)));
   }, [selectedYear, selectedSemester]);
 
+  useEffect(() => {
+    if (!authEmail) return;
+
+    // Always reflect currently logged-in identity in profile form.
+    setName(authName || "");
+    setEmail(authEmail);
+
+    const currentSaved = getSavedProfile();
+    const savedEmail = (currentSaved.email || "").trim().toLowerCase();
+    if (savedEmail !== authEmail) {
+      const alignedProfile = {
+        ...currentSaved,
+        name: authName || "",
+        email: authEmail,
+      };
+      localStorage.setItem("studentProfile", JSON.stringify(alignedProfile));
+
+      if (alignedProfile.skills.length > 0 || alignedProfile.selectedModules?.length > 0) {
+        setDisplayedProfile(alignedProfile);
+      }
+    }
+  }, [authName, authEmail]);
+
   return (
-    <div className="lms-layout">
-      <Navbar />
-      <div style={{ display: "flex", flex: 1 }}>
-        
-        <main className="main">
+    <main className="main">
         {/* ── Hero Section ── */}
         <section className="hero-card">
           <div className="hero-card__content">
@@ -649,8 +671,6 @@ export default function Dashboard() {
           ))}
         </div>
       </main>
-      </div>
-    </div>
   );
 }
 

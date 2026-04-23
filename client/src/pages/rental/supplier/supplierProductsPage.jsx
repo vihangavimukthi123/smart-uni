@@ -24,8 +24,6 @@ export default function SupplierProductsPage() {
   // }, [loaded])
   useEffect(() => {
     if (!loaded) {
-      const token = localStorage.getItem("token");
-
       api
         .get("/rental/products")
         .then((response) => {
@@ -37,82 +35,83 @@ export default function SupplierProductsPage() {
 
   const navigate = useNavigate();
   return (
-    <div className="glass-card w-full min-h-screen bg-elevated p-4">
-      <div className="bg-white card-rounded card-shadow overflow-hidden">
+    <div className="flex flex-col gap-md">
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="gradient-text">Product Inventory</h1>
+          <p>Manage and track all your rental items in one place.</p>
+        </div>
+        <div className="page-header-actions">
+          <Link to="/supplier/add-product" className="btn btn-primary">
+            <BiPlus style={{ fontSize: '1.2rem' }} /> Add Product
+          </Link>
+        </div>
+      </div>
+
+      <div className="table-wrapper" style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)' }}>
         {loaded ? (
-          <table className="w-full">
-            <thead className="bg-card sticky top-4 z-10">
-              <tr className="uppercase tracking-wide">
-                <th className="px-6 py-4">Image</th>
-                <th className="px-6 py-4">Product ID</th>
-                <th className="px-6 py-4">Name</th>
-                <th className="px-6 py-4">Price</th>
-                {/* <th className="px-6 py-4">Labeled Price</th> */}
-                <th className="px-6 py-4">Category</th>
-                <th className="px-6 py-4">Brand</th>
-                <th className="px-6 py-4">Model</th>
-                <th className="px-6 py-4">Stock</th>
-                <th className="px-6 py-4">Availability</th>
-                <th className="px-6 py-4">Actions</th>
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Image</th>
+                <th>Product ID</th>
+                <th>Name</th>
+                <th>Price</th>
+                <th>Category</th>
+                <th>Brand</th>
+                <th>Model</th>
+                <th>Stock</th>
+                <th>Availability</th>
+                <th style={{ textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
 
-            <tbody className="divide-y">
+            <tbody style={{ color: 'var(--text-primary)' }}>
               {products.map((item) => (
-                <tr
-                  key={item.productID}
-                  className="transition duration-200"
-                >
-                  <td className="px-6 py-4">
+                <tr key={item.productID}>
+                  <td>
                     <img
                       src={item.images[0]}
                       alt={item.name}
-                      className="w-20 h-20 object-cover card-rounded card-shadow border"
+                      style={{
+                        width: '48px',
+                        height: '48px',
+                        objectCover: 'cover',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border)'
+                      }}
                     />
                   </td>
 
-                  <td className="px-6 py-4">{item.productID}</td>
-                  <td className="px-6 py-4">{item.name}</td>
-                  <td className="px-6 py-4">Rs. {item.price}</td>
-                  {/* <td className="px-6 py-4 line-through -500">
-                  Rs. {item.labelPrice}
-                </td> */}
-                  <td className="px-6 py-4">{item.category}</td>
-                  <td className="px-6 py-4">{item.brand}</td>
-                  <td className="px-6 py-4">{item.model}</td>
-                  <td className="px-6 py-4">
-                    {item.stock}
+                  <td><code className="text-xs font-bold">{item.productID}</code></td>
+                  <td className="font-semibold">{item.name}</td>
+                  <td>
+                    <span className="font-bold">Rs. {item.price.toLocaleString()}</span>
                   </td>
+                  <td><span className="badge badge-indigo">{item.category}</span></td>
+                  <td>{item.brand}</td>
+                  <td>{item.model}</td>
+                  <td>{item.stock}</td>
 
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        item.isAvailable
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
-                      }`}
-                    >
-                      {item.isAvailable ? "In Stock" : "Out of Stock"}
+                  <td>
+                    <span className={`badge ${item.isAvailable ? 'badge-success' : 'badge-danger'}`}>
+                      {item.isAvailable ? 'In Stock' : 'Out of Stock'}
                     </span>
                   </td>
 
-                  <td className="px-6 py-4">
-                    <div className="flex justify-center items-center gap-4">
+                  <td>
+                    <div className="flex justify-center items-center gap-sm">
                       <button
-                        onClick={() => {
-                          navigate("/supplier/update-product", { state: item });
-                        }}
-                        //className="px-3 py-2 card-rounded w-[70px] bg-accent hover:bg-transparent hover: border-2 border-accent transition"
-                        className="hover: border-2 border-accent card-rounded cursor-pointer hover:bg-accent justify-center items-center transition h-[30px] w-[100px]"
+                        onClick={() => navigate("/supplier/update-product", { state: item })}
+                        className="btn btn-secondary btn-sm"
+                        style={{ width: '100px' }}
                       >
                         Edit
                       </button>
 
                       <ProductDeleteButton
                         productID={item.productID}
-                        reload={() => {
-                          setLoaded(false);
-                        }}
+                        reload={() => setLoaded(false)}
                       />
                     </div>
                   </td>
@@ -121,18 +120,12 @@ export default function SupplierProductsPage() {
             </tbody>
           </table>
         ) : (
-          <Loader />
+          <div className="flex justify-center py-10">
+            <Loader />
+          </div>
         )}
       </div>
 
-      <Link
-        to="/supplier/add-product"
-        className="fixed right-6 bottom-6 w-14 h-14 flex items-center justify-center
-          rounded-full bg-accent text-white text-3xl shadow-xl
-          hover:bg-gold hover:scale-105 transition-all duration-300"
-      >
-        <BiPlus />
-      </Link>
     </div>
   );
 }
