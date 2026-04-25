@@ -164,7 +164,12 @@ export default function GenerateWorkplan() {
   const [customStart, setCustomStart] = useState("18:00");
   const [customEnd, setCustomEnd] = useState("22:00");
   const [saturday, setSaturday] = useState("All Day");
+  const [satCustomStart, setSatCustomStart] = useState("10:00");
+  const [satCustomEnd, setSatCustomEnd] = useState("17:00");
   const [sunday, setSunday] = useState("12:00 PM - 8:00 PM");
+  const [sunCustomStart, setSunCustomStart] = useState("12:00");
+  const [sunCustomEnd, setSunCustomEnd] = useState("20:00");
+  const [customStudyBlock, setCustomStudyBlock] = useState("");
   const [tasks, setTasks] = useState([
     { id: 1, name: "", deadline: "", priority: "High" },
   ]);
@@ -176,23 +181,72 @@ export default function GenerateWorkplan() {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   useEffect(() => {
-    if (location.state?.editData) {
-        const d = location.state.editData;
-        if (d.tasks) setTasks(d.tasks);
-        if (d.lifeEvents) setLifeEvents(d.lifeEvents);
-        if (d.bedtime) setBedtime(d.bedtime);
-        if (d.wakeup) setWakeup(d.wakeup);
-        if (d.studyInterval) setStudyBlock(d.studyInterval);
-        if (d.energyLevel) setEnergyLevel(d.energyLevel);
-        if (d.availability && d.availability.includes("-")) {
-            setCustomizeWeekday(true);
-            const [s, e] = d.availability.split(" - ");
-            setCustomStart(s); setCustomEnd(e);
-        }
+    if (!location.state?.editData) return;
+    const d = location.state.editData;
+    setIsEditMode(true);
+
+    // Tasks, life events, sleep, energy
+    if (d.tasks?.length)     setTasks(d.tasks);
+    if (d.lifeEvents?.length) setLifeEvents(d.lifeEvents);
+    if (d.bedtime)            setBedtime(d.bedtime);
+    if (d.wakeup)             setWakeup(d.wakeup);
+    if (d.energyLevel)        setEnergyLevel(d.energyLevel);
+
+    // Weekday availability — try to match a preset first
+    if (d.availability) {
+      const presetIdx = weekdayPresets.findIndex(p => p.label === d.availability);
+      if (presetIdx !== -1) {
+        setSelectedPreset(presetIdx);
+        setCustomizeWeekday(false);
+      } else {
+        setCustomizeWeekday(true);
+        const parts = d.availability.split(" - ");
+        if (parts[0]) setCustomStart(parts[0].trim());
+        if (parts[1]) setCustomEnd(parts[1].trim());
+      }
+    }
+
+    // Saturday
+    if (d.saturday) {
+      const knownSat = saturdayOptions.filter(o => o !== "Customize");
+      if (knownSat.includes(d.saturday)) {
+        setSaturday(d.saturday);
+      } else {
+        setSaturday("Customize");
+        const parts = d.saturday.split(" - ");
+        if (parts[0]) setSatCustomStart(parts[0].trim());
+        if (parts[1]) setSatCustomEnd(parts[1].trim());
+      }
+    }
+
+    // Sunday
+    if (d.sunday) {
+      const knownSun = sundayOptions.filter(o => o !== "Customize");
+      if (knownSun.includes(d.sunday)) {
+        setSunday(d.sunday);
+      } else {
+        setSunday("Customize");
+        const parts = d.sunday.split(" - ");
+        if (parts[0]) setSunCustomStart(parts[0].trim());
+        if (parts[1]) setSunCustomEnd(parts[1].trim());
+      }
+    }
+
+    // Study block interval
+    if (d.studyInterval) {
+      const knownBlocks = studyBlocks.filter(b => b !== "Custom");
+      if (knownBlocks.includes(d.studyInterval)) {
+        setStudyBlock(d.studyInterval);
+      } else {
+        setStudyBlock("Custom");
+        setCustomStudyBlock(d.studyInterval);
+      }
     }
   }, [location.state]);
+
 
   // ---- CHANGE 1: todayStr in YYYY-MM-DD local time (no timezone bug) ----
   const todayStr = new Date().toLocaleDateString("en-CA");
@@ -284,8 +338,11 @@ export default function GenerateWorkplan() {
         const payload = {
             userId: user?._id,
             availability: customizeWeekday ? `${customStart} - ${customEnd}` : weekdayPresets[selectedPreset].label,
-            saturday, sunday, tasks: tasks.filter(t => t.name.trim()),
-            studyInterval: studyBlock, bedtime, wakeup, lifeEvents, energyLevel
+            saturday: saturday === "Customize" ? `${satCustomStart} - ${satCustomEnd}` : saturday,
+            sunday: sunday === "Customize" ? `${sunCustomStart} - ${sunCustomEnd}` : sunday,
+            tasks: tasks.filter(t => t.name.trim()),
+            studyInterval: studyBlock === "Custom" ? (customStudyBlock || "Custom") : studyBlock,
+            bedtime, wakeup, lifeEvents, energyLevel
         };
         const res = await api.post('/momentum/generate-plan', payload);
         if (res.data.success) {
@@ -429,13 +486,7 @@ export default function GenerateWorkplan() {
                   <div className="section-title">
                     <span>📅</span> Saturday
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 10,
-                    }}
-                  >
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {saturdayOptions.map((o) => (
                       <RadioOption
                         key={o}
@@ -445,18 +496,21 @@ export default function GenerateWorkplan() {
                       />
                     ))}
                   </div>
+                  {saturday === "Customize" && (
+                    <div className="custom-box" style={{ marginTop: 12 }}>
+                      <div className="custom-box-label">CUSTOM SATURDAY HOURS</div>
+                      <div className="time-row">
+                        <TimeInput label="Start Time" value={satCustomStart} onChange={setSatCustomStart} />
+                        <TimeInput label="End Time" value={satCustomEnd} onChange={setSatCustomEnd} />
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <div className="section-title">
                     <span>📅</span> Sunday
                   </div>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 10,
-                    }}
-                  >
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     {sundayOptions.map((o) => (
                       <RadioOption
                         key={o}
@@ -466,6 +520,15 @@ export default function GenerateWorkplan() {
                       />
                     ))}
                   </div>
+                  {sunday === "Customize" && (
+                    <div className="custom-box" style={{ marginTop: 12 }}>
+                      <div className="custom-box-label">CUSTOM SUNDAY HOURS</div>
+                      <div className="time-row">
+                        <TimeInput label="Start Time" value={sunCustomStart} onChange={setSunCustomStart} />
+                        <TimeInput label="End Time" value={sunCustomEnd} onChange={setSunCustomEnd} />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </section>
@@ -681,7 +744,7 @@ export default function GenerateWorkplan() {
               <div className="section-title">
                 <span>⏱️</span> Preferred Study Blocks
               </div>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
                 {studyBlocks.map((b) => (
                   <button
                     key={b}
@@ -695,15 +758,25 @@ export default function GenerateWorkplan() {
                       transition: "all 0.15s",
                       background: studyBlock === b ? PRIMARY : "#f3f4f6",
                       color: studyBlock === b ? "#fff" : "#374151",
-                      border:
-                        "1.5px solid " +
-                        (studyBlock === b ? PRIMARY : "transparent"),
+                      border: "1.5px solid " + (studyBlock === b ? PRIMARY : "transparent"),
                     }}
                   >
                     {b}
                   </button>
                 ))}
               </div>
+              {studyBlock === "Custom" && (
+                <div className="custom-box">
+                  <div className="custom-box-label">CUSTOM BLOCK DURATION</div>
+                  <input
+                    className="task-input"
+                    placeholder="e.g. 50m, 2 hours, 1h 30m"
+                    value={customStudyBlock}
+                    onChange={e => setCustomStudyBlock(e.target.value)}
+                    style={{ maxWidth: 280 }}
+                  />
+                </div>
+              )}
             </section>
 
             {/* Success banner */}
@@ -720,7 +793,56 @@ export default function GenerateWorkplan() {
                   textAlign: "center",
                 }}
               >
-                ✅ Workplan generated successfully! Redirecting to your Vault...
+                ✅ Workplan generated with AI! Redirecting to your Vault...
+              </div>
+            )}
+
+            {/* Edit mode banner */}
+            {isEditMode && (
+              <div style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                background: '#fffbeb', border: '1px solid #fde68a',
+                borderRadius: 12, padding: '12px 18px', marginBottom: 8,
+              }}>
+                <span style={{ fontSize: 20 }}>✏️</span>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: '#92400e' }}>Editing existing plan</div>
+                  <div style={{ fontSize: 12, color: '#b45309', marginTop: 2 }}>
+                    Adjust your inputs below and click <strong>Regenerate Workplan</strong> to create a new version.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Loading banner */}
+            {loading && (
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 14,
+                  background: '#eff6ff',
+                  border: '1px solid #bfdbfe',
+                  borderRadius: 12,
+                  padding: '14px 20px',
+                  animation: 'pulse 1.8s ease-in-out infinite',
+                }}
+              >
+                <div style={{
+                  width: 20, height: 20, borderRadius: '50%',
+                  border: `3px solid ${PRIMARY}`,
+                  borderTopColor: 'transparent',
+                  animation: 'spin 0.8s linear infinite',
+                  flexShrink: 0,
+                }} />
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: 14, color: '#1e40af' }}>
+                    Your workplan is being generated...
+                  </div>
+                  <div style={{ fontSize: 12, color: '#3b82f6', marginTop: 2 }}>
+                    Please wait, this may take a few moments.
+                  </div>
+                </div>
               </div>
             )}
 
@@ -748,7 +870,7 @@ export default function GenerateWorkplan() {
               disabled={loading || success}
               style={{ opacity: loading || success ? 0.7 : 1, cursor: loading || success ? 'not-allowed' : 'pointer' }}
             >
-              {loading ? "⏳ Generating your plan..." : "Generate My Workplan"}
+              {loading ? "⏳ Generating your plan..." : isEditMode ? "♻️ Regenerate Workplan" : "Generate My Workplan"}
             </button>
           </div>
         </div>
