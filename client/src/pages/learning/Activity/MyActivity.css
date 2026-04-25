@@ -734,9 +734,9 @@ body { margin: 0; font-family: var(--font); background: var(--bg); }
   margin-bottom: 8px;
 }
 
-.aa-modal__textarea {
+.aa-modal__textarea,
+.aa-modal__input {
   width: 100%;
-  min-height: 110px;
   padding: 11px 14px;
   border: 1.5px solid #bfdbfe;
   border-radius: 10px;
@@ -744,12 +744,16 @@ body { margin: 0; font-family: var(--font); background: var(--bg); }
   font-size: 0.9rem;
   color: var(--text-h);
   background: #f8faff;
-  resize: vertical;
   outline: none;
   box-sizing: border-box;
   transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
-.aa-modal__textarea:focus {
+.aa-modal__textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+.aa-modal__textarea:focus,
+.aa-modal__input:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(37,99,235,0.14);
   background: #fff;

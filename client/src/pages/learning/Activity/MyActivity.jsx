@@ -225,14 +225,8 @@ export default function MyActivity() {
   }
 
   async function handleMarkCompleted(req) {
-    try {
-      await api.put(`/learning/requests/${req._id}`, { status: "COMPLETED" });
-      fetchRequests();
-      showToast("Request marked as completed.", "success");
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to mark as completed.", "error");
-    }
+    // Instead of completing immediately, we open the review modal
+    openReviewModal(req);
   }
 
   function openReviewModal(req) {
@@ -258,6 +252,7 @@ export default function MyActivity() {
   async function handleSubmitReview() {
     if (!reviewingReq) return;
     try {
+      // Submit the review (backend will automatically mark request as COMPLETED)
       await api.post("/learning/peerreviews", {
         requestId: reviewingReq._id,
         reviewerName: currentUserName,
@@ -267,12 +262,14 @@ export default function MyActivity() {
         rating: Number(reviewRating),
         comment: reviewComment,
       });
+
       setReviewingReq(null);
+      await fetchRequests();
       await fetchMyReviews();
-      showToast("Review submitted successfully.", "success");
+      showToast("Completed! Your review has been shared.", "success");
     } catch (err) {
       console.error(err);
-      showToast(err.response?.data?.message || err.message || "Failed to submit review.", "error");
+      showToast(err.response?.data?.message || err.message || "Failed to complete request.", "error");
     }
   }
 
@@ -282,7 +279,10 @@ export default function MyActivity() {
       await api.delete(`/learning/tasks/${id}`);
       fetchMyTasks();
       showToast("Task removed.", "error");
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err); 
+      showToast("Failed to delete task.", "error");
+    }
   }
 
   function handleEditTask(t) {
@@ -297,7 +297,10 @@ export default function MyActivity() {
       setEditingTask(null);
       fetchMyTasks();
       showToast("Task updated.", "success");
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err); 
+      showToast("Failed to update task.", "error");
+    }
   }
 
   function copyTaskApplicantEmail(email) {
@@ -585,6 +588,86 @@ export default function MyActivity() {
                 <div className="aa-modal__footer">
                   <button className="aa-btn aa-btn--ghost" onClick={() => setEditingReq(null)}>Cancel</button>
                   <button className="aa-btn aa-btn--primary" onClick={handleUpdate}>Update Message</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {editingTask && (
+            <div className="aa-modal-bg" onClick={() => setEditingTask(null)}>
+              <div className="aa-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="aa-modal__header">
+                  <h3>Edit Posted Task</h3>
+                  <button className="aa-modal__close" onClick={() => setEditingTask(null)}>×</button>
+                </div>
+                <div className="aa-modal__body">
+                  <div className="profile-field">
+                    <label className="aa-modal__label">Task Title</label>
+                    <input
+                      className="aa-modal__input"
+                      value={taskTitle}
+                      onChange={(e) => setTaskTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="profile-field" style={{ marginTop: '12px' }}>
+                    <label className="aa-modal__label">Task Description</label>
+                    <textarea
+                      className="aa-modal__textarea"
+                      value={taskDesc}
+                      onChange={(e) => setTaskDesc(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+                </div>
+                <div className="aa-modal__footer">
+                  <button className="aa-btn aa-btn--ghost" onClick={() => setEditingTask(null)}>Cancel</button>
+                  <button className="aa-btn aa-btn--primary" onClick={handleUpdateTask}>Save Changes</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {reviewingReq && (
+            <div className="aa-modal-bg" onClick={() => setReviewingReq(null)}>
+              <div className="aa-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="aa-modal__header">
+                  <h3>Rate Your Experience</h3>
+                  <button className="aa-modal__close" onClick={() => setReviewingReq(null)}>×</button>
+                </div>
+                <div className="aa-modal__body">
+                  <p style={{ marginBottom: '20px', color: '#64748b' }}>
+                    How was your learning session with <strong>{reviewingReq.receiverName}</strong>?
+                  </p>
+                  
+                  <div className="profile-field">
+                    <label className="aa-modal__label">Rating (1-5 Stars)</label>
+                    <div style={{ display: 'flex', gap: '8px', fontSize: '24px', cursor: 'pointer', marginBottom: '16px' }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span 
+                          key={star} 
+                          onClick={() => setReviewRating(star)}
+                          style={{ color: star <= reviewRating ? '#f59e0b' : '#cbd5e1' }}
+                        >
+                          {star <= reviewRating ? '★' : '☆'}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="profile-field">
+                    <label className="aa-modal__label">Your Feedback</label>
+                    <textarea
+                      className="aa-modal__textarea"
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="Share your thoughts on the collaboration..."
+                      rows={4}
+                    />
+                  </div>
+                </div>
+                <div className="aa-modal__footer">
+                  <button className="aa-btn aa-btn--ghost" onClick={() => setReviewingReq(null)}>Skip Review</button>
+                  <button className="aa-btn aa-btn--primary" onClick={handleSubmitReview}>Submit & Complete</button>
                 </div>
               </div>
             </div>
