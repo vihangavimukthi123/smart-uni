@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   BarChart,
   Bar,
@@ -11,43 +11,43 @@ import {
   CartesianGrid,
 } from "recharts";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../sidebar/sidebar";
-
-
+import { useAuth } from "../../../context/AuthContext";
+import api from "../../../api/axios";
+import "./MoDash.css";
 
 const PRIMARY = "#1152D4";
 
 const quickLinks = [
   {
     icon: "🗺️",
-    title: "Generate Work Plans",
-    desc: "Dissect courses into actionable weekly milestones and plans.",
+    title: "Work Plans",
+    desc: "Dissect courses into actionable weekly milestones.",
     btn: "Create Plan",
-    path: "/workplan",
+    path: "/momentum/workplan",
     dark: false,
   },
   {
     icon: "📂",
     title: "My Plans",
-    desc: "Access your saved academic vaults and keep track of your roadmap.",
+    desc: "Access your saved academic vaults and track your roadmap.",
     btn: "View Vault",
-    path: "/vault",
+    path: "/momentum/vault",
     dark: true,
   },
   {
     icon: "🧠",
     title: "Learning Journal",
-    desc: "Reflect on your daily progress and jot down key academic insights.",
+    desc: "Reflect on your daily progress and jot down insights.",
     btn: "Open Journal",
-    path: "/learning-journal",
+    path: "/momentum/learning-journal",
     dark: false,
   },
   {
     icon: "⏱️",
     title: "Study Tracker",
-    desc: "Log deep focus hours, manage your micro-tasks, and analyze productivity.",
+    desc: "Log focus hours and manage your micro-tasks.",
     btn: "Track Tasks",
-    path: "/tracker",
+    path: "/momentum/tracker",
     dark: true,
   },
 ];
@@ -56,33 +56,20 @@ const quickLinks = [
 function StatCard({ title, value, delta, positive }) {
   const isNull = positive === null;
   return (
-    <div style={styles.statCard}>
-      <div style={styles.statTop}>
-        <div style={styles.statIconWrap}>
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke={PRIMARY}
-            strokeWidth="2"
-          >
+    <div className="dm-stat-card">
+      <div className="dm-stat-top">
+        <div className="dm-stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
             <polyline points="16 7 22 7 22 13" />
           </svg>
         </div>
-        <span
-          style={{
-            ...styles.delta,
-            color: isNull ? "#888" : positive ? "#22c55e" : "#ef4444",
-            background: isNull ? "#f3f4f6" : positive ? "#f0fdf4" : "#fef2f2",
-          }}
-        >
+        <span className={`dm-delta ${isNull ? 'dm-delta--neu' : positive ? 'dm-delta--pos' : 'dm-delta--neg'}`}>
           {delta}
         </span>
       </div>
-      <div style={styles.statLabel}>{title}</div>
-      <div style={styles.statValue}>{value}</div>
+      <div className="dm-stat-label">{title}</div>
+      <div className="dm-stat-value">{value}</div>
     </div>
   );
 }
@@ -91,30 +78,19 @@ function StatCard({ title, value, delta, positive }) {
 const BarTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
-      <div style={styles.tooltip}>
-        <div style={{ fontWeight: 700, color: PRIMARY }}>{label}</div>
-        <div style={{ color: "#444", fontSize: 13 }}>{payload[0].value}h</div>
+      <div className="dm-tooltip">
+        <div className="dm-tooltip-label">{label}</div>
+        <div className="dm-tooltip-val">{payload[0].value}h Tracked</div>
       </div>
     );
   }
   return null;
 };
 
-const AreaTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div style={styles.tooltip}>
-        <div style={{ fontWeight: 700, color: PRIMARY }}>{label}</div>
-        <div style={{ color: "#444", fontSize: 13 }}>{payload[0].value}%</div>
-      </div>
-    );
-  }
-  return null;
-};
-
-// ─── Main Dashboard ───────────────────────────────────────────────────────────
+// ─── Main Component ────────────────────────────────────────────────────────────
 export default function MomentumDashboard() {
-  const [active, setActive] = useState("dashboard");
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [stats, setStats] = useState({
     weeklyProductivity: { value: "0%", delta: "-", positive: null },
     studyCompletion: { value: "0%", delta: "-", positive: null },
@@ -123,498 +99,170 @@ export default function MomentumDashboard() {
   });
   const [weekly, setWeekly] = useState([]);
   const [monthly, setMonthly] = useState([]);
+  const [completionRate, setCompletionRate] = useState(0);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const { default: api } = await import("../../../api/axios.js");
-        const res = await api.get("/momentum/study-tasks");
-        const tasks = res.data.data || [];
+  const loadData = useCallback(async () => {
+    try {
+      const res = await api.get("/momentum/study-tasks");
+      const tasks = res.data.data || [];
 
-        // 1. Calculate Aggregate Stats
-        const total = tasks.length;
-        const completed = tasks.filter(t => t.status === "Completed").length;
-        const pending = tasks.filter(t => t.status === "Pending").length;
-        
-        const completionRate = total ? (completed / total) * 100 : 0;
-        const totalFocus = tasks.reduce((sum, t) => sum + (t.timeTracked || 0), 0) / 60;
-        const avgProd = total ? tasks.reduce((sum, t) => sum + (t.prodScore || 0), 0) / total : 0;
+      // Calculate Aggregate Stats
+      const total = tasks.length;
+      const completed = tasks.filter(t => t.status === "Completed").length;
+      const pending = tasks.filter(t => t.status === "Pending").length;
+      const rate = total ? (completed / total) * 100 : 0;
+      const totalFocus = tasks.reduce((sum, t) => sum + (t.timeTracked || 0), 0) / 60;
+      const avgProd = total ? tasks.reduce((sum, t) => sum + (t.prodScore || 0), 0) / total : 0;
 
-        setStats({
-          weeklyProductivity: { 
-            value: `${avgProd.toFixed(1)}%`, 
-            delta: avgProd >= 80 ? "High" : "Average", 
-            positive: avgProd >= 80 
-          },
-          studyCompletion: { 
-            value: `${completionRate.toFixed(1)}%`, 
-            delta: "Lifetime", 
-            positive: completionRate >= 70 
-          },
-          deepFocusHours: { 
-            value: `${totalFocus.toFixed(1)}h`, 
-            delta: "Total", 
-            positive: true 
-          },
-          activeAssignments: { 
-            value: pending.toString(), 
-            delta: "Pending", 
-            positive: pending > 0 ? null : true 
-          },
-        });
+      setCompletionRate(rate);
+      setStats({
+        weeklyProductivity: { value: `${avgProd.toFixed(0)}%`, delta: avgProd >= 80 ? "Optimal" : "Average", positive: avgProd >= 80 },
+        studyCompletion: { value: `${rate.toFixed(0)}%`, delta: "Completion", positive: rate >= 70 },
+        deepFocusHours: { value: `${totalFocus.toFixed(1)}h`, delta: "Total", positive: true },
+        activeAssignments: { value: pending.toString(), delta: "Pending", positive: pending === 0 },
+      });
 
-        // 2. Weekly Bar Chart Sorting (Grouping by day created)
-        const days = { 0: "SUN", 1: "MON", 2: "TUE", 3: "WED", 4: "THU", 5: "FRI", 6: "SAT" };
-        const weekMap = { MON: 0, TUE: 0, WED: 0, THU: 0, FRI: 0, SAT: 0, SUN: 0 };
-        
-        tasks.forEach(t => {
-          const d = new Date(t.taskDate || t.createdAt).getDay();
-          weekMap[days[d]] += (t.timeTracked || 0) / 60;
-        });
-        
-        const wData = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map(d => ({
-          day: d,
-          hours: Number(weekMap[d].toFixed(1))
-        }));
-        setWeekly(wData);
+      // Weekly Distribution
+      const days = { 0: "SUN", 1: "MON", 2: "TUE", 3: "WED", 4: "THU", 5: "FRI", 6: "SAT" };
+      const weekMap = { MON: 0, TUE: 0, WED: 0, THU: 0, FRI: 0, SAT: 0, SUN: 0 };
+      tasks.forEach(t => {
+        const d = new Date(t.taskDate || t.createdAt).getDay();
+        weekMap[days[d]] += (t.timeTracked || 0) / 60;
+      });
+      setWeekly(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map(d => ({
+        day: d, hours: Number(weekMap[d].toFixed(1)),
+      })));
 
-        // 3. Monthly Cumulative Completion Mapping
-        const mData = [
-          { week: "Week 1", completion: Number((completionRate * 0.4).toFixed(1)) },
-          { week: "Week 2", completion: Number((completionRate * 0.6).toFixed(1)) },
-          { week: "Week 3", completion: Number((completionRate * 0.8).toFixed(1)) },
-          { week: "Week 4", completion: Number(completionRate.toFixed(1)) },
-        ];
-        
-        setMonthly(mData);
-        setLoading(false);
-      } catch (err) {
-        console.error("Dashboard Sync Error:", err);
-        setLoading(false);
-      }
-    };
+      // Monthly Trend (Simulated)
+      setMonthly([
+        { week: "Wk 1", completion: Number((rate * 0.4).toFixed(0)) },
+        { week: "Wk 2", completion: Number((rate * 0.7).toFixed(0)) },
+        { week: "Wk 3", completion: Number((rate * 0.9).toFixed(0)) },
+        { week: "Wk 4", completion: Number(rate.toFixed(0)) },
+      ]);
 
-    loadData();
+      setLoading(false);
+    } catch (err) {
+      console.error("Dashboard Error:", err);
+      setLoading(false);
+    }
   }, []);
 
+  useEffect(() => {
+    loadData();
+    const onFocus = () => loadData();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [loadData]);
+
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        minHeight: "100vh",
-        fontFamily: "'Segoe UI', sans-serif",
-        backgroundColor: "#F3F4F6",
-      }}
-    >
-      {/*<Navbar />*/}
+    <div className="dm-main">
+      {/* Hero Banner */}
+      <div className="dm-hero">
+        <div className="dm-hero-top">
+          <div>
+            <h1 className="dm-hero-title">
+              Keep the momentum going, <span className="gradient-text" style={{ filter: 'brightness(1.5)' }}>{user?.name?.split(' ')[0] || 'Scholar'}</span>! 🚀
+            </h1>
+            <div className="dm-hero-cards">
+              <div className="dm-hero-card">
+                <div className="dm-hero-card-title">Study Efficiency</div>
+                <div className="dm-hero-card-desc">Your average productivity is currently {stats.weeklyProductivity.value}.</div>
+              </div>
+              <div className="dm-hero-card">
+                <div className="dm-hero-card-title">Current Goal</div>
+                <div className="dm-hero-card-desc">You have {stats.activeAssignments.value} pending tasks in your tracker.</div>
+              </div>
+            </div>
+          </div>
+          <div className="dm-hero-actions">
+            <button className="dm-hero-icon-btn" title="Settings">⚙️</button>
+          </div>
+        </div>
+        <div className="dm-hero-lamp"></div>
+      </div>
 
-      <div style={{ display: "flex", flex: 1 }}>
-        
+      <div className="dm-content">
+        {/* Stats Row */}
+        <div className="dm-stats">
+          <StatCard title="Productivity" {...stats.weeklyProductivity} />
+          <StatCard title="Completion" {...stats.studyCompletion} />
+          <StatCard title="Focus Hours" {...stats.deepFocusHours} />
+          <StatCard title="Active Tasks" {...stats.activeAssignments} />
+        </div>
 
-        <div style={styles.shell}>
-          {/* ── Main ── */}
-          <main style={styles.main}>
-            {/* Hero */}
-            <div style={styles.hero}>
+        {/* Charts Row */}
+        <div className="dm-charts">
+          <div className="dm-chart-card">
+            <div className="dm-chart-header">
               <div>
-                <h1 style={styles.heroTitle}>
-                  Keep the momentum going, Alex! 🚀
-                </h1>
-                <div style={styles.heroCards}>
-                  <div style={styles.heroCard}>
-                    <div style={styles.heroCardTitle}>
-                      What is Productivity?
-                    </div>
-                    <div style={styles.heroCardDesc}>
-                      Achieving your academic goals with focus and efficiency.
-                      It's about working smarter, not harder.
-                    </div>
-                  </div>
-                  <div style={styles.heroCard}>
-                    <div style={styles.heroCardTitle}>Why keep it up?</div>
-                    <div style={styles.heroCardDesc}>
-                      Consistent momentum turns small wins into graduation
-                      success and a balanced, rewarding life.
-                    </div>
-                  </div>
-                </div>
+                <div className="dm-chart-title">Weekly Distribution</div>
+                <div className="dm-chart-sub">Tracked hours per day</div>
               </div>
-              <div style={styles.heroIcon}>💡</div>
+              <button className="dm-chip-btn" onClick={() => navigate('/momentum/tracker')}>Analyzer</button>
             </div>
-
-            {/* Stat Cards */}
-            {loading ? (
-              <div style={styles.loading}>Loading stats…</div>
-            ) : (
-              <div style={styles.statsRow}>
-                <StatCard
-                  title="Weekly Productivity"
-                  {...stats.weeklyProductivity}
-                />
-                <StatCard title="Study Completion" {...stats.studyCompletion} />
-                <StatCard title="Deep Focus Hours" {...stats.deepFocusHours} />
-                <StatCard
-                  title="Active Assignments"
-                  {...stats.activeAssignments}
-                />
-              </div>
-            )}
-
-            {/* Charts Row */}
-            <div style={styles.chartsRow}>
-              {/* Bar Chart */}
-              <div style={styles.chartCard}>
-                <div style={styles.chartHeader}>
-                  <div>
-                    <div style={styles.chartTitle}>
-                      Weekly Productivity Momentum
-                    </div>
-                    <div style={styles.chartSub}>
-                      Activity across the last 7 days
-                    </div>
-                  </div>
-                  <button style={styles.chipBtn}>Exam Prep Week ▾</button>
-                </div>
-                <ResponsiveContainer width="100%" height={200}>
-                  <BarChart data={weekly} barSize={28}>
-                    <XAxis
-                      dataKey="day"
-                      tick={{ fontSize: 11, fill: "#9ca3af" }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis hide />
-                    <Tooltip
-                      content={<BarTooltip />}
-                      cursor={{ fill: "rgba(17,82,212,0.05)" }}
-                    />
-                    <Bar
-                      dataKey="hours"
-                      fill={`${PRIMARY}55`}
-                      radius={[6, 6, 0, 0]}
-                      activeBar={{ fill: PRIMARY }}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Area Chart */}
-              <div style={styles.chartCard}>
-                <div style={styles.chartHeader}>
-                  <div>
-                    <div style={styles.chartTitle}>
-                      Monthly Academic Overview
-                    </div>
-                    <div style={styles.chartSub}>
-                      Cumulative goal completion rate
-                    </div>
-                  </div>
-                  <div style={styles.badgeBlue}>⊙ 72%</div>
-                </div>
-                <ResponsiveContainer width="100%" height={200}>
-                  <AreaChart data={monthly}>
-                    <defs>
-                      <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-                        <stop
-                          offset="5%"
-                          stopColor={PRIMARY}
-                          stopOpacity={0.18}
-                        />
-                        <stop
-                          offset="95%"
-                          stopColor={PRIMARY}
-                          stopOpacity={0}
-                        />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      stroke="#f0f0f0"
-                      vertical={false}
-                    />
-                    <XAxis
-                      dataKey="week"
-                      tick={{ fontSize: 11, fill: "#9ca3af" }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      domain={[0, 100]}
-                      tickFormatter={(v) => `${v}%`}
-                      tick={{ fontSize: 11, fill: "#9ca3af" }}
-                      axisLine={false}
-                      tickLine={false}
-                    />
-                    <Tooltip content={<AreaTooltip />} />
-                    <Area
-                      type="monotone"
-                      dataKey="completion"
-                      stroke={PRIMARY}
-                      strokeWidth={2.5}
-                      fill="url(#grad)"
-                      dot={{
-                        fill: PRIMARY,
-                        r: 5,
-                        strokeWidth: 2,
-                        stroke: "#fff",
-                      }}
-                      activeDot={{ r: 7 }}
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
+            <div style={{ width: "100%", height: 220 }}>
+              <ResponsiveContainer>
+                <BarChart data={weekly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
+                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 600 }} />
+                  <YAxis hide />
+                  <Tooltip cursor={{ fill: "var(--bg-glass)" }} content={<BarTooltip />} />
+                  <Bar dataKey="hours" fill="var(--indigo)" radius={[4, 4, 0, 0]} barSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
+          </div>
 
-            {/* Quick Navigation Links */}
-            <div style={styles.sectionTitle}>Dashboard Quick Links</div>
-            <div style={styles.hacksGrid}>
-              {quickLinks.map((link) => (
-                <div key={link.title} style={styles.hackCard}>
-                  <div style={styles.hackIcon}>{link.icon}</div>
-                  <div style={styles.hackTitle}>{link.title}</div>
-                  <div style={styles.hackDesc}>{link.desc}</div>
-                  <button
-                    onClick={() => navigate(link.path)}
-                    style={{
-                      ...styles.hackBtn,
-                      background: link.dark ? "#111" : PRIMARY,
-                    }}
-                  >
-                    {link.btn}
-                  </button>
-                </div>
-              ))}
+          <div className="dm-chart-card">
+            <div className="dm-chart-header">
+              <div>
+                <div className="dm-chart-title">Academic Resilience</div>
+                <div className="dm-chart-sub">Cumulative completion rate</div>
+              </div>
+              <div className="dm-badge-blue"><span className="dm-badge-dot"></span> {completionRate.toFixed(0)}% Done</div>
             </div>
-          </main>
+            <div style={{ width: "100%", height: 220 }}>
+              <ResponsiveContainer>
+                <AreaChart data={monthly} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--indigo)" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="var(--indigo)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                  <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 600 }} />
+                  <YAxis domain={[0, 100]} hide />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="completion" stroke="var(--indigo)" strokeWidth={3} fill="url(#colorGrad)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+
+        {/* Productivity Suite */}
+        <div>
+          <h2 className="dm-section-title">Productivity Suite</h2>
+          <div className="dm-hacks" style={{ marginTop: 20 }}>
+            {quickLinks.map((link, idx) => (
+              <div key={idx} className="dm-hack-card">
+                <div className="dm-hack-icon-wrap">{link.icon}</div>
+                <div className="dm-hack-title">{link.title}</div>
+                <div className="dm-hack-desc">{link.desc}</div>
+                <button
+                  className="dm-hack-btn"
+                  style={{ background: link.dark ? "var(--bg-elevated)" : "var(--indigo)", color: link.dark ? "var(--text-primary)" : "#fff", border: link.dark ? "1px solid var(--border)" : "none" }}
+                  onClick={() => navigate(link.path)}
+                >
+                  {link.btn}
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
   );
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-const styles = {
-  shell: {
-    display: "flex",
-    flex: 1,
-    height: "100vh",
-    fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
-    background: "#f5f7fc",
-    overflow: "hidden",
-  },
-  sidebar: {
-    width: 210,
-    minWidth: 210,
-    background: "#fff",
-    borderRight: "1px solid #eef0f5",
-    display: "flex",
-    flexDirection: "column",
-    padding: "24px 16px",
-    gap: 8,
-  },
-  logoRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    marginBottom: 28,
-    paddingLeft: 8,
-  },
-  logoIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    background: PRIMARY,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 16,
-  },
-  logoText: {
-    fontWeight: 700,
-    fontSize: 17,
-    color: "#111",
-    letterSpacing: "-0.3px",
-  },
-  nav: { display: "flex", flexDirection: "column", gap: 4 },
-  navBtn: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "10px 12px",
-    borderRadius: 10,
-    border: "none",
-    background: "transparent",
-    cursor: "pointer",
-    fontSize: 13.5,
-    fontWeight: 500,
-    color: "#555",
-    textAlign: "left",
-    transition: "background 0.15s",
-  },
-  navBtnActive: {
-    background: PRIMARY,
-    color: "#fff",
-    fontWeight: 600,
-  },
-  main: {
-    flex: 1,
-    overflowY: "auto",
-    padding: "0 28px 40px",
-  },
-  hero: {
-    background: `linear-gradient(120deg, rgba(17,82,212,0.85) 0%, rgba(14,62,168,0.95) 100%), url('/momentum_banner.png')`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    borderRadius: "0 0 20px 20px",
-    padding: "28px 32px",
-    color: "#fff",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 24,
-    position: "relative",
-    overflow: "hidden",
-  },
-  heroTitle: {
-    fontSize: 22,
-    fontWeight: 700,
-    margin: "0 0 16px",
-    letterSpacing: "-0.4px",
-  },
-  heroCards: { display: "flex", gap: 14 },
-  heroCard: {
-    background: "rgba(255,255,255,0.13)",
-    borderRadius: 12,
-    padding: "12px 16px",
-    maxWidth: 210,
-    backdropFilter: "blur(6px)",
-    border: "1px solid rgba(255,255,255,0.18)",
-  },
-  heroCardTitle: { fontWeight: 700, fontSize: 13, marginBottom: 4 },
-  heroCardDesc: { fontSize: 12, opacity: 0.85, lineHeight: 1.5 },
-  heroIcon: { fontSize: 64, opacity: 0.25, userSelect: "none" },
-  loading: { textAlign: "center", color: "#aaa", padding: 32 },
-  statsRow: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
-    gap: 16,
-    marginBottom: 24,
-  },
-  statCard: {
-    background: "#fff",
-    borderRadius: 16,
-    padding: "18px 20px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-  },
-  statTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  statIconWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    background: `${PRIMARY}12`,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  delta: {
-    fontSize: 11,
-    fontWeight: 700,
-    padding: "3px 8px",
-    borderRadius: 20,
-  },
-  statLabel: { fontSize: 12, color: "#9ca3af", marginBottom: 4 },
-  statValue: {
-    fontSize: 26,
-    fontWeight: 800,
-    color: "#111",
-    letterSpacing: "-0.5px",
-  },
-  chartsRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 20,
-    marginBottom: 28,
-  },
-  chartCard: {
-    background: "#fff",
-    borderRadius: 16,
-    padding: "20px 20px 12px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-  },
-  chartHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 16,
-  },
-  chartTitle: { fontWeight: 700, fontSize: 15, color: "#111" },
-  chartSub: { fontSize: 12, color: "#9ca3af", marginTop: 2 },
-  chipBtn: {
-    border: `1px solid ${PRIMARY}`,
-    color: PRIMARY,
-    background: "#fff",
-    borderRadius: 20,
-    padding: "4px 12px",
-    fontSize: 12,
-    cursor: "pointer",
-    fontWeight: 600,
-  },
-  badgeBlue: {
-    background: `${PRIMARY}14`,
-    color: PRIMARY,
-    borderRadius: 20,
-    padding: "4px 12px",
-    fontSize: 12,
-    fontWeight: 700,
-  },
-  tooltip: {
-    background: "#fff",
-    border: `1px solid ${PRIMARY}30`,
-    borderRadius: 10,
-    padding: "8px 14px",
-    boxShadow: "0 4px 16px rgba(0,0,0,0.1)",
-  },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: 700,
-    color: "#111",
-    marginBottom: 16,
-  },
-  hacksGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(4, 1fr)",
-    gap: 16,
-  },
-  hackCard: {
-    background: "#fff",
-    borderRadius: 16,
-    padding: "20px 18px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-  hackIcon: { fontSize: 28 },
-  hackTitle: { fontWeight: 700, fontSize: 14, color: "#111" },
-  hackDesc: { fontSize: 12.5, color: "#6b7280", lineHeight: 1.5, flexGrow: 1 },
-  hackBtn: {
-    marginTop: 8,
-    width: "100%",
-    padding: "10px 0",
-    borderRadius: 10,
-    border: "none",
-    color: "#fff",
-    fontWeight: 700,
-    fontSize: 13,
-    cursor: "pointer",
-    transition: "opacity 0.15s",
-  },
-};

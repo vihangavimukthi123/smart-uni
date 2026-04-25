@@ -10,6 +10,7 @@ const {
   updateStudyTask,
   getFaqs,
   getPublicFaqs,
+  getAdminFaqs,
   getMyPendingFaqs,
   createFaq,
   updateFaq,
@@ -40,6 +41,7 @@ router.delete('/study-tasks/:id', deleteStudyTask);
 // FAQ routes
 router.get('/faqs', getFaqs);
 router.get('/faqs/public', getPublicFaqs);
+router.get('/faqs/admin', getAdminFaqs);
 router.post('/faqs/my-pending', getMyPendingFaqs);
 router.post('/faqs', createFaq);
 router.put('/faqs/:id', updateFaq);
@@ -47,7 +49,7 @@ router.delete('/faqs/:id', deleteFaq);
 
 //uniqe
 router.post('/generate-plan', generateWorkplan);
-router.get('/workplans/:userId', getAllPlans);
+router.get('/workplans/user/:userId', getAllPlans);
 router.get('/workplans/single/:id', getSinglePlan);
 router.put('/workplans/:id', updatePlan);
 router.delete('/workplans/:id', deletePlan);

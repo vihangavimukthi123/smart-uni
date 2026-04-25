@@ -22,6 +22,10 @@ const faqSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    submittedByUser: {
+      type: Boolean,
+      default: false,
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

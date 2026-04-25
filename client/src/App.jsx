@@ -54,10 +54,11 @@ import MomentumDashboard from './pages/momentum/MomentumDashboard/MoDash';
 import StudyTracker from './pages/momentum/study tracker/studyTracker';
 import GenerateWorkplan from './pages/momentum/workplanGenerate/planGenerate';
 import Planner from './pages/momentum/myPlans/myPlans';
-import FAQManager from "./pages/momentum/faqManager/faqManager";
 import FAQPublic from "./pages/momentum/faqPublic/faqPublic";
+import FAQAdmin from "./pages/momentum/faqAdmin/faqAdmin";
 import LearningJournal from "./pages/momentum/learningJournal/learningJournal";
 import NotificationManager from "./pages/momentum/notificationManager/notificationManager";
+import PlanView from "./pages/momentum/myPlans/PlanView";
 
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -122,16 +123,18 @@ function AppContent() {
           <Route path="learning/activity" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><MyActivity /></ProtectedRoute>} />
           <Route path="learning/resources" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><ResourceHub /></ProtectedRoute>} />
 
-          {/* Momentum Routes */}
-          <Route path="momentum" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><MomentumDashboard /></ProtectedRoute>} />
-          <Route path="momentum/tracker" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><StudyTracker /></ProtectedRoute>} />
-          <Route path="momentum/workplan" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><GenerateWorkplan /></ProtectedRoute>} />
-          <Route path="momentum/vault" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><Planner /></ProtectedRoute>} />
-          <Route path="momentum/learning-journal" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><LearningJournal /></ProtectedRoute>} />
-          <Route path="momentum/learning-channel" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><Navigate to="/momentum/learning-journal" /></ProtectedRoute>} />
+          {/* Momentum Routes — students/users only except FAQ */}
+          <Route path="momentum" element={<ProtectedRoute allowedRoles={['student', 'user']}><MomentumDashboard /></ProtectedRoute>} />
+          <Route path="momentum/tracker" element={<ProtectedRoute allowedRoles={['student', 'user']}><StudyTracker /></ProtectedRoute>} />
+          <Route path="momentum/workplan" element={<ProtectedRoute allowedRoles={['student', 'user']}><GenerateWorkplan /></ProtectedRoute>} />
+          <Route path="momentum/vault" element={<ProtectedRoute allowedRoles={['student', 'user']}><Planner /></ProtectedRoute>} />
+          <Route path="momentum/vault/:id" element={<ProtectedRoute allowedRoles={['student', 'user']}><PlanView /></ProtectedRoute>} />
+          <Route path="momentum/learning-journal" element={<ProtectedRoute allowedRoles={['student', 'user']}><LearningJournal /></ProtectedRoute>} />
+          <Route path="momentum/learning-channel" element={<ProtectedRoute allowedRoles={['student', 'user']}><Navigate to="/momentum/learning-journal" /></ProtectedRoute>} />
+          {/* FAQ — accessible to all roles; admin-only management page */}
           <Route path="momentum/faqs" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><FAQPublic /></ProtectedRoute>} />
-          <Route path="momentum/faq" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><FAQManager /></ProtectedRoute>} />
-          <Route path="momentum/notification-manager" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><NotificationManager /></ProtectedRoute >} />
+          <Route path="momentum/faq-admin" element={<ProtectedRoute allowedRoles={['admin']}><FAQAdmin /></ProtectedRoute>} />
+          <Route path="momentum/notification-manager" element={<ProtectedRoute allowedRoles={['student', 'user']}><NotificationManager /></ProtectedRoute>} />
           
           <Route path="*" element={<Navigate to={user?.role === 'admin' ? '/admin' : '/dashboard'} replace />} />
         </Route>

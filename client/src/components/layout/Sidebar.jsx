@@ -27,13 +27,8 @@ const adminNav = [
     { label: 'Task Board', to: '/learning/tasks', icon: <MdTaskAlt /> },
     { label: 'Peers', to: '/learning/peers', icon: <MdPeople /> },
   ]},
-  { section: 'Momentum', items: [
-    { label: "Dashboard", to: "/momentum", icon: <MdDashboard /> },
-    { label: "Study Tracker", to: "/momentum/tracker", icon: <MdBarChart /> },
-    { label: "Learning Journal", to: "/momentum/learning-journal", icon: <MdChat /> },
-    { label: "Generate Workplan", to: "/momentum/workplan", icon: <MdEvent /> },
-    { label: "Academic Vault", to: "/momentum/vault", icon: <MdSchool /> },
-    { label: "FAQs", to: "/momentum/faqs", icon: <MdHistory /> },
+  { section: 'Momentum FAQ', items: [
+    { label: "FAQs",  to: "/momentum/faq-admin", icon: <MdHistory /> },
   ]}
 ];
 

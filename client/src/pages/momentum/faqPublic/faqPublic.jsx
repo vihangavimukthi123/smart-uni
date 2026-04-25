@@ -1,27 +1,28 @@
-import { useEffect, useMemo, useState } from "react";
-
-import Sidebar from "../sidebar/sidebar";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { MdSearch, MdHelpOutline, MdAdd, MdClose, MdHistory, MdArrowBack } from "react-icons/md";
+import { useNavigate } from "react-router-dom";
 import { useNotifications } from "../../../context/NotificationContext";
+import { useAuth } from "../../../context/AuthContext";
 import api from "../../../api/axios";
-
 import "./faqPublic.css";
 
-
-
+// ─── FaqItem Component ───────────────────────────────────────────────────────
 function FaqItem({ item, expanded, onToggle }) {
   return (
-    <div className="faq-item">
-      <button className="question-btn" onClick={onToggle}>
-        <span className="question-text">{item.question}</span>
-        <span className="chevron">{expanded ? "−" : "+"}</span>
+    <div className={`faq-item ${expanded ? 'faq-item--active' : ''}`}>
+      <button className="faq-question-btn" onClick={onToggle}>
+        <span className="faq-question-text">{item.question}</span>
+        <span className="faq-chevron">{expanded ? "−" : "+"}</span>
       </button>
-
-      {expanded && <div className="answer">{item.answer}</div>}
+      {expanded && <div className="faq-answer anim-fadeIn">{item.answer}</div>}
     </div>
   );
 }
 
+// ─── FAQPublic Page ──────────────────────────────────────────────────────────
 export default function FAQPublic() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const { addNotification } = useNotifications() || {};
 
   const [faqs, setFaqs] = useState([]);
@@ -31,319 +32,202 @@ export default function FAQPublic() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState("All");
   const [openId, setOpenId] = useState("");
+  
   const [showAskForm, setShowAskForm] = useState(false);
-  const [newQuestion, setNewQuestion] = useState("");
-  const [askCategory, setAskCategory] = useState("General");
-  const [askStatus, setAskStatus] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [editId, setEditId] = useState(null);
+  const [formData, setFormData] = useState({ question: "", category: "General" });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    const loadFaqs = async () => {
-      setLoading(true);
-      setError("");
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      // 1. Answered FAQs
+      const res = await api.get("/momentum/faqs/public");
+      setFaqs(res.data.data || []);
 
-      try {
-        const response = await api.get("/momentum/faqs/public");
-        const publishedData = Array.isArray(response.data.data) ? response.data.data : [];
-        setFaqs(publishedData);
-
-        const pendingIds = JSON.parse(localStorage.getItem("my_pending_faqs") || "[]");
-        if (pendingIds.length > 0) {
-          const pendingRes = await api.post("/momentum/faqs/my-pending", { ids: pendingIds });
-          const temp = pendingRes.data;
-          const pendingData = Array.isArray(temp.data) ? temp.data : [];
-          setPendingFaqs(pendingData);
-          
-          const activePendingIds = pendingData.map(f => f._id);
-          localStorage.setItem("my_pending_faqs", JSON.stringify(activePendingIds));
-        }
-      } catch (err) {
-        setError(err.response?.data?.message || err.message || "Failed to load FAQs");
-      } finally {
-        setLoading(false);
+      // 2. Personal Pending Questions
+      const pendingIds = JSON.parse(localStorage.getItem("my_pending_faqs") || "[]");
+      if (pendingIds.length > 0) {
+        const pRes = await api.post("/momentum/faqs/my-pending", { ids: pendingIds });
+        const pData = pRes.data.data || [];
+        setPendingFaqs(pData.filter(f => !f.isPublished));
+        
+        const aliveIds = pData.filter(f => !f.isPublished).map(f => f._id);
+        localStorage.setItem("my_pending_faqs", JSON.stringify(aliveIds));
       }
-    };
-
-    loadFaqs();
+    } catch (err) {
+      setError("Unable to sync with Academic FAQ Knowledge Base.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleAskSubmit = async (e) => {
     e.preventDefault();
-    if (!newQuestion.trim()) {
-      setAskStatus("Please enter a question.");
-      return;
-    }
-    
+    if (!formData.question.trim()) return;
     setIsSubmitting(true);
-    setAskStatus("");
     try {
       if (editId) {
-        await api.put(`/momentum/faqs/${editId}`, {
-          question: newQuestion,
-          category: askCategory,
-          isPublished: false,
-        });
-
-        setPendingFaqs(prev => prev.map(f => f._id === editId ? ({ ...f, question: newQuestion, category: askCategory }) : f));
-        setAskStatus("Question updated successfully!");
-        if (addNotification) addNotification("Question Updated", "Your pending question was updated.", "success");
+        await api.put(`/momentum/faqs/${editId}`, formData);
+        setPendingFaqs(prev => prev.map(f => f._id === editId ? { ...f, ...formData } : f));
       } else {
-        const response = await api.post(`/momentum/faqs`, {
-          question: newQuestion,
-          answer: "",
-          category: askCategory,
-          isPublished: false,
-        });
-
-        const payload = response.data;
-        if (payload.data && payload.data._id) {
-          const existingIds = JSON.parse(localStorage.getItem("my_pending_faqs") || "[]");
-          existingIds.push(payload.data._id);
-          localStorage.setItem("my_pending_faqs", JSON.stringify(existingIds));
-          setPendingFaqs(prev => [payload.data, ...prev]);
-        }
-
-        setAskStatus("Your question has been submitted successfully!");
-        if (addNotification) {
-          addNotification("Question Submitted", "An admin will review and answer your question shortly.", "success");
+        const res = await api.post("/momentum/faqs", { ...formData, isPublished: false, submittedByUser: true });
+        const created = res.data.data;
+        if (created?._id) {
+          const ids = JSON.parse(localStorage.getItem("my_pending_faqs") || "[]");
+          ids.push(created._id);
+          localStorage.setItem("my_pending_faqs", JSON.stringify(ids));
+          setPendingFaqs(prev => [created, ...prev]);
         }
       }
-
-      setTimeout(() => {
-        closeModal();
-      }, 2000);
+      addNotification?.(editId ? "Question Revised" : "Question Received", "An admin will review your inquiry shortly.", "success");
+      closeModal();
     } catch (err) {
-      setAskStatus(err.message || "Something went wrong.");
+      alert("Submission error");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const closeModal = () => {
-    setShowAskForm(false);
-    setAskStatus("");
-    setEditId(null);
-    setNewQuestion("");
-    setAskCategory("General");
+  const handleDeletePending = async (id) => {
+    if (!window.confirm("Rescind this question?")) return;
+    try {
+      await api.delete(`/momentum/faqs/${id}`);
+      setPendingFaqs(prev => prev.filter(f => f._id !== id));
+      const ids = JSON.parse(localStorage.getItem("my_pending_faqs") || "[]");
+      localStorage.setItem("my_pending_faqs", JSON.stringify(ids.filter(pid => pid !== id)));
+    } catch (err) { alert("Delete failed"); }
   };
 
   const handleEditClick = (item) => {
     setEditId(item._id);
-    setNewQuestion(item.question);
-    setAskCategory(item.category || "General");
+    setFormData({ question: item.question, category: item.category || "General" });
     setShowAskForm(true);
-    setAskStatus("");
   };
 
-  const handleDeletePending = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this pending question?")) return;
-    try {
-      await api.delete(`/momentum/faqs/${id}`);
-      
-      setPendingFaqs(prev => prev.filter(f => f._id !== id));
-      
-      const pendingIds = JSON.parse(localStorage.getItem("my_pending_faqs") || "[]");
-      const updatedIds = pendingIds.filter(pid => pid !== id);
-      localStorage.setItem("my_pending_faqs", JSON.stringify(updatedIds));
-      
-      if (addNotification) addNotification("Question Deleted", "Your pending question was removed.", "success");
-    } catch(err) {
-      alert("Error deleting question: " + err.message);
-    }
+  const closeModal = () => {
+    setShowAskForm(false);
+    setEditId(null);
+    setFormData({ question: "", category: "General" });
   };
 
-  const categories = useMemo(() => {
-    const uniqueCategories = new Set(
-      faqs.map((faq) => faq.category || "General"),
-    );
-    return ["All", ...Array.from(uniqueCategories)];
-  }, [faqs]);
-
+  const categories = useMemo(() => ["All", ...new Set(faqs.map(f => f.category || "General"))], [faqs]);
   const filteredFaqs = useMemo(() => {
-    return faqs.filter((faq) => {
-      const categoryMatch =
-        activeCategory === "All" || (faq.category || "General") === activeCategory;
-      const searchText = search.trim().toLowerCase();
-      const searchMatch =
-        !searchText ||
-        faq.question.toLowerCase().includes(searchText) ||
-        faq.answer.toLowerCase().includes(searchText);
-
-      return categoryMatch && searchMatch;
+    return faqs.filter(f => {
+      const catMatch = activeCategory === "All" || (f.category || "General") === activeCategory;
+      const textMatch = !search.trim() || f.question.toLowerCase().includes(search.toLowerCase()) || f.answer?.toLowerCase().includes(search.toLowerCase());
+      return catMatch && textMatch;
     });
   }, [faqs, activeCategory, search]);
 
   return (
-    <div className="app-container">
-      <div className="app-layout">
-        
+    <div className="faq-page">
+      {/* Hero */}
+      <div className="faq-hero">
+        <button onClick={() => navigate('/momentum')} className="st-icon-btn" style={{ marginBottom: 12, border: 'none', background: 'rgba(255,255,255,0.15)', color: '#fff' }}>
+          <MdArrowBack />
+        </button>
+        <h1 className="faq-hero-title">Academic Knowledge Base 📚</h1>
+        <p className="faq-hero-sub">Resolve your doubts instantly. If not here, ask us directly.</p>
+      </div>
 
-        <div className="public-page">
-          <div className="hero">
-            <h1 className="hero-title">Frequently Asked Questions</h1>
-            <p className="hero-sub">
-              Find quick answers about planning, tracking, and using Momentum effectively.
-            </p>
+      <div className="faq-content">
+        {/* Tools */}
+        <div className="faq-tools">
+          <div className="st-search-wrap" style={{ flex: 1 }}>
+            <MdSearch size={18} color="var(--text-muted)" />
+            <input className="st-search-input" placeholder="Search for answers..." value={search} onChange={e => setSearch(e.target.value)} />
           </div>
-
-          <div className="content-wrapper">
-
-          <div className="tools-row">
-            <input
-              className="search-input"
-              placeholder="Search FAQs..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-
-            <select
-              className="category-select"
-              value={activeCategory}
-              onChange={(e) => setActiveCategory(e.target.value)}
-            >
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {error && <div className="error-box">{error}</div>}
-
-          {loading ? (
-            <div className="empty">Loading FAQs...</div>
-          ) : (
-            <>
-              {pendingFaqs.length > 0 && activeCategory === "All" && !search && (
-                <div className="pending-section">
-                  <h2 className="pending-title">My Pending Questions</h2>
-                  <div className="faq-list">
-                    {pendingFaqs.map((item) => (
-                      <div key={item._id} className="faq-item pending-faq-item">
-                        <div className="pending-faq-content">
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <div style={{ flex: 1 }}>
-                              <div className="question-text pending-question-text">{item.question}</div>
-                              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                                <span className="pending-status-badge">Status: Pending Answer</span>
-                                <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>•</span>
-                                <span style={{ fontSize: '12px', color: '#64748b', fontWeight: 600 }}>{item.category || "General"}</span>
-                              </div>
-                            </div>
-                            <div style={{ display: 'flex', gap: '8px', paddingLeft: '16px' }}>
-                              <button 
-                                style={{ border: 'none', background: '#eef2ff', color: '#4f46e5', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-                                onClick={() => handleEditClick(item)}
-                              >Edit</button>
-                              <button 
-                                style={{ border: 'none', background: '#fef2f2', color: '#dc2626', padding: '6px 12px', borderRadius: '6px', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-                                onClick={() => handleDeletePending(item._id)}
-                              >Delete</button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {filteredFaqs.length === 0 ? (
-                <div className="empty">No FAQs found for this filter.</div>
-              ) : (
-                <div className="faq-list">
-                  {filteredFaqs.map((item) => (
-                    <FaqItem
-                      key={item._id}
-                      item={item}
-                      expanded={openId === item._id}
-                      onToggle={() =>
-                        setOpenId((prev) => (prev === item._id ? "" : item._id))
-                      }
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          </div>
-
+          <select className="faq-category" value={activeCategory} onChange={e => setActiveCategory(e.target.value)}>
+            {categories.map(c => <option key={c} value={c}>{c}</option>)}
+          </select>
         </div>
 
-        {showAskForm && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              <h2 className="modal-title">{editId ? "Edit Pending Question" : "Ask a Question"}</h2>
-              <p className="modal-desc">{editId ? "Update your question details below." : "If you can't find the answer, ask us! Answers will be provided by an admin soon."}</p>
-              
-              <form onSubmit={handleAskSubmit}>
-                <div className="form-group">
-                  <label className="modal-label">Question:</label>
-                  <input
-                    className="modal-input"
-                    value={newQuestion}
-                    onChange={(e) => setNewQuestion(e.target.value)}
-                    placeholder="Type your question here..."
-                    required
-                  />
-                </div>
-                <div className="form-group">
-                  <label className="modal-label">Category:</label>
-                  <select
-                    className="modal-input"
-                    value={askCategory}
-                    onChange={(e) => setAskCategory(e.target.value)}
-                  >
-                    <option value="General">General</option>
-                    <option value="Getting Started">Getting Started</option>
-                    <option value="Study Tracker">Study Tracker</option>
-                    <option value="Workplan">Workplan</option>
-                    <option value="Academic Vault">Academic Vault</option>
-                    <option value="Account">Account</option>
-                    <option value="Technical Support">Technical Support</option>
-                  </select>
-                </div>
-                
-                {askStatus && (
-                  <div className={`ask-status ${askStatus.includes('success') ? 'ask-status-success' : 'ask-status-error'}`}>
-                    {askStatus}
+        {error && <div className="error-box">{error}</div>}
+
+        {/* Pending Section */}
+        {pendingFaqs.length > 0 && activeCategory === "All" && !search && (
+          <div className="faq-pending-section anim-slideDown">
+            <h2 className="faq-pending-title"><MdHistory /> My Pending Inquiries</h2>
+            <div className="faq-list">
+              {pendingFaqs.map(item => (
+                <div key={item._id} className="faq-item" style={{ borderLeft: '4px solid #f59e0b' }}>
+                  <div style={{ padding: '16px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div className="faq-question-text">{item.question}</div>
+                      <div style={{ display: 'flex', gap: 12, marginTop: 4 }}>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 800, color: '#b45309', textTransform: 'uppercase' }}>Waiting for response</span>
+                        <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>{item.category}</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button className="btn btn-ghost btn-sm" onClick={() => handleEditClick(item)}>Edit</button>
+                      <button className="btn btn-ghost btn-sm" style={{ color: 'var(--rose)' }} onClick={() => handleDeletePending(item._id)}>Cancel</button>
+                    </div>
                   </div>
-                )}
-                
-                <div className="modal-actions">
-                  <button type="button" onClick={closeModal} className="modal-close-btn">Cancel</button>
-                  <button 
-                    type="submit" 
-                    disabled={isSubmitting || askStatus.includes('success')} 
-                    className={`modal-submit-btn ${(isSubmitting || askStatus.includes('success')) ? 'btn-disabled' : ''}`}
-                  >
-                    {isSubmitting ? "Saving..." : askStatus.includes('success') ? "Saved!" : (editId ? "Update Question" : "Submit Question")}
-                  </button>
                 </div>
-              </form>
+              ))}
             </div>
           </div>
         )}
 
-        <button
-          type="button"
-          onClick={() => {
-            setEditId(null);
-            setAskStatus("");
-            setNewQuestion("");
-            setShowAskForm(true);
-          }}
-          className="manage-btn"
-          title="Ask a Question"
-          aria-label="Ask a Question"
-        >
-          <span className="manage-icon">？</span>
-          <span className="manage-text">Ask a Question</span>
-        </button>
+        {/* Main FAQ List */}
+        <div className="faq-list">
+          {loading ? (
+            <div className="empty">Updating Knowledge Base...</div>
+          ) : filteredFaqs.length === 0 ? (
+            <div className="empty">No entries found matching your criteria.</div>
+          ) : (
+            filteredFaqs.map(item => (
+              <FaqItem 
+                key={item._id} 
+                item={item} 
+                expanded={openId === item._id} 
+                onToggle={() => setOpenId(prev => prev === item._id ? "" : item._id)} 
+              />
+            ))
+          )}
+        </div>
       </div>
+
+      {/* Floating Ask Button */}
+      <button className="faq-ask-btn" onClick={() => setShowAskForm(true)}>
+        <MdHelpOutline size={20} /> Ask a Question
+      </button>
+
+      {/* Modal */}
+      {showAskForm && (
+        <div className="faq-modal-overlay">
+          <form className="faq-modal anim-slideUp" onSubmit={handleAskSubmit}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
+              <div>
+                <h3 className="lj-label" style={{ fontSize: '1.2rem', color: 'var(--text-primary)' }}>{editId ? 'Revise Inquiry' : 'New Academic Inquiry'}</h3>
+                <p className="faq-hero-sub" style={{ color: 'var(--text-muted)' }}>We'll provide an answer as soon as possible.</p>
+              </div>
+              <button type="button" className="st-icon-btn" onClick={closeModal}><MdClose /></button>
+            </div>
+
+            <div className="lj-field-group">
+              <label className="lj-label">Your Question</label>
+              <textarea className="lj-textarea" required rows={4} value={formData.question} onChange={e => setFormData({ ...formData, question: e.target.value })} placeholder="Be as specific as possible..." />
+            </div>
+
+            <div className="lj-field-group">
+              <label className="lj-label">Category</label>
+              <select className="lj-input" value={formData.category} onChange={e => setFormData({ ...formData, category: e.target.value })}>
+                {["General", "Study Tracker", "Workplan", "Academic Vault", "Account", "Technical Support"].map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 12 }}>
+              <button type="button" className="btn btn-secondary" onClick={closeModal}>Discard</button>
+              <button type="submit" className="btn btn-primary" disabled={isSubmitting}>{isSubmitting ? 'Syncing...' : 'Submit Inquiry'}</button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

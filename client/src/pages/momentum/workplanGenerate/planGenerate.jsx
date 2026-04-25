@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import api from "../../../api/axios";
+import { useAuth } from "../../../context/AuthContext";
 import Sidebar from "../sidebar/sidebar";
 import "./planGenerate.css";
 
@@ -152,6 +155,10 @@ function ErrMsg({ msg }) {
 
 // ======= Main Component =======
 export default function GenerateWorkplan() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { user } = useAuth();
+
   const [customizeWeekday, setCustomizeWeekday] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState(0);
   const [customStart, setCustomStart] = useState("18:00");
@@ -161,11 +168,31 @@ export default function GenerateWorkplan() {
   const [tasks, setTasks] = useState([
     { id: 1, name: "", deadline: "", priority: "High" },
   ]);
+  const [lifeEvents, setLifeEvents] = useState([]);
+  const [energyLevel, setEnergyLevel] = useState("Balanced");
   const [bedtime, setBedtime] = useState("23:00");
   const [wakeup, setWakeup] = useState("07:00");
   const [studyBlock, setStudyBlock] = useState("25m (Pomodoro)");
   const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (location.state?.editData) {
+        const d = location.state.editData;
+        if (d.tasks) setTasks(d.tasks);
+        if (d.lifeEvents) setLifeEvents(d.lifeEvents);
+        if (d.bedtime) setBedtime(d.bedtime);
+        if (d.wakeup) setWakeup(d.wakeup);
+        if (d.studyInterval) setStudyBlock(d.studyInterval);
+        if (d.energyLevel) setEnergyLevel(d.energyLevel);
+        if (d.availability && d.availability.includes("-")) {
+            setCustomizeWeekday(true);
+            const [s, e] = d.availability.split(" - ");
+            setCustomStart(s); setCustomEnd(e);
+        }
+    }
+  }, [location.state]);
 
   // ---- CHANGE 1: todayStr in YYYY-MM-DD local time (no timezone bug) ----
   const todayStr = new Date().toLocaleDateString("en-CA");
@@ -194,6 +221,17 @@ export default function GenerateWorkplan() {
 
   const removeTask = (id) =>
     setTasks((prev) => prev.filter((t) => t.id !== id));
+
+  const addLifeEvent = () => setLifeEvents((p) => [...p, { id: Date.now(), name: "", days: [], startTime: "19:00", endTime: "21:00" }]);
+  const removeLifeEvent = (id) => setLifeEvents((p) => p.filter((e) => e.id !== id));
+  const updateLifeEvent = (id, field, val) => setLifeEvents((p) => p.map((e) => (e.id === id ? { ...e, [field]: val } : e)));
+  const toggleDay = (eventId, day) => {
+    setLifeEvents(prev => prev.map(e => {
+        if (e.id !== eventId) return e;
+        const days = e.days.includes(day) ? e.days.filter(d => d !== day) : [...e.days, day];
+        return { ...e, days };
+    }));
+  };
 
   // ---- Validation ----
   const validate = () => {
@@ -234,13 +272,29 @@ export default function GenerateWorkplan() {
     return e;
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     setSuccess(false);
     const e = validate();
     setErrors(e);
     if (Object.keys(e).length === 0) {
-      setSuccess(true);
-      // TODO: call your backend API here
+      setLoading(true);
+      try {
+        const payload = {
+            userId: user?._id,
+            availability: customizeWeekday ? `${customStart} - ${customEnd}` : weekdayPresets[selectedPreset].label,
+            saturday, sunday, tasks: tasks.filter(t => t.name.trim()),
+            studyInterval: studyBlock, bedtime, wakeup, lifeEvents, energyLevel
+        };
+        const res = await api.post('/momentum/generate-plan', payload);
+        if (res.data.success) {
+            setSuccess(true);
+            setTimeout(() => navigate('/momentum/vault'), 1500);
+        }
+      } catch (err) {
+        alert("Generation failed: " + (err.response?.data?.message || err.message));
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -524,6 +578,65 @@ export default function GenerateWorkplan() {
                 <button className="add-task-btn" onClick={addTask}>
                   + Add Another Task
                 </button>
+              </div>
+            </section>
+
+            <div className="divider" />
+
+            {/* ===== Fixed Tasks (Life Events) ===== */}
+            <section className="section">
+              <div className="section-title">
+                <span>🏙️</span> Fixed Tasks & Commitments
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {lifeEvents.map(e => (
+                  <div key={e.id} className="custom-box" style={{ marginTop: 0, padding: 16 }}>
+                     <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                        <input className="task-input" style={{ flex: 1 }} placeholder="Commitment (e.g. Gym, Part-time Job)" value={e.name} onChange={v => updateLifeEvent(e.id, 'name', v.target.value)} />
+                        <button className="delete-task-btn" onClick={() => removeLifeEvent(e.id)}>✕</button>
+                     </div>
+                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+                        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map(d => (
+                            <button key={d} type="button" onClick={() => toggleDay(e.id, d)} style={{ padding: '6px 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, border: '1px solid var(--border)', background: e.days.includes(d) ? PRIMARY : 'transparent', color: e.days.includes(d) ? '#fff' : 'inherit' }}>{d}</button>
+                        ))}
+                     </div>
+                     <div style={{ display: 'flex', gap: 12 }}>
+                        <div style={{ flex: 1 }}><TimeInput label="Starts At" value={e.startTime} onChange={v => updateLifeEvent(e.id, 'startTime', v)} /></div>
+                        <div style={{ flex: 1 }}><TimeInput label="Ends At" value={e.endTime} onChange={v => updateLifeEvent(e.id, 'endTime', v)} /></div>
+                     </div>
+                  </div>
+                ))}
+                <button className="add-task-btn" onClick={addLifeEvent} style={{ alignSelf: 'flex-start' }}>+ Add Recurring Commitment</button>
+              </div>
+            </section>
+
+            <div className="divider" />
+
+            {/* ===== Energy Level ===== */}
+            <section className="section">
+              <div className="section-title">
+                <span>⚡</span> Preferred Energy Profile
+              </div>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {["Morning Person", "Balanced", "Night Owl"].map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setEnergyLevel(l)}
+                    style={{
+                      padding: "8px 18px",
+                      borderRadius: 20,
+                      fontWeight: 600,
+                      fontSize: 13,
+                      cursor: "pointer",
+                      transition: "all 0.15s",
+                      background: energyLevel === l ? PRIMARY : "#f3f4f6",
+                      color: energyLevel === l ? "#fff" : "#374151",
+                      border: "1.5px solid " + (energyLevel === l ? PRIMARY : "transparent"),
+                    }}
+                  >
+                    {l}
+                  </button>
+                ))}
               </div>
             </section>
 

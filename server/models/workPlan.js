@@ -6,6 +6,11 @@ const workPlanSchema = new mongoose.Schema({
         ref: 'User', // conecting with User model
         required: true
     },
+    // Original inputs used for generation
+    inputs: {
+        type: mongoose.Schema.Types.Mixed,
+        required: true
+    },
     // AI generated work plan details
     workplan: {
         type: mongoose.Schema.Types.Mixed,

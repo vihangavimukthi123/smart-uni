@@ -87,6 +87,12 @@ const getPublicFaqs = asyncHandler(async (req, res) => {
   res.json({ success: true, data: faqs });
 });
 
+// @GET /api/momentum/faqs/admin — all user-submitted questions for admin review
+const getAdminFaqs = asyncHandler(async (req, res) => {
+  const faqs = await Faq.find({ submittedByUser: true }).sort('-createdAt');
+  res.json({ success: true, data: faqs });
+});
+
 // @POST /api/momentum/faqs/my-pending (Public)
 const getMyPendingFaqs = asyncHandler(async (req, res) => {
   const { ids } = req.body;
@@ -102,7 +108,12 @@ const createFaq = asyncHandler(async (req, res) => {
 
 // @PUT /api/momentum/faqs/:id
 const updateFaq = asyncHandler(async (req, res) => {
-  const faq = await Faq.findByIdAndUpdate(req.params.id, req.body, {
+  // Auto-publish when admin provides a non-empty answer
+  const update = { ...req.body };
+  if (update.answer && update.answer.trim() !== '') {
+    update.isPublished = true;
+  }
+  const faq = await Faq.findByIdAndUpdate(req.params.id, update, {
     new: true,
     runValidators: true,
   });
@@ -132,6 +143,7 @@ module.exports = {
   updateStudyTask,
   getFaqs,
   getPublicFaqs,
+  getAdminFaqs,
   getMyPendingFaqs,
   createFaq,
   updateFaq,
