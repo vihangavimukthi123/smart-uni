@@ -61,6 +61,11 @@ import MomentumDashboard from './pages/momentum/MomentumDashboard/MoDash';
 import StudyTracker from './pages/momentum/study tracker/studyTracker';
 import GenerateWorkplan from './pages/momentum/workplanGenerate/planGenerate';
 import Planner from './pages/momentum/myPlans/myPlans';
+import FAQManager from "./pages/momentum/faqManager/faqManager";
+import FAQPublic from "./pages/momentum/faqPublic/faqPublic";
+import LearningJournal from "./pages/momentum/learningJournal/learningJournal";
+import NotificationManager from "./pages/momentum/notificationManager/notificationManager";
+
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();

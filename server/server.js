@@ -32,6 +32,7 @@ const peerRoutes = require('./routes/peerRoutes');
 const peerReviewRoutes = require('./routes/peerReviewRoutes');
 const requestRoutes = require('./routes/requestRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const momentumRoutes = require('./routes/momentumRoutes');
 
 
 // ── Initialize App ──────────────────────────────────────────────────────────
@@ -145,6 +146,7 @@ app.use('/api/learning/peers', peerRoutes);
 app.use('/api/learning/peerreviews', peerReviewRoutes);
 app.use('/api/learning/requests', requestRoutes);
 app.use('/api/learning/tasks', taskRoutes);
+app.use('/api/momentum', momentumRoutes);
 
 
 // ── 404 Handler ──────────────────────────────────────────────────────────────
