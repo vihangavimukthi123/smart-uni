@@ -1,12 +1,18 @@
 const express = require('express');
 const Request = require('../models/Request');
+const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
 // CREATE request
-router.post("/", async (req, res) => {
+router.post("/", protect, async (req, res) => {
   try {
-    const request = new Request(req.body);
+    const requestData = {
+      ...req.body,
+      senderEmail: req.user.email.toLowerCase().trim(),
+      senderName: req.user.name
+    };
+    const request = new Request(requestData);
     const saved = await request.save();
     res.json(saved);
   } catch (err) {
@@ -14,10 +20,17 @@ router.post("/", async (req, res) => {
   }
 });
 
-// GET all requests
-router.get("/", async (req, res) => {
+// GET all requests for the authenticated user
+router.get("/", protect, async (req, res) => {
   try {
-    const requests = await Request.find().sort({ createdAt: -1 });
+    const email = req.user.email.toLowerCase().trim();
+    // Fetch requests where the user is either the sender or the receiver
+    const requests = await Request.find({
+      $or: [
+        { senderEmail: email },
+        { receiverEmail: email }
+      ]
+    }).sort({ createdAt: -1 });
     res.json(requests);
   } catch (err) {
     res.status(500).json(err);
@@ -25,7 +38,7 @@ router.get("/", async (req, res) => {
 });
 
 // UPDATE request
-router.put("/:id", async (req, res) => {
+router.put("/:id", protect, async (req, res) => {
   try {
     const updated = await Request.findByIdAndUpdate(
       req.params.id,
@@ -39,7 +52,7 @@ router.put("/:id", async (req, res) => {
 });
 
 // DELETE request
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", protect, async (req, res) => {
   try {
     await Request.findByIdAndDelete(req.params.id);
     res.json({ message: "Deleted" });

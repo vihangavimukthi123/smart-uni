@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import "./MyActivity.css";
 import api from "../../../api/axios";
 
+import { useAuth } from "../../../context/AuthContext";
+
 const getProfile = () => {
   const saved = localStorage.getItem("studentProfile");
   return saved ? JSON.parse(saved) : { name: "", email: "" };
@@ -77,9 +79,12 @@ function RequestCard({ req, onAccept, onDecline, onStartConversation }) {
 
 /* ── Main Component ─────────────────────────────────────── */
 export default function MyActivity() {
+  const { user } = useAuth();
   const currentProfile = getProfile();
-  const currentUserName = currentProfile.name || "Student";
-  const currentUserId = currentProfile.email || "local-user";
+  
+  // Use auth context if available, fallback to localStorage
+  const currentUserId = user?.email || currentProfile.email || "local-user";
+  const currentUserName = user?.name || currentProfile.name || "Student";
   
   const [received,      setReceived]      = useState([]);
   const [sent, setSent] = useState([]);
@@ -88,10 +93,12 @@ export default function MyActivity() {
   const [myTasks,       setMyTasks]       = useState([]);
 
   useEffect(() => {
-    fetchRequests();
-    fetchMyTasks();
-    fetchMyReviews();
-  }, []);
+    if (currentUserId && currentUserId !== "local-user") {
+      fetchRequests();
+      fetchMyTasks();
+      fetchMyReviews();
+    }
+  }, [currentUserId]);
 
   const fetchRequests = async () => {
     try {
@@ -105,15 +112,14 @@ export default function MyActivity() {
         all.filter(
           (r) =>
             !isTaskApplication(r) &&
-            (((r.senderEmail || "").toLowerCase() === (currentUserId || "").toLowerCase()) || r.senderName === currentUserName)
+            ((r.senderEmail || "").toLowerCase() === (currentUserId || "").toLowerCase())
         )
       );
       setReceived(
         all.filter(
           (r) =>
             !isTaskApplication(r) &&
-            ((r.receiverEmail && r.receiverEmail === currentUserId) || r.receiverName === currentUserName) &&
-            !((r.senderEmail && r.senderEmail === currentUserId) || r.senderName === currentUserName)
+            ((r.receiverEmail || "").toLowerCase() === (currentUserId || "").toLowerCase())
         )
       );
 
@@ -131,8 +137,8 @@ export default function MyActivity() {
 
   const fetchMyTasks = async () => {
     try {
-      const res = await api.get("/learning/tasks");
-      setMyTasks(res.data.filter((t) => (t.userId && t.userId === currentUserId) || t.author === currentUserName));
+      const res = await api.get(`/learning/tasks/user/${encodeURIComponent(currentUserId)}`);
+      setMyTasks(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error(err);
     }

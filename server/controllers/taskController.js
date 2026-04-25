@@ -3,7 +3,12 @@ const Task = require('../models/Task');
 // CREATE TASK
 const createTask = async (req, res) => {
   try {
-    const task = await Task.create(req.body);
+    const taskData = {
+      ...req.body,
+      userId: req.user.email.toLowerCase().trim(),
+      author: req.user.name
+    };
+    const task = await Task.create(taskData);
     res.status(201).json(task);
   } catch (err) {
     res.status(500).json(err);
