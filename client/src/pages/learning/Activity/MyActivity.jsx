@@ -90,6 +90,7 @@ export default function MyActivity() {
   const [sent, setSent] = useState([]);
   const [taskApplications, setTaskApplications] = useState([]);
   const [reviewedRequestIds, setReviewedRequestIds] = useState(new Set());
+  const [myReviews, setMyReviews] = useState([]);
   const [myTasks,       setMyTasks]       = useState([]);
 
   useEffect(() => {
@@ -145,11 +146,16 @@ export default function MyActivity() {
   };
 
   const fetchMyReviews = async () => {
-    if (!currentUserId) return;
+    if (!currentUserId || currentUserId === "local-user") return;
     try {
-      const res = await api.get(`/learning/peerreviews/reviewer/${encodeURIComponent(currentUserId)}`);
-      const ids = new Set((Array.isArray(res.data) ? res.data : []).map((r) => String(r.requestId)));
+      // 1. Get IDs of requests I have ALREADY reviewed (to disable review button)
+      const resReviewer = await api.get(`/learning/peerreviews/reviewer/${encodeURIComponent(currentUserId)}`);
+      const ids = new Set((Array.isArray(resReviewer.data) ? resReviewer.data : []).map((r) => String(r.requestId)));
       setReviewedRequestIds(ids);
+
+      // 2. Get reviews received BY me (to display in the "Reviews" section)
+      const resPeer = await api.get(`/learning/peerreviews/peer/${encodeURIComponent(currentUserId)}`);
+      setMyReviews(Array.isArray(resPeer.data.reviews) ? resPeer.data.reviews : []);
     } catch (err) {
       console.error(err);
     }
@@ -391,7 +397,7 @@ export default function MyActivity() {
             </div>
           </header>
 
-          <main className="aa-content">
+          <div className="aa-content">
             <section className="aa-summary-banner">
               <div className="aa-summary-banner__content">
                 <span className="material-symbols-outlined">info</span>
@@ -524,50 +530,71 @@ export default function MyActivity() {
                 </div>
               </div>
 
-              <div className="aa-replies-section">
-                <h3 className="aa-subsection-title">Latest Replies</h3>
+            <section className="aa-section">
+              <div className="aa-section__header">
+                <div>
+                  <h2 className="aa-section__title">Reviews</h2>
+                  <p className="aa-section__sub">Feedback from students you've helped</p>
+                </div>
+              </div>
+
+              <div className="aa-subsection">
                 <div className="aa-replies-list">
-                  {taskApplications.map((app) => (
-                    <div key={`task-app-${app._id}`} className="aa-reply aa-reply--task-app">
-                      <div className="aa-avatar aa-avatar--md aa-initials aa-initials--secondary">
-                        {(app.senderName || "Peer")
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </div>
+                  {/* --- PEER REVIEWS RECEIVED --- */}
+                  {myReviews.map((rev) => (
+                    <div className="aa-reply" key={rev._id} style={{ borderLeft: '4px solid #f59e0b' }}>
                       <div className="aa-reply__body">
                         <div className="aa-reply__top">
-                          <span className="aa-reply__name">{app.senderName || "Peer"} applied to help</span>
-                          <span className="aa-reply__time">{new Date(app.createdAt || app.date || Date.now()).toLocaleString()}</span>
+                          <span className="aa-reply__name">{rev.reviewerName}</span>
+                          <span className="aa-reply__time">{new Date(rev.createdAt).toLocaleDateString()}</span>
                         </div>
-                        <p className="aa-reply__preview">
-                          "{app.senderName || "A peer"} applied for your task: {app.taskTitle || app.skill || "Untitled task"}."
-                        </p>
-                        <div className="aa-reply__actions">
-                          <button className="aa-action-btn aa-action-btn--primary" onClick={() => openTaskApplicationConversation(app)}>
-                            <span className="material-symbols-outlined" style={{ fontSize: "14px", marginRight: "4px" }}>forum</span>
-                            Contact
-                          </button>
-                          <button className="aa-action-btn aa-action-btn--primary" onClick={() => copyTaskApplicantEmail(app.senderEmail)}>
-                            <span className="material-symbols-outlined" style={{ fontSize: "14px", marginRight: "4px" }}>content_copy</span>
-                            Copy Email
-                          </button>
+                        <div style={{ marginBottom: '8px', color: '#f59e0b', fontSize: '14px' }}>
+                          {"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}
                         </div>
+                        <p className="aa-reply__preview">{rev.comment || "No comment provided."}</p>
                       </div>
                     </div>
                   ))}
 
-                  {taskApplications.length === 0 && (
+                  {/* --- TASK APPLICATIONS --- */}
+                  {taskApplications.length > 0 && (
+                    <>
+                      <h4 className="aa-subsection-title" style={{ marginTop: '20px', fontSize: '0.85rem' }}>Task Applications</h4>
+                      {taskApplications.map((app) => (
+                        <div className="aa-reply aa-reply--task-app" key={app._id}>
+                          <div className="aa-reply__body">
+                            <div className="aa-reply__top">
+                              <span className="aa-reply__name">{app.senderName}</span>
+                              <span className="aa-reply__time">
+                                {new Date(app.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="aa-reply__preview">{app.message}</p>
+                            <div className="aa-reply__actions">
+                              <button className="aa-action-btn aa-action-btn--chat" onClick={() => openConversation(app)}>
+                                Contact
+                              </button>
+                              <button className="aa-action-btn aa-action-btn--primary" onClick={() => copyTaskApplicantEmail(app.senderEmail)}>
+                                <span className="material-symbols-outlined" style={{ fontSize: "14px", marginRight: "4px" }}>content_copy</span>
+                                Copy Email
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {myReviews.length === 0 && taskApplications.length === 0 && (
                     <div className="aa-empty-state">
-                      <p>No any replies yet.</p>
+                      <p>No reviews or applications yet.</p>
                     </div>
                   )}
                 </div>
               </div>
             </section>
-          </main>
+          </section>
+        </div>
 
           {editingReq && (
             <div className="aa-modal-bg" onClick={() => setEditingReq(null)}>
