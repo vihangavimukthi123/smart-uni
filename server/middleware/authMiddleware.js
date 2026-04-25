@@ -12,7 +12,6 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Not authorized, no token' });
     }
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-    console.log(`[AUTH] Decoded ID: ${decoded.id}`);
     
     // Check User collection first
     let user = await User.findById(decoded.id).select('-password');
@@ -28,6 +27,8 @@ const protect = async (req, res, next) => {
         user.name = `${supplier.firstName} ${supplier.lastName}`.trim();
         user.email = supplier.semail; // Mapping semail to email for consistency
         user.isActive = !supplier.isBlocked;
+        user.phone = supplier.phone;
+        user.bio = supplier.description; // Mapping description to bio for profile page
       }
     }
 

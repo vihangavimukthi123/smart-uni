@@ -26,9 +26,9 @@ export const SocketProvider = ({ children }) => {
 
     socketRef.current.on('disconnect', () => setConnected(false));
 
-    socketRef.current.on('scheduleUpdated',   (data) => setLastEvent({ type: 'scheduleUpdated', data, ts: Date.now() }));
+    socketRef.current.on('scheduleUpdated', (data) => setLastEvent({ type: 'scheduleUpdated', data, ts: Date.now() }));
     socketRef.current.on('roomStatusChanged', (data) => setLastEvent({ type: 'roomStatusChanged', data, ts: Date.now() }));
-    socketRef.current.on('newNotification',   (data) => setLastEvent({ type: 'newNotification', data, ts: Date.now() }));
+    socketRef.current.on('newNotification', (data) => setLastEvent({ type: 'newNotification', data, ts: Date.now() }));
 
     return () => { socketRef.current?.disconnect(); };
   }, [user]);
