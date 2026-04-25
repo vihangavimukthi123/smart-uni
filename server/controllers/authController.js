@@ -52,7 +52,7 @@ const login = asyncHandler(async (req, res) => {
     return res.status(403).json({ success: false, message: 'Account is deactivated' });
   }
   const { accessToken, refreshToken } = generateTokens(user._id);
-  await User.findByIdAndUpdate(user._id, { refreshToken, lastLogin: new Date() });
+  await User.findByIdAndUpdate(user._id, { refreshToken, lastLogin: new Date(), lastActiveAt: new Date() });
   const userObj = user.toJSON();
   res.json({
     success: true,

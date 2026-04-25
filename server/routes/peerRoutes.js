@@ -1,5 +1,7 @@
 const express = require('express');
 const Peer = require('../models/Peer');
+const User = require('../models/User');
+const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -17,14 +19,32 @@ const getIdentityKey = (peer = {}) => {
 };
 
 // Get all peers
-router.get("/", async (req, res) => {
+router.get("/", protect, async (req, res) => {
   try {
     const { year, semester, excludeEmail } = req.query;
 
-    const filter = {};
-    if (year) filter.year = Number(year);
-    if (semester) filter.semester = Number(semester);
-    if (excludeEmail) filter.email = { $ne: excludeEmail };
+    const studentUsers = await User.find({ role: 'student', isActive: true }).select('email lastActiveAt');
+    const studentEmails = studentUsers
+      .map((u) => normalize(u.email))
+      .filter(Boolean);
+
+    const studentMap = {};
+    studentUsers.forEach(u => {
+      if (u.email) studentMap[normalize(u.email)] = u.lastActiveAt;
+    });
+
+    const filter = { $and: [] };
+    // Only show peer profiles linked to real student accounts (no seed-only peers).
+    filter.$and.push({ email: { $in: studentEmails } });
+    
+    // Always exclude the currently logged in user
+    if (req.user && req.user.email) {
+      filter.$and.push({ email: { $ne: normalize(req.user.email) } });
+    } else if (excludeEmail) {
+      filter.$and.push({ email: { $ne: normalize(excludeEmail) } });
+    }
+    if (year) filter.$and.push({ year: Number(year) });
+    if (semester) filter.$and.push({ semester: Number(semester) });
 
     const peers = await Peer.find(filter).sort({ rating: -1, updatedAt: -1, name: 1 });
 
@@ -35,7 +55,14 @@ router.get("/", async (req, res) => {
       const key = getIdentityKey(peer);
       if (!seen.has(key)) {
         seen.add(key);
-        deduped.push(peer);
+        const peerObj = peer.toObject ? peer.toObject() : peer;
+        const lastActiveAt = studentMap[normalize(peer.email)];
+        if (lastActiveAt) {
+          peerObj.lastActiveAt = lastActiveAt;
+        } else {
+          peerObj.lastActiveAt = peer.updatedAt;
+        }
+        deduped.push(peerObj);
       }
     }
 
@@ -46,7 +73,7 @@ router.get("/", async (req, res) => {
 });
 
 // Create or update a peer profile by email (used before auth integration)
-router.post("/upsert", async (req, res) => {
+router.post("/upsert", protect, async (req, res) => {
   try {
     const {
       name,
@@ -62,29 +89,50 @@ router.post("/upsert", async (req, res) => {
       profilePic,
     } = req.body;
 
-    if (!name || !email) {
+    const canonicalName = String(req.user?.name || name || "").trim();
+    const canonicalEmail = String(req.user?.email || email || "").trim().toLowerCase();
+
+    if (!canonicalName || !canonicalEmail) {
       return res.status(400).json({ message: "Name and email are required" });
     }
 
+    const yearValue = Number(year) || 1;
+    const semesterValue = Number(semester) || 1;
+
+    const identityFilters = [{ email: canonicalEmail }];
+    if (studentId) identityFilters.push({ studentId: String(studentId).trim() });
+    identityFilters.push({ name: canonicalName, year: yearValue, semester: semesterValue });
+
+    const existingByEmail = await Peer.findOne({ email: canonicalEmail });
+    const existingByLegacy = await Peer.findOne({ $or: identityFilters }).sort({ rating: -1, updatedAt: -1 });
+    const target = existingByEmail || existingByLegacy;
+
     const update = {
-      name,
-      email,
+      name: canonicalName,
+      email: canonicalEmail,
       studentId: studentId || "",
-      year: Number(year) || 1,
-      semester: Number(semester) || 1,
+      year: yearValue,
+      semester: semesterValue,
       modules: Array.isArray(modules) ? modules : [],
       skills: Array.isArray(skills) ? skills : [],
-      degree: degree || `BSc IT - Year ${Number(year) || 1}`,
+      degree: degree || `BSc IT - Year ${yearValue}`,
       degreeProgram: degreeProgram || "",
       bio: bio || "",
       profilePic: profilePic || "https://randomuser.me/api/portraits/lego/1.jpg",
     };
 
-    const peer = await Peer.findOneAndUpdate(
-      { email },
-      update,
-      { new: true, upsert: true, runValidators: true }
-    );
+    let peer;
+    if (target) {
+      Object.assign(target, update);
+      peer = await target.save();
+    } else {
+      peer = await Peer.create(update);
+    }
+
+    // Remove a stale duplicate if both a legacy and canonical record existed.
+    if (existingByEmail && existingByLegacy && String(existingByEmail._id) !== String(existingByLegacy._id)) {
+      await Peer.findByIdAndDelete(existingByLegacy._id);
+    }
 
     res.status(200).json(peer);
   } catch (err) {

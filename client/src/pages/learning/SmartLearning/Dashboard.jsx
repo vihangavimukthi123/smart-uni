@@ -125,6 +125,8 @@ const getSavedProfile = () => {
   };
 };
 
+const getProfileStorageKey = (email = "") => `studentProfile:${String(email).trim().toLowerCase()}`;
+
 // --- FeatureCard Sub-component ---
 function FeatureCard({ icon, title, description, linkLabel, link }) {
   return (
@@ -310,6 +312,13 @@ export default function Dashboard() {
   const authName = (user?.name || "").trim();
   const authEmail = (user?.email || "").trim().toLowerCase();
 
+  const persistProfile = (profile, email = authEmail) => {
+    localStorage.setItem("studentProfile", JSON.stringify(profile));
+    if (email) {
+      localStorage.setItem(getProfileStorageKey(email), JSON.stringify(profile));
+    }
+  };
+
   const filteredModules = MODULE_OPTIONS.filter(
     (m) => m.year === parseInt(selectedYear) && m.semester === parseInt(selectedSemester)
   );
@@ -324,7 +333,7 @@ export default function Dashboard() {
     if (displayedProfile) {
       const moduleLabels = updatedModules.map(val => getModuleData(val).label);
       const updatedProfile = { ...displayedProfile, selectedModules: updatedModules, moduleLabels };
-      localStorage.setItem("studentProfile", JSON.stringify(updatedProfile));
+      persistProfile(updatedProfile);
       setDisplayedProfile(updatedProfile);
     }
   };
@@ -376,7 +385,7 @@ export default function Dashboard() {
       degreeProgram: Number(selectedYear) >= 3 ? degreeProgram : "",
     };
     setSelectedModules(modulesForCurrentTerm);
-    localStorage.setItem("studentProfile", JSON.stringify(profileData));
+    persistProfile(profileData, profileData.email);
     setDisplayedProfile(profileData);
 
     try {
@@ -432,19 +441,64 @@ export default function Dashboard() {
     setName(authName || "");
     setEmail(authEmail);
 
-    const currentSaved = getSavedProfile();
-    const savedEmail = (currentSaved.email || "").trim().toLowerCase();
-    if (savedEmail !== authEmail) {
-      const alignedProfile = {
-        ...currentSaved,
+    const perUserSavedRaw = localStorage.getItem(getProfileStorageKey(authEmail));
+    const fallbackSaved = getSavedProfile();
+    const fallbackEmail = (fallbackSaved.email || "").trim().toLowerCase();
+    const currentSaved = perUserSavedRaw
+      ? JSON.parse(perUserSavedRaw)
+      : (fallbackEmail === authEmail ? fallbackSaved : null);
+
+    if (!currentSaved) {
+      // New user (or user without saved profile): start fresh only for this account.
+      const freshProfile = {
         name: authName || "",
         email: authEmail,
+        studentId: "",
+        bio: "",
+        skills: [],
+        selectedModules: [],
+        moduleLabels: [],
+        selectedYear: "",
+        selectedSemester: "",
+        degreeProgram: "",
       };
-      localStorage.setItem("studentProfile", JSON.stringify(alignedProfile));
+      persistProfile(freshProfile, authEmail);
 
-      if (alignedProfile.skills.length > 0 || alignedProfile.selectedModules?.length > 0) {
-        setDisplayedProfile(alignedProfile);
-      }
+      setStudentId("");
+      setBio("");
+      setSkills([]);
+      setSkillInput("");
+      setSelectedModules([]);
+      setSelectedYear("");
+      setSelectedSemester("");
+      setDegreeProgram("");
+      setDisplayedProfile(null);
+      return;
+    }
+
+    // Existing user with previously saved profile: restore it.
+    const restoredProfile = {
+      ...currentSaved,
+      name: authName || currentSaved.name || "",
+      email: authEmail,
+      skills: Array.isArray(currentSaved.skills) ? currentSaved.skills : [],
+      selectedModules: Array.isArray(currentSaved.selectedModules) ? currentSaved.selectedModules : [],
+      moduleLabels: Array.isArray(currentSaved.moduleLabels) ? currentSaved.moduleLabels : [],
+    };
+    persistProfile(restoredProfile, authEmail);
+
+    setStudentId(restoredProfile.studentId || "");
+    setBio(restoredProfile.bio || "");
+    setSkills(restoredProfile.skills);
+    setSelectedModules(restoredProfile.selectedModules);
+    setSelectedYear(restoredProfile.selectedYear || "");
+    setSelectedSemester(restoredProfile.selectedSemester || "");
+    setDegreeProgram(restoredProfile.degreeProgram || "");
+
+    if (restoredProfile.skills.length > 0 || restoredProfile.selectedModules.length > 0) {
+      setDisplayedProfile(restoredProfile);
+    } else {
+      setDisplayedProfile(null);
     }
   }, [authName, authEmail]);
 

@@ -32,7 +32,7 @@ const baseStudents = [
   {
     studentId: "IT220102",
     name: "Ravindu Perera",
-    email: "ravindu.perera@campus.edu",
+    email: "ravindu@campus.edu",
     year: 3,
     semester: 2,
     degree: "BSc IT - Year 3",

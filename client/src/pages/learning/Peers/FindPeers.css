@@ -489,20 +489,40 @@ body {
   color: #64748b;
 }
 
+.peer-last-seen {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.table-last-seen {
+  margin-top: 2px;
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
 .table-rating {
   font-weight: 700;
   color: #92400e;
   background: #fefce8;
   border: 1px solid #fde68a;
   border-radius: 12px;
-  padding: 3px 10px;
-  display: inline-block;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.82rem;
+  white-space: nowrap;
 }
 
 .table-status {
   font-size: 0.82rem;
   font-weight: 600;
+}
+
+.table-status.online-now {
+  color: #16a34a;
 }
 
 .table-actions {
