@@ -124,14 +124,26 @@ export default function MomentumDashboard() {
       });
 
       // Weekly Distribution
-      const days = { 0: "SUN", 1: "MON", 2: "TUE", 3: "WED", 4: "THU", 5: "FRI", 6: "SAT" };
+      const daysArr = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
       const weekMap = { MON: 0, TUE: 0, WED: 0, THU: 0, FRI: 0, SAT: 0, SUN: 0 };
+      
       tasks.forEach(t => {
-        const d = new Date(t.taskDate || t.createdAt).getDay();
-        weekMap[days[d]] += (t.timeTracked || 0) / 60;
+        const dateVal = t.taskDate || t.createdAt;
+        if (!dateVal) return;
+        
+        // Robust date parsing
+        const dateObj = new Date(dateVal);
+        if (!isNaN(dateObj.getTime())) {
+          const dayName = daysArr[dateObj.getDay()];
+          if (weekMap[dayName] !== undefined) {
+             weekMap[dayName] += (t.timeTracked || 0) / 60;
+          }
+        }
       });
+      
       setWeekly(["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map(d => ({
-        day: d, hours: Number(weekMap[d].toFixed(1)),
+        day: d,
+        hours: Number(weekMap[d].toFixed(1)),
       })));
 
       // Monthly Trend (Simulated)
@@ -185,7 +197,7 @@ export default function MomentumDashboard() {
 
       <div className="dm-content">
         {/* Stats Row */}
-        <div className="dm-stats">
+        <div className="dm-stats" style={{ gridTemplateColumns: "repeat(4, 1fr)" }}>
           <StatCard title="Productivity" {...stats.weeklyProductivity} />
           <StatCard title="Completion" {...stats.studyCompletion} />
           <StatCard title="Focus Hours" {...stats.deepFocusHours} />
@@ -204,8 +216,15 @@ export default function MomentumDashboard() {
             </div>
             <div style={{ width: "100%", height: 220 }}>
               <ResponsiveContainer>
-                <BarChart data={weekly} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
-                  <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 600 }} />
+                <BarChart data={weekly} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                  <XAxis 
+                    dataKey="day" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    interval={0} 
+                    padding={{ left: 10, right: 10 }}
+                    tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 600 }} 
+                  />
                   <YAxis hide />
                   <Tooltip cursor={{ fill: "var(--bg-glass)" }} content={<BarTooltip />} />
                   <Bar dataKey="hours" fill="var(--indigo)" radius={[4, 4, 0, 0]} barSize={24} />
@@ -224,7 +243,7 @@ export default function MomentumDashboard() {
             </div>
             <div style={{ width: "100%", height: 220 }}>
               <ResponsiveContainer>
-                <AreaChart data={monthly} margin={{ top: 10, right: 0, left: -25, bottom: 0 }}>
+                <AreaChart data={monthly} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="var(--indigo)" stopOpacity={0.2}/>
@@ -232,7 +251,13 @@ export default function MomentumDashboard() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                  <XAxis dataKey="week" axisLine={false} tickLine={false} tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 600 }} />
+                  <XAxis 
+                    dataKey="week" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    padding={{ left: 15, right: 15 }}
+                    tick={{ fill: "var(--text-muted)", fontSize: 11, fontWeight: 600 }} 
+                  />
                   <YAxis domain={[0, 100]} hide />
                   <Tooltip />
                   <Area type="monotone" dataKey="completion" stroke="var(--indigo)" strokeWidth={3} fill="url(#colorGrad)" />
@@ -245,7 +270,7 @@ export default function MomentumDashboard() {
         {/* Productivity Suite */}
         <div>
           <h2 className="dm-section-title">Productivity Suite</h2>
-          <div className="dm-hacks" style={{ marginTop: 20 }}>
+          <div className="dm-hacks" style={{ marginTop: 20, gridTemplateColumns: "repeat(4, 1fr)" }}>
             {quickLinks.map((link, idx) => (
               <div key={idx} className="dm-hack-card">
                 <div className="dm-hack-icon-wrap">{link.icon}</div>

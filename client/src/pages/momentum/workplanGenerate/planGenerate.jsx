@@ -253,13 +253,15 @@ export default function GenerateWorkplan() {
     tasks.forEach((t) => {
       if (t.name.trim()) {
         if (!t.deadline) {
-          e["task_" + t.id + "_deadline"] = "Required";
+          e["task_" + t.id + "_deadline"] = "Deadline is required for each named task";
         } else {
-          // ---- CHANGE 3: direct string comparison — no Date parsing, no timezone bugs ----
           if (t.deadline < todayStr) {
-            e["task_" + t.id + "_deadline"] = "Must be today or a future date";
+            e["task_" + t.id + "_deadline"] = "Deadline must be today or a future date";
           }
         }
+      } else if (t.deadline) {
+        // Has a deadline but no name
+        e["task_" + t.id + "_name"] = "Task name is required when a deadline is set";
       }
     });
 
@@ -718,8 +720,7 @@ export default function GenerateWorkplan() {
                   textAlign: "center",
                 }}
               >
-                Workplan generated successfully! Connect your backend to
-                process.
+                ✅ Workplan generated successfully! Redirecting to your Vault...
               </div>
             )}
 
@@ -741,8 +742,13 @@ export default function GenerateWorkplan() {
             )}
 
             {/* Generate Button */}
-            <button className="generate-btn" onClick={handleGenerate}>
-              Generate My Workplan
+            <button 
+              className="generate-btn" 
+              onClick={handleGenerate}
+              disabled={loading || success}
+              style={{ opacity: loading || success ? 0.7 : 1, cursor: loading || success ? 'not-allowed' : 'pointer' }}
+            >
+              {loading ? "⏳ Generating your plan..." : "Generate My Workplan"}
             </button>
           </div>
         </div>

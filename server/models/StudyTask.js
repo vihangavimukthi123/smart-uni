@@ -6,7 +6,10 @@ const studyTaskSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-
+    course: {
+      type: String,
+      default: "",
+    },
     subject: {
       type: String,
       required: true,

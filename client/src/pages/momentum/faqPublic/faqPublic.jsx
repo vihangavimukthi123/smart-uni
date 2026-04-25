@@ -73,7 +73,12 @@ export default function FAQPublic() {
         await api.put(`/momentum/faqs/${editId}`, formData);
         setPendingFaqs(prev => prev.map(f => f._id === editId ? { ...f, ...formData } : f));
       } else {
-        const res = await api.post("/momentum/faqs", { ...formData, isPublished: false, submittedByUser: true });
+        const res = await api.post("/momentum/faqs", { 
+            ...formData, 
+            isPublished: false, 
+            submittedByUser: true,
+            userId: user?._id
+        });
         const created = res.data.data;
         if (created?._id) {
           const ids = JSON.parse(localStorage.getItem("my_pending_faqs") || "[]");
