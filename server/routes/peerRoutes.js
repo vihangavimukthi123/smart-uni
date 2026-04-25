@@ -35,14 +35,16 @@ router.get("/", protect, async (req, res) => {
       });
     }
 
-    const studentUsers = await User.find({ role: 'student', isActive: true }).select('email lastActiveAt');
+    const studentUsers = await User.find({ role: 'student', isActive: true }).select('email lastActiveAt lastLogin');
     const studentEmails = studentUsers
       .map((u) => normalize(u.email))
       .filter(Boolean);
 
     const studentMap = {};
     studentUsers.forEach(u => {
-      if (u.email) studentMap[normalize(u.email)] = u.lastActiveAt;
+      if (u.email) {
+        studentMap[normalize(u.email)] = u.lastActiveAt || u.lastLogin;
+      }
     });
 
     const filter = { $and: [] };
@@ -75,11 +77,11 @@ router.get("/", protect, async (req, res) => {
       if (!seen.has(key)) {
         seen.add(key);
         const peerObj = peer.toObject ? peer.toObject() : peer;
-        const lastActiveAt = studentMap[normalize(peer.email)];
-        if (lastActiveAt) {
-          peerObj.lastActiveAt = lastActiveAt;
+        const activityTimestamp = studentMap[normalize(peer.email)];
+        if (activityTimestamp) {
+          peerObj.lastActiveAt = activityTimestamp;
         } else {
-          peerObj.lastActiveAt = peer.updatedAt;
+          peerObj.lastActiveAt = null; // No fallback to updatedAt to avoid misleading info
         }
         deduped.push(peerObj);
       }
