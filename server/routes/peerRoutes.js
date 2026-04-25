@@ -21,46 +21,31 @@ const getIdentityKey = (peer = {}) => {
 // Get all peers
 router.get("/", protect, async (req, res) => {
   try {
-    const { year, semester, excludeEmail } = req.query;
+    const { year, semester, degreeProgram, excludeEmail } = req.query;
 
-    // 1. Check if the logged-in user has a completed peer profile
     const currentUserProfile = await Peer.findOne({ email: normalize(req.user.email) });
-    
-    // If no profile exists, the user hasn't saved their academic details yet
     if (!currentUserProfile) {
-      return res.json({
-        profileComplete: false,
-        message: "Please complete your profile to find relevant peers.",
-        peers: []
-      });
+      return res.json({ profileComplete: false, message: "Please complete your profile.", peers: [] });
     }
 
     const studentUsers = await User.find({ role: 'student', isActive: true }).select('email lastActiveAt lastLogin');
-    const studentEmails = studentUsers
-      .map((u) => normalize(u.email))
-      .filter(Boolean);
-
+    const studentEmails = studentUsers.map((u) => normalize(u.email)).filter(Boolean);
     const studentMap = {};
-    studentUsers.forEach(u => {
-      if (u.email) {
-        studentMap[normalize(u.email)] = u.lastActiveAt || u.lastLogin;
-      }
-    });
+    studentUsers.forEach(u => { if (u.email) studentMap[normalize(u.email)] = u.lastActiveAt || u.lastLogin; });
 
     const filter = { $and: [] };
-    // Only show peer profiles linked to real student accounts (no seed-only peers).
     filter.$and.push({ email: { $in: studentEmails } });
     
-    // Always exclude the currently logged in user
     if (req.user && req.user.email) {
       filter.$and.push({ email: { $ne: normalize(req.user.email) } });
     } else if (excludeEmail) {
       filter.$and.push({ email: { $ne: normalize(excludeEmail) } });
     }
 
-    // 2. Default filtering logic: 
-    // If year/semester NOT provided in query, use current user's profile values
-    // Otherwise use the provided filters (allowing override)
+    if (degreeProgram) {
+      filter.$and.push({ degreeProgram: normalize(degreeProgram).toUpperCase() });
+    }
+
     const filterYear = year ? Number(year) : currentUserProfile.year;
     const filterSemester = semester ? Number(semester) : currentUserProfile.semester;
 
@@ -91,7 +76,9 @@ router.get("/", protect, async (req, res) => {
       profileComplete: true,
       userProfile: {
         year: currentUserProfile.year,
-        semester: currentUserProfile.semester
+        semester: currentUserProfile.semester,
+        modules: currentUserProfile.modules || [],
+        skills: currentUserProfile.skills || []
       },
       peers: deduped
     });

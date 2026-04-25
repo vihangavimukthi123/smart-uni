@@ -20,6 +20,9 @@
   --font:           "Inter","DM Sans",sans-serif;
 }
 
+.aa-text--danger { color: var(--danger); font-weight: 600; }
+.aa-text--success { color: var(--success); font-weight: 600; }
+
 /* ─── Layout ──────────────────────────────────────────── */
 body { margin: 0; font-family: var(--font); background: var(--bg); }
 

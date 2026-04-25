@@ -509,8 +509,10 @@ export default function MyActivity() {
                         <p className="aa-task-card__desc">{t.description}</p>
                         <div className="aa-task-card__footer">
                           <div className="aa-task-card__meta">
-                            <span>
-                              <span className="material-symbols-outlined">calendar_today</span>
+                            <span className={toUiDeadline(t.deadlineDate, t.deadline) === "Overdue" ? "aa-text--danger" : ""}>
+                              <span className="material-symbols-outlined" style={{ fontSize: '14px', verticalAlign: 'middle' }}>
+                                {toUiDeadline(t.deadlineDate, t.deadline) === "Overdue" ? "warning" : "calendar_today"}
+                              </span>
                               {" "}
                               {toUiDeadline(t.deadlineDate, t.deadline)}
                             </span>

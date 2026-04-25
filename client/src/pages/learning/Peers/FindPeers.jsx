@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import "./FindPeers.css";
 import api from "../../../api/axios";
+import { useAuth } from "../../../context/AuthContext";
 
 
 // --- HELPERS ---
@@ -181,13 +182,15 @@ export default function FindPeers() {
   const [filterSkill, setFilterSkill] = useState("");
   const [filterYear, setFilterYear] = useState("");
   const [filterSemester, setFilterSemester] = useState("");
+  const [filterSpecialization, setFilterSpecialization] = useState("");
+  const { user } = useAuth();
   const [dbPeers, setDbPeers] = useState([]);
+  const [apiUserProfile, setApiUserProfile] = useState(null);
   const [loadingPeers, setLoadingPeers] = useState(true);
   const [isProfileComplete, setIsProfileComplete] = useState(true);
   const [profileMessage, setProfileMessage] = useState("");
 
-  // Module to Skill Mapping for Advanced Recommendation
-  const moduleSkillMapping = {
+const moduleSkillMapping = {
     "Introduction to Programming": ["Python", "Java", "C++", "Logic", "Coding", "Programming"],
     "Mathematics for Computing": ["Math", "Discrete Math", "Logic", "Calculus"],
     "Object Oriented Concepts": ["Java", "OOP", "Design Patterns", "C++"],
@@ -242,6 +245,9 @@ export default function FindPeers() {
         if (currentProfile.email) params.append("excludeEmail", currentProfile.email);
         if (filterYear) params.append("year", filterYear);
         if (filterSemester) params.append("semester", filterSemester);
+        if (filterSpecialization && (filterYear === "3" || filterYear === "4")) {
+          params.append("degreeProgram", filterSpecialization);
+        }
 
         const query = params.toString();
         const res = await api.get(`/learning/peers${query ? `?${query}` : ""}`);
@@ -253,6 +259,7 @@ export default function FindPeers() {
         } else {
           setIsProfileComplete(true);
           setDbPeers((res.data.peers || []).map(toUiPeer));
+          setApiUserProfile(res.data.userProfile);
         }
       } catch (err) {
         console.error("Error fetching students:", err);
@@ -261,40 +268,46 @@ export default function FindPeers() {
       }
     };
     fetchPeers();
-  }, [currentProfile.email, filterYear, filterSemester]);
+  }, [currentProfile.email, filterYear, filterSemester, filterSpecialization]);
 
   const allPeers = dbPeers.filter((p) => !!p);
   const [filteredPeers, setFilteredPeers] = useState([]);
 
   // Modified Recommendation logic: Match user's modules with others' skills
-  // We now use allPeers instead of only ratedPeers so new students without reviews can be recommended
-  const recommendedPeers = allPeers
+  const rawRecommended = (dbPeers || [])
     .map(p => {
-      if (!p) return null;
-      const peerSkills = (p.skills || []).map(s => s.toLowerCase());
-      const userModules = currentProfile.moduleLabels || [];
+      if (!p || p.email === user?.email) return null;
+      
+      const userModules = apiUserProfile?.modules || currentProfile.moduleLabels || [];
+      const peerSkills = (p.skills || []).map(s => String(s || "").trim().toLowerCase());
 
       let bestMatch = null;
       let matchType = "";
 
-      // Check each user module for matching peer skills
-      for (const moduleLabel of userModules) {
-        // Direct match: peer has a skill that is exactly the module name
-        const directMatch = p.skills.find(s => s.toLowerCase() === moduleLabel.toLowerCase());
+      for (const rawModule of userModules) {
+        const moduleLabel = String(rawModule || "").trim();
+        if (!moduleLabel) continue;
+
+        // 1. Direct match
+        const directMatch = p.skills.find(s => 
+          String(s || "").trim().toLowerCase() === moduleLabel.toLowerCase()
+        );
+        
         if (directMatch) {
           bestMatch = directMatch;
-          matchType = "EXPERT IN " + moduleLabel.toUpperCase();
+          matchType = "Expert in " + moduleLabel;
           break;
         }
 
-        // Indirect match: peer has a skill mapping to this module
+        // 2. Mapping match
         const relatedSkills = moduleSkillMapping[moduleLabel] || [];
         const foundRelated = p.skills.find(s =>
-          relatedSkills.some(rs => rs.toLowerCase() === s.toLowerCase())
+          relatedSkills.some(rs => rs.toLowerCase() === String(s || "").trim().toLowerCase())
         );
+
         if (foundRelated) {
           bestMatch = foundRelated;
-          matchType = `SKILLED IN ${foundRelated.toUpperCase()} (FOR ${moduleLabel.toUpperCase()})`;
+          matchType = `${foundRelated} (for ${moduleLabel})`;
           break;
         }
       }
@@ -304,10 +317,22 @@ export default function FindPeers() {
       }
       return null;
     })
-    .filter(Boolean)
-    // Sort by rating descending (User requirement: high ratings on that relevant skill)
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 3);
+    .filter(Boolean);
+
+  // Fallback: If no module-based recommendations, suggest top-rated peers in the same year/semester
+  let recommendedPeers = rawRecommended;
+  if (recommendedPeers.length === 0 && apiUserProfile) {
+    const topPeers = (dbPeers || [])
+      .filter(p => p.email !== user?.email && p.year === apiUserProfile.year)
+      .map(p => ({ ...p, matchedBy: `Top Mentor in Year ${p.year}` }))
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 3);
+    recommendedPeers = topPeers;
+  } else {
+    recommendedPeers = recommendedPeers
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 3);
+  }
 
   // Get unique modules and skills for dropdowns
   const modulesList = [...new Set(allPeers.flatMap(p => p?.modules || []))];
@@ -388,6 +413,18 @@ export default function FindPeers() {
             <option value="1">Semester 1</option>
             <option value="2">Semester 2</option>
           </select>
+
+          {/* Conditional Specialization Filter */}
+          {(filterYear === "3" || filterYear === "4") && (
+            <select value={filterSpecialization} onChange={e => setFilterSpecialization(e.target.value)}>
+              <option value="">All Specializations</option>
+              <option value="IT">IT (Information Technology)</option>
+              <option value="SE">SE (Software Engineering)</option>
+              <option value="DS">DS (Data Science)</option>
+              <option value="CS">CS (Cyber Security)</option>
+            </select>
+          )}
+
           <select value={filterModule} onChange={e => setFilterModule(e.target.value)}>
             <option value="">Select Module</option>
             {modulesList.map(m => <option key={m} value={m}>{m}</option>)}
@@ -400,7 +437,7 @@ export default function FindPeers() {
         </div>
 
         {/* AI RECOMMENDED PEERS */}
-        {!searchName && !filterModule && !filterSkill && !filterYear && !filterSemester && recommendedPeers.length > 0 && (
+        {!searchName && !filterModule && !filterSkill && recommendedPeers.length > 0 && (
           <div className="recommendations-section">
             <div className="recommendation-header">
               <span className="material-symbols-outlined ai-icon">auto_awesome</span>
