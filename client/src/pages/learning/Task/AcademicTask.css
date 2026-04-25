@@ -3,21 +3,21 @@
 
 /* ── Variables ───────────────────────────────────────── */
 .academic-page {
-  --primary:        #2563eb;
-  --primary-hover:  #1d4ed8;
-  --primary-light:  #eff6ff;
-  --bg:             #f1f5fc;
-  --surface:        #ffffff;
-  --border:         #dbeafe;
-  --text-heading:   #0f172a;
-  --text-body:      #475569;
-  --text-muted:     #94a3b8;
-  --urgent:         #ef4444;
-  --radius-card:    16px;
-  --radius-btn:     8px;
-  --shadow-card:    0 2px 12px rgba(37, 99, 235, 0.07);
-  --shadow-hover:   0 8px 28px rgba(37, 99, 235, 0.15);
-  --font:           "Inter", "DM Sans", sans-serif;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-light: #eff6ff;
+  --bg: #f1f5fc;
+  --surface: #ffffff;
+  --border: #dbeafe;
+  --text-heading: #0f172a;
+  --text-body: #475569;
+  --text-muted: #94a3b8;
+  --urgent: #ef4444;
+  --radius-card: 16px;
+  --radius-btn: 8px;
+  --shadow-card: 0 2px 12px rgba(37, 99, 235, 0.07);
+  --shadow-hover: 0 8px 28px rgba(37, 99, 235, 0.15);
+  --font: "Inter", "DM Sans", sans-serif;
 
   font-family: var(--font);
   background: var(--bg);
@@ -198,10 +198,25 @@
   text-transform: uppercase;
 }
 
-.academic-page .task-category--blue   { background: #dbeafe; color: #1d4ed8; }
-.academic-page .task-category--teal   { background: #ccfbf1; color: #0d9488; }
-.academic-page .task-category--purple { background: #ede9fe; color: #7c3aed; }
-.academic-page .task-category--green  { background: #dcfce7; color: #16a34a; }
+.academic-page .task-category--blue {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.academic-page .task-category--teal {
+  background: #ccfbf1;
+  color: #0d9488;
+}
+
+.academic-page .task-category--purple {
+  background: #ede9fe;
+  color: #7c3aed;
+}
+
+.academic-page .task-category--green {
+  background: #dcfce7;
+  color: #16a34a;
+}
 
 /* ── Deadline ── */
 .academic-page .task-deadline {
@@ -362,9 +377,20 @@
 }
 
 @keyframes task-pulse {
-  0%   { transform: scale(1);   opacity: 1;   }
-  50%  { transform: scale(1.1); opacity: 0.8; }
-  100% { transform: scale(1);   opacity: 1;   }
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* Wrapper adds top padding so the badge above the card shows */
@@ -414,8 +440,13 @@
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .aa-modal {
@@ -431,8 +462,15 @@
 }
 
 @keyframes slideUp {
-  from { transform: translateY(24px); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .aa-modal__header {
