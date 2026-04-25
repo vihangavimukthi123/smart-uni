@@ -32,6 +32,7 @@ const orderSchema = new mongoose.Schema({
   ],
   rentalDates: {
     pickup: { type: Date, required: true },
+    pickupTime: { type: String, default: "09:00" },
     return: { type: Date, required: true }
   },
   deliveryDetails: {

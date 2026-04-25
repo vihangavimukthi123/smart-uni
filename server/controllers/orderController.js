@@ -9,6 +9,22 @@ const isDeadlinePassed = (pickupDate) => {
   return diffInMs < (24 * 60 * 60 * 1000); // 24 hours in milliseconds
 };
 
+// Unified status calculation logic
+const calculateOverallStatus = (items) => {
+  if (!items || items.length === 0) return "Pending";
+  
+  const allCancelled = items.every(i => i.status === "Cancelled");
+  if (allCancelled) return "Cancelled";
+  
+  const allDelivered = items.every(i => i.status === "Delivered");
+  if (allDelivered) return "Completed";
+  
+  const anyActive = items.some(i => i.status === "Processing" || i.status === "Delivered");
+  if (anyActive) return "Active";
+  
+  return "Pending";
+};
+
 async function createOrder(req, res) {
   try {
     if (!req.user) {
@@ -70,19 +86,47 @@ async function updateOrder(req, res) {
       return res.status(404).json({ message: "Order not found" });
     }
 
+    const { items, rentalDates, deliveryDetails, contactInfo, totalAmount, status } = req.body;
+    
+    // If it's a cancellation request, bypass the deadline check
+    if (status === "Cancelled") {
+      const updatedOrder = await Order.findOneAndUpdate(
+        { _id: id, studentEmail: req.user.email },
+        { 
+          $set: { 
+            status: "Cancelled",
+            "items.$[].status": "Cancelled" 
+          } 
+        },
+        { new: true }
+      );
+
+      require('fs').appendFileSync('request_logs.txt', `[${new Date().toISOString()}] CANCELLED ORDER: ${id}. NEW STATUS: ${updatedOrder?.status}\n`);
+      
+      if (!updatedOrder) {
+        return res.status(404).json({ message: "Order not found or unauthorized" });
+      }
+
+      return res.status(200).json({ 
+        message: "Order cancelled successfully", 
+        order: updatedOrder 
+      });
+    }
+
+    // For other updates (edits), enforce the deadline
     if (isDeadlinePassed(order.rentalDates.pickup)) {
       return res.status(403).json({ message: "Deadline passed: Cannot edit order within 24 hours of rental start" });
     }
 
-    // Update fields
-    const { items, rentalDates, deliveryDetails, contactInfo, totalAmount } = req.body;
+    // Update fields for edit
     order.items = items || order.items;
     order.rentalDates = rentalDates || order.rentalDates;
     order.deliveryDetails = deliveryDetails || order.deliveryDetails;
     order.contactInfo = contactInfo || order.contactInfo;
     order.totalAmount = totalAmount || order.totalAmount;
-    order.status = "Pending"; // Reset status to pending after edit? Or keep current? 
-    // Usually, an edit triggers a re-review or just keeps it pending.
+    
+    // Recalculate status based on NEW items state
+    order.status = calculateOverallStatus(order.items);
 
     await order.save();
     res.status(200).json({ message: "Order updated successfully", order });
@@ -166,21 +210,8 @@ async function updateOrderItemStatus(req, res) {
             return res.status(404).json({ message: "No matching items found for this supplier" });
         }
 
-        // Recalculate Global Order Status
-        const allItems = order.items;
-        const allDelivered = allItems.every(i => i.status === "Delivered");
-        const anyActive = allItems.some(i => i.status === "Processing" || i.status === "Delivered");
-        const anyCancelled = allItems.every(i => i.status === "Cancelled");
-
-        if (allDelivered) {
-            order.status = "Completed";
-        } else if (anyCancelled) {
-            order.status = "Cancelled";
-        } else if (anyActive) {
-            order.status = "Active";
-        } else {
-            order.status = "Pending";
-        }
+        // Recalculate Global Order Status using unified logic
+        order.status = calculateOverallStatus(order.items);
 
         await order.save();
         return res.status(200).json({ 

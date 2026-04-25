@@ -85,9 +85,9 @@ const logout = asyncHandler(async (req, res) => {
 
 // @GET /api/auth/me
 const getMe = asyncHandler(async (req, res) => {
-  const user = await User.findById(req.user._id);
-  res.json({ success: true, data: { user } });
+  res.json({ success: true, data: { user: req.user } });
 });
+
 
 // @GET /api/auth/users (Admin Only)
 const getAllUsers = asyncHandler(async (req, res) => {
