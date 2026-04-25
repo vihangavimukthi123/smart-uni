@@ -23,6 +23,18 @@ router.get("/", protect, async (req, res) => {
   try {
     const { year, semester, excludeEmail } = req.query;
 
+    // 1. Check if the logged-in user has a completed peer profile
+    const currentUserProfile = await Peer.findOne({ email: normalize(req.user.email) });
+    
+    // If no profile exists, the user hasn't saved their academic details yet
+    if (!currentUserProfile) {
+      return res.json({
+        profileComplete: false,
+        message: "Please complete your profile to find relevant peers.",
+        peers: []
+      });
+    }
+
     const studentUsers = await User.find({ role: 'student', isActive: true }).select('email lastActiveAt');
     const studentEmails = studentUsers
       .map((u) => normalize(u.email))
@@ -43,8 +55,15 @@ router.get("/", protect, async (req, res) => {
     } else if (excludeEmail) {
       filter.$and.push({ email: { $ne: normalize(excludeEmail) } });
     }
-    if (year) filter.$and.push({ year: Number(year) });
-    if (semester) filter.$and.push({ semester: Number(semester) });
+
+    // 2. Default filtering logic: 
+    // If year/semester NOT provided in query, use current user's profile values
+    // Otherwise use the provided filters (allowing override)
+    const filterYear = year ? Number(year) : currentUserProfile.year;
+    const filterSemester = semester ? Number(semester) : currentUserProfile.semester;
+
+    if (filterYear) filter.$and.push({ year: filterYear });
+    if (filterSemester) filter.$and.push({ semester: filterSemester });
 
     const peers = await Peer.find(filter).sort({ rating: -1, updatedAt: -1, name: 1 });
 
@@ -66,7 +85,14 @@ router.get("/", protect, async (req, res) => {
       }
     }
 
-    res.json(deduped);
+    res.json({
+      profileComplete: true,
+      userProfile: {
+        year: currentUserProfile.year,
+        semester: currentUserProfile.semester
+      },
+      peers: deduped
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

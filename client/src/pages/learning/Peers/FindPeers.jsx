@@ -183,6 +183,8 @@ export default function FindPeers() {
   const [filterSemester, setFilterSemester] = useState("");
   const [dbPeers, setDbPeers] = useState([]);
   const [loadingPeers, setLoadingPeers] = useState(true);
+  const [isProfileComplete, setIsProfileComplete] = useState(true);
+  const [profileMessage, setProfileMessage] = useState("");
 
   // Module to Skill Mapping for Advanced Recommendation
   const moduleSkillMapping = {
@@ -238,10 +240,20 @@ export default function FindPeers() {
       try {
         const params = new URLSearchParams();
         if (currentProfile.email) params.append("excludeEmail", currentProfile.email);
+        if (filterYear) params.append("year", filterYear);
+        if (filterSemester) params.append("semester", filterSemester);
 
         const query = params.toString();
         const res = await api.get(`/learning/peers${query ? `?${query}` : ""}`);
-        setDbPeers((res.data || []).map(toUiPeer));
+        
+        if (res.data.profileComplete === false) {
+          setIsProfileComplete(false);
+          setProfileMessage(res.data.message);
+          setDbPeers([]);
+        } else {
+          setIsProfileComplete(true);
+          setDbPeers((res.data.peers || []).map(toUiPeer));
+        }
       } catch (err) {
         console.error("Error fetching students:", err);
       } finally {
@@ -249,7 +261,7 @@ export default function FindPeers() {
       }
     };
     fetchPeers();
-  }, [currentProfile.email]);
+  }, [currentProfile.email, filterYear, filterSemester]);
 
   const allPeers = dbPeers.filter((p) => !!p);
   const [filteredPeers, setFilteredPeers] = useState([]);
@@ -346,7 +358,15 @@ export default function FindPeers() {
       <main className="peers-content">
         {/* TOPBAR */}
         <div className="topbar">
-          <h1>Find Peers</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <h1>Find Peers</h1>
+            {!isProfileComplete && (
+              <span className="incomplete-badge">
+                <span className="material-symbols-outlined">warning</span>
+                Profile Incomplete
+              </span>
+            )}
+          </div>
         </div>
 
         {/* FILTER */}
@@ -412,36 +432,52 @@ export default function FindPeers() {
         <div className="peers-list-section">
           <h2>All Available Peers</h2>
           <div className="peer-table-container">
-            <table className="peer-table">
-              <thead>
-                <tr>
-                  <th>Student</th>
-                  <th>Skills</th>
-                  <th>Rating</th>
-                  <th>Last Seen</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPeers.map((p) => (
-                  <PeerTableRow
-                    key={p.id || p._id}
-                    peer={p}
-                    onRequest={(peer) => {
-                      setSelectedPeer(peer);
-                      setSkill("");
-                      setMsg("");
-                      setDate("");
-                      setShowModal(true);
-                    }}
-                  />
-                ))}
-              </tbody>
-            </table>
-            {filteredPeers.length === 0 && (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
-                No peers found matching your filters.
+            {!isProfileComplete ? (
+              <div className="incomplete-profile-container">
+                <span className="material-symbols-outlined large-icon">account_circle_off</span>
+                <h3>Profile Incomplete</h3>
+                <p>{profileMessage || "Please complete your profile to find relevant peers."}</p>
+                <button 
+                  className="btn-primary" 
+                  onClick={() => window.location.href = '/learning/dash'}
+                >
+                  Go to Dashboard to Complete Profile
+                </button>
               </div>
+            ) : (
+              <>
+                <table className="peer-table">
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Skills</th>
+                      <th>Rating</th>
+                      <th>Last Seen</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPeers.map((p) => (
+                      <PeerTableRow
+                        key={p.id || p._id}
+                        peer={p}
+                        onRequest={(peer) => {
+                          setSelectedPeer(peer);
+                          setSkill("");
+                          setMsg("");
+                          setDate("");
+                          setShowModal(true);
+                        }}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+                {filteredPeers.length === 0 && (
+                  <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                    No peers found matching your filters.
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
