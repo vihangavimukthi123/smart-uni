@@ -1,6 +1,8 @@
 import { useState } from "react"
+import { createPortal } from "react-dom";
 import toast from "react-hot-toast"
 import api from "../../../api/axios";
+import { BiTrash } from "react-icons/bi";
 
 export default function ProductDeleteButton(props){
 
@@ -27,12 +29,12 @@ export default function ProductDeleteButton(props){
         <>
             <button 
               onClick={() => setIsMessageOpen(true)} 
-              className="btn btn-danger btn-sm"
-              style={{ width: '100px' }}
+              className="w-10 h-10 rounded-xl bg-rose/10 text-rose flex items-center justify-center btn-hover-rose transition-all shadow-sm border border-rose/20"
+              title="Remove Product"
             >
-                Delete
+                <BiTrash size={20} />
             </button>
-            {isMessageOpen && (
+            {isMessageOpen && createPortal(
                 <div className="modal-overlay">
                     <div className="modal anim-scaleIn" style={{ maxWidth: '400px' }}>
                         <div className="modal-header">
@@ -89,7 +91,8 @@ export default function ProductDeleteButton(props){
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </>
     )

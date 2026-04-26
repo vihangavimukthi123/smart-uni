@@ -19,4 +19,13 @@ const authLimiter = rateLimit({
   skip: () => process.env.NODE_ENV === 'development',
 });
 
-module.exports = { globalLimiter, authLimiter };
+const verificationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10, // 10 attempts per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many verification attempts, please try again after 15 minutes' },
+  skip: () => process.env.NODE_ENV === 'development',
+});
+
+module.exports = { globalLimiter, authLimiter, verificationLimiter };

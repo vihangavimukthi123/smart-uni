@@ -1,7 +1,9 @@
+// registerPage.jsx
 import axios from "axios";
 import { useState } from 'react'
 import toast from "react-hot-toast";
 import { Link, useNavigate } from 'react-router-dom'
+import { BiUser, BiEnvelope, BiPhone, BiLockAlt, BiArrowBack, BiChevronRight, BiBuildings } from "react-icons/bi";
 
 export default function RegisterPage() {
   const [email, setEmail] = useState("")
@@ -13,11 +15,12 @@ export default function RegisterPage() {
   const navigate = useNavigate()
 
   async function register() {
+    if (!email || !firstName || !lastName || !phone || !password) {
+      return toast.error("Please fill in all security protocols");
+    }
+    
     try {
-      const url = role === "student" 
-        ? "/api/auth" 
-        : "/api/auth"
-
+      const url = "/api/auth" 
       const res = await axios.post(url, {
         email,
         firstName,
@@ -26,129 +29,146 @@ export default function RegisterPage() {
         password,
         role
       })
-
-      toast.success(res.data.message || "Registration successful")
+      toast.success(res.data.message || "Credential registry successful")
       navigate("/login")
     } catch (err) {
-      toast.error(err.response?.data?.message || "Registration failed")
-      console.log(err)
+      toast.error(err.response?.data?.message || "Registry handshake failed")
     }
   }
 
   return (
-    <div
-      style={{
-        width: "100%",
-        minHeight: "100vh",
-        backgroundColor: "#F3F4F6",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontFamily: "'Segoe UI', sans-serif",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      <div style={{
-        position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-        background: "linear-gradient(135deg, #1E40AF 0%, #1E3A8A 40%, #1e2f6e 100%)",
-        zIndex: 0,
-      }} />
+    <div className="min-h-screen w-full flex-center relative overflow-hidden bg-[#0A0A0B]">
+      {/* Dynamic Background Elements */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo/10 rounded-full blur-[120px] animate-pulse" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple/10 rounded-full blur-[120px] animate-pulse" style={{ animationDelay: '1s' }} />
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-[0.03]" />
+      
+      <div className="relative z-10 w-full max-w-xl mx-4">
+        {/* Back Link */}
+        <Link to="/login" className="group inline-flex items-center gap-2 text-muted hover:text-indigo transition-colors mb-8 ml-2">
+          <BiArrowBack className="text-xl group-hover:-translate-x-1 transition-transform" />
+          <span className="text-[10px] font-black uppercase tracking-widest">Return to Access Portal</span>
+        </Link>
 
-      <div
-        style={{
-          position: "relative", zIndex: 2,
-          width: "100%", maxWidth: "500px",
-          backgroundColor: "#FFFFFF",
-          borderRadius: "16px",
-          boxShadow: "0 20px 60px rgba(0,0,0,0.25)",
-          padding: "40px",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-        }}
-      >
-        <h1 style={{ fontSize: "26px", fontWeight: "800", color: "#111827", margin: "0 0 4px 0" }}>
-          Create Account
-        </h1>
-        <p style={{ fontSize: "14px", color: "#6B7280", margin: "0 0 32px 0" }}>
-          Join the university event rental community
-        </p>
-
-        <div style={{ width: "100%", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-          <div>
-            <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>First Name</label>
-            <input type="text" placeholder="John" onChange={(e) => setFirstName(e.target.value)} style={inputStyle} />
+        <div className="glass-card p-10 md:p-14 border-white/10 shadow-2xl bg-gradient-to-br from-white/[0.03] to-transparent animate-in fade-in zoom-in duration-700">
+          <div className="text-center mb-12">
+            <div className="w-16 h-16 bg-indigo/10 rounded-2xl flex-center mx-auto mb-6 border border-indigo/20 shadow-2xl shadow-indigo/10">
+              <BiUser className="text-indigo" size={32} />
+            </div>
+            <h1 className="text-4xl font-black text-primary tracking-tighter mb-3">Identity Registry</h1>
+            <p className="text-[10px] font-black text-muted uppercase tracking-[0.3em] opacity-60">
+              Join the university logistics network
+            </p>
           </div>
-          <div>
-            <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>Last Name</label>
-            <input type="text" placeholder="Doe" onChange={(e) => setLastName(e.target.value)} style={inputStyle} />
+
+          <div className="space-y-8">
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">First Name</label>
+                <div className="relative">
+                  <BiUser className="absolute left-4 top-1/2 -translate-y-1/2 text-muted/40" size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="John" 
+                    onChange={(e) => setFirstName(e.target.value)} 
+                    className="w-full bg-white/5 border border-white/10 focus:border-indigo/50 rounded-2xl px-12 py-4 text-sm font-bold outline-none transition-all placeholder:text-white/10" 
+                  />
+                </div>
+              </div>
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Last Name</label>
+                <input 
+                  type="text" 
+                  placeholder="Doe" 
+                  onChange={(e) => setLastName(e.target.value)} 
+                  className="w-full bg-white/5 border border-white/10 focus:border-indigo/50 rounded-2xl px-6 py-4 text-sm font-bold outline-none transition-all placeholder:text-white/10" 
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Email Address</label>
+              <div className="relative">
+                <BiEnvelope className="absolute left-4 top-1/2 -translate-y-1/2 text-muted/40" size={18} />
+                <input 
+                  type="email" 
+                  placeholder="you@university.edu" 
+                  onChange={(e) => setEmail(e.target.value)} 
+                  className="w-full bg-white/5 border border-white/10 focus:border-indigo/50 rounded-2xl px-12 py-4 text-sm font-bold outline-none transition-all placeholder:text-white/10" 
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Phone Number</label>
+              <div className="relative">
+                <BiPhone className="absolute left-4 top-1/2 -translate-y-1/2 text-muted/40" size={18} />
+                <input 
+                  type="tel" 
+                  placeholder="07XXXXXXXX" 
+                  onChange={(e) => setPhone(e.target.value)} 
+                  className="w-full bg-white/5 border border-white/10 focus:border-indigo/50 rounded-2xl px-12 py-4 text-sm font-bold outline-none transition-all placeholder:text-white/10" 
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Secure Password</label>
+              <div className="relative">
+                <BiLockAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-muted/40" size={18} />
+                <input 
+                  type="password" 
+                  placeholder="••••••••••••" 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  className="w-full bg-white/5 border border-white/10 focus:border-indigo/50 rounded-2xl px-12 py-4 text-sm font-bold outline-none transition-all placeholder:text-white/10" 
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-muted uppercase tracking-widest ml-1">Account Classification</label>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { id: "student", label: "Student", icon: <BiUser size={18} /> },
+                  { id: "supplier", label: "Partner", icon: <BiBuildings size={18} /> }
+                ].map(r => (
+                  <label key={r.id} className={`flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                    role === r.id ? "bg-indigo/10 border-indigo shadow-lg shadow-indigo/10" : "bg-white/5 border-white/5 hover:border-white/10"
+                  }`}>
+                    <input 
+                      type="radio" 
+                      name="role" 
+                      value={r.id} 
+                      checked={role === r.id} 
+                      onChange={() => setRole(r.id)} 
+                      className="hidden"
+                    />
+                    <div className={`${role === r.id ? "text-indigo" : "text-muted"} transition-colors`}>{r.icon}</div>
+                    <span className={`text-sm font-black uppercase tracking-widest ${role === r.id ? "text-primary" : "text-muted"}`}>{r.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <button
+              onClick={register}
+              className="w-full py-5 btn btn-primary flex-center gap-3 text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-indigo/20 mt-4 active:scale-[0.98] transition-all"
+            >
+              <span>INITIALIZE REGISTRY</span>
+              <BiChevronRight size={20} />
+            </button>
+
+            <div className="text-center pt-6">
+              <p className="text-[10px] font-black text-muted uppercase tracking-widest">
+                Already registered in the network?{" "}
+                <Link to="/login" className="text-indigo hover:text-primary transition-colors ml-2">
+                  Access Portal
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
-
-        <div style={{ width: "100%", marginBottom: "16px" }}>
-          <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>Email Address</label>
-          <input type="email" placeholder="you@university.edu" onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
-        </div>
-
-        <div style={{ width: "100%", marginBottom: "16px" }}>
-          <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>Phone Number</label>
-          <input type="tel" placeholder="0XXXXXXXXX" onChange={(e) => setPhone(e.target.value)} style={inputStyle} />
-        </div>
-
-        <div style={{ width: "100%", marginBottom: "16px" }}>
-          <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#374151", marginBottom: "6px" }}>Password</label>
-          <input type="password" placeholder="••••••••" onChange={(e) => setPassword(e.target.value)} style={inputStyle} />
-        </div>
-
-        <div style={{ width: "100%", marginBottom: "24px" }}>
-          <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#374151", marginBottom: "8px" }}>I am a:</label>
-          <div style={{ display: "flex", gap: "16px" }}>
-            <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "14px", cursor: "pointer" }}>
-              <input type="radio" name="role" value="student" checked={role === "student"} onChange={() => setRole("student")} /> Student
-            </label>
-            <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "14px", cursor: "pointer" }}>
-              <input type="radio" name="role" value="supplier" checked={role === "supplier"} onChange={() => setRole("supplier")} /> Supplier
-            </label>
-          </div>
-        </div>
-
-        <button
-          onClick={register}
-          style={{
-            width: "100%", height: "46px",
-            backgroundColor: "#1E40AF", color: "#FFFFFF",
-            fontSize: "15px", fontWeight: "700",
-            border: "none", borderRadius: "8px", cursor: "pointer",
-            marginBottom: "16px", transition: "background-color 0.15s",
-          }}
-          onMouseEnter={e => e.target.style.backgroundColor = "#1E3A8A"}
-          onMouseLeave={e => e.target.style.backgroundColor = "#1E40AF"}
-        >
-          Create Account
-        </button>
-
-        <p style={{ fontSize: "13px", color: "#6B7280", margin: 0 }}>
-          Already have an account?{" "}
-          <Link to="/login" style={{ color: "#1E40AF", fontWeight: "600", textDecoration: "none" }}>
-            Sign in
-          </Link>
-        </p>
       </div>
     </div>
   )
 }
-
-const inputStyle = {
-  width: "100%", height: "42px",
-  padding: "0 12px",
-  border: "1px solid #E5E7EB",
-  borderRadius: "8px",
-  fontSize: "14px",
-  color: "#111827",
-  backgroundColor: "#FAFAFA",
-  outline: "none",
-  boxSizing: "border-box",
-}
-
-
