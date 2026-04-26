@@ -11,6 +11,7 @@ import Layout from './components/layout/Layout';
 // Auth Pages (Unified)
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
+import SupplierRegisterPage from './pages/auth/SupplierRegisterPage';
 
 // Admin Pages
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -19,6 +20,11 @@ import EventsPage from './pages/admin/EventsPage';
 import SchedulePage from './pages/admin/SchedulePage';
 import AnalyticsPage from './pages/admin/AnalyticsPage';
 import UsersPage from './pages/admin/UsersPage';
+import AdminRentalProducts from './pages/admin/AdminRentalProducts';
+import AdminRentalOrders from './pages/admin/AdminRentalOrders';
+import AdminRentalReviews from './pages/admin/AdminRentalReviews';
+import AdminRentalPackages from './pages/admin/AdminRentalPackages';
+import AdminRentalOffers from './pages/admin/AdminRentalOffers';
 
 // User / Shared Pages
 import UserDashboard from './pages/user/UserDashboard';
@@ -28,7 +34,7 @@ import UserProfilePage from './pages/user/UserProfilePage';
 import MessagesPage from './pages/messages/MessagesPage';
 
 // Smart Rental System Pages
-import RentalLandingPage from './pages/rental/rentalLandingPage';
+// import RentalLandingPage from './pages/rental/rentalLandingPage';
 import ItemList from './pages/rental/rentItem/itemList';
 import ItemDetails from './pages/rental/rentItem/itemDetails';
 import SupplierList from './pages/rental/supplierList';
@@ -40,6 +46,8 @@ import CheckoutPage from './pages/rental/rentItem/checkout';
 import HistoryPage from './pages/rental/history';
 import WriteReview from './pages/rental/addReview';
 import SupplierPage from './pages/rental/supplierPage';
+import PackagesBrowsePage from './pages/rental/rentItem/PackagesBrowsePage';
+import OffersBrowsePage from './pages/rental/rentItem/OffersBrowsePage';
 
 // SmartLearningHub Pages
 import LearningDashboard from './pages/learning/SmartLearning/Dashboard';
@@ -53,6 +61,11 @@ import MomentumDashboard from './pages/momentum/MomentumDashboard/MoDash';
 import StudyTracker from './pages/momentum/study tracker/studyTracker';
 import GenerateWorkplan from './pages/momentum/workplanGenerate/planGenerate';
 import Planner from './pages/momentum/myPlans/myPlans';
+import FAQManager from "./pages/momentum/faqManager/faqManager";
+import FAQPublic from "./pages/momentum/faqPublic/faqPublic";
+import LearningJournal from "./pages/momentum/learningJournal/learningJournal";
+import NotificationManager from "./pages/momentum/notificationManager/notificationManager";
+
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
@@ -68,7 +81,7 @@ function AppContent() {
   const { user } = useAuth();
   return (
     <>
-      <Toaster position="top-right" toastOptions={{ 
+      <Toaster position="top-right" toastOptions={{
         className: 'glass-card-static',
         style: { background: 'var(--bg-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)' }
       }} />
@@ -76,6 +89,7 @@ function AppContent() {
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/register-supplier" element={<SupplierRegisterPage />} />
 
         <Route path="/" element={<Layout />}>
           {/* Admin / Scheduler Routes */}
@@ -86,26 +100,34 @@ function AppContent() {
           <Route path="admin/analytics" element={<ProtectedRoute allowedRoles={['admin']}><AnalyticsPage /></ProtectedRoute>} />
           <Route path="admin/users" element={<ProtectedRoute allowedRoles={['admin']}><UsersPage /></ProtectedRoute>} />
 
+          <Route path="admin/rental/products" element={<ProtectedRoute allowedRoles={['admin']}><AdminRentalProducts /></ProtectedRoute>} />
+          <Route path="admin/rental/orders" element={<ProtectedRoute allowedRoles={['admin']}><AdminRentalOrders /></ProtectedRoute>} />
+          <Route path="admin/rental/reviews" element={<ProtectedRoute allowedRoles={['admin']}><AdminRentalReviews /></ProtectedRoute>} />
+          <Route path="admin/rental/packages" element={<ProtectedRoute allowedRoles={['admin']}><AdminRentalPackages /></ProtectedRoute>} />
+          <Route path="admin/rental/offers" element={<ProtectedRoute allowedRoles={['admin']}><AdminRentalOffers /></ProtectedRoute>} />
+
           {/* User Routes (Core) */}
           <Route path="dashboard" element={<ProtectedRoute allowedRoles={['student', 'user', 'scheduler', 'admin']}><UserDashboard /></ProtectedRoute>} />
           <Route path="dashboard/requests" element={<ProtectedRoute allowedRoles={['student', 'user', 'scheduler', 'admin']}><UserRequestsPage /></ProtectedRoute>} />
           <Route path="dashboard/schedule" element={<ProtectedRoute allowedRoles={['student', 'user', 'scheduler', 'admin']}><UserSchedulePage /></ProtectedRoute>} />
-          
+
           <Route path="messages" element={<ProtectedRoute allowedRoles={['student', 'user', 'scheduler', 'admin', 'supplier']}><MessagesPage /></ProtectedRoute>} />
           <Route path="profile" element={<ProtectedRoute allowedRoles={['student', 'user', 'scheduler', 'admin', 'supplier']}><UserProfilePage /></ProtectedRoute>} />
-          
+
           {/* Smart Rental System Routes */}
-          <Route path="rental" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><RentalLandingPage /></ProtectedRoute>} />
-          <Route path="rental/items" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><ItemList /></ProtectedRoute>} />
-          <Route path="rental/items/:id" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><ItemDetails /></ProtectedRoute>} />
-          <Route path="rental/suppliers" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><SupplierList /></ProtectedRoute>} />
-          <Route path="rental/suppliers/:id" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><SupplierDetails /></ProtectedRoute>} />
-          <Route path="rental/kit-generator" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><KitGenerator /></ProtectedRoute>} />
-          <Route path="rental/kit-generator/input" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><KitGeneratorInput /></ProtectedRoute>} />
-          <Route path="rental/cart" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><CartPage /></ProtectedRoute>} />
-          <Route path="rental/checkout" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><CheckoutPage /></ProtectedRoute>} />
-          <Route path="rental/history" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><HistoryPage /></ProtectedRoute>} />
-          <Route path="rental/review" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><WriteReview /></ProtectedRoute>} />
+          <Route path="rental" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><ItemList /></ProtectedRoute>} />
+          <Route path="rental/items" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><ItemList /></ProtectedRoute>} />
+          <Route path="rental/items/:id" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><ItemDetails /></ProtectedRoute>} />
+          <Route path="rental/suppliers" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><SupplierList /></ProtectedRoute>} />
+          <Route path="rental/supplier-details" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><SupplierDetails /></ProtectedRoute>} />
+          <Route path="rental/kit-generator" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><KitGenerator /></ProtectedRoute>} />
+          <Route path="rental/kit-generator/input" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><KitGeneratorInput /></ProtectedRoute>} />
+          <Route path="rental/cart" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><CartPage /></ProtectedRoute>} />
+          <Route path="rental/checkout" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><CheckoutPage /></ProtectedRoute>} />
+          <Route path="rental/packages" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><PackagesBrowsePage /></ProtectedRoute>} />
+          <Route path="rental/offers" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><OffersBrowsePage /></ProtectedRoute>} />
+          <Route path="rental/history" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><HistoryPage /></ProtectedRoute>} />
+          <Route path="rental/review" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin', 'supplier']}><WriteReview /></ProtectedRoute>} />
           <Route path="supplier/*" element={<ProtectedRoute allowedRoles={['supplier', 'admin']}><SupplierPage /></ProtectedRoute>} />
 
           {/* SmartLearningHub Routes */}
@@ -120,7 +142,7 @@ function AppContent() {
           <Route path="momentum/tracker" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><StudyTracker /></ProtectedRoute>} />
           <Route path="momentum/workplan" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><GenerateWorkplan /></ProtectedRoute>} />
           <Route path="momentum/vault" element={<ProtectedRoute allowedRoles={['student', 'user', 'admin']}><Planner /></ProtectedRoute>} />
-          
+
           <Route path="*" element={<Navigate to={user?.role === 'admin' ? '/admin' : '/dashboard'} replace />} />
         </Route>
       </Routes>

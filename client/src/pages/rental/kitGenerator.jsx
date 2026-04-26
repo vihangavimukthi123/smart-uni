@@ -1,6 +1,14 @@
+// kitGenerator.jsx
 import { useState } from "react";
-import Navbar from "../../components/layout/Navbar";
-import Sidebar from "../../components/layout/Sidebar";
+import { useLocation, useNavigate, Link } from "react-router-dom";
+import { useCart } from "../../context/CartContext";
+import toast from "react-hot-toast";
+import { 
+  BiBot, BiEditAlt, BiCartAlt, BiPackage, 
+  BiStar, BiCheck, BiChevronRight, BiShoppingBag, BiArrowBack,
+  BiPlus, BiInfoCircle, BiBuildings, BiTask, BiMoney
+} from "react-icons/bi";
+import { useTheme } from "../../context/ThemeContext";
 
 const initialItems = [
   {
@@ -41,7 +49,7 @@ const initialItems = [
   },
 ];
 
-const suppliers = [
+const suppliersList = [
   {
     id: 1,
     name: "Elite Rental Co.",
@@ -71,192 +79,17 @@ const suppliers = [
   },
 ];
 
-// SVG Icons
-const GridIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <rect x="3" y="3" width="7" height="7" />
-    <rect x="14" y="3" width="7" height="7" />
-    <rect x="3" y="14" width="7" height="7" />
-    <rect x="14" y="14" width="7" height="7" />
-  </svg>
-);
-const SparkleIcon = ({ size = 18 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor">
-    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
-  </svg>
-);
-const BuildingIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <rect x="3" y="3" width="18" height="18" rx="1" />
-    <path d="M3 9h18M9 21V9" />
-  </svg>
-);
-const ClockIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <circle cx="12" cy="12" r="10" />
-    <path d="M12 6v6l4 2" />
-  </svg>
-);
-const BellIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-  </svg>
-);
-const HelpIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
-    <circle cx="12" cy="12" r="10" />
-    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-    <line x1="12" y1="17" x2="12.01" y2="17" />
-  </svg>
-);
-const EditIcon = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-const CartIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-  >
-    <circle cx="9" cy="21" r="1" />
-    <circle cx="20" cy="21" r="1" />
-    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
-  </svg>
-);
-const ArrowRightIcon = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.5"
-  >
-    <line x1="5" y1="12" x2="19" y2="12" />
-    <polyline points="12 5 19 12 12 19" />
-  </svg>
-);
-const RobotIcon = () => (
-  <svg
-    width="28"
-    height="28"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#3b5bdb"
-    strokeWidth="1.8"
-  >
-    <rect x="3" y="8" width="18" height="12" rx="2" />
-    <path d="M9 8V6a3 3 0 0 1 6 0v2" />
-    <circle cx="9" cy="13" r="1.5" fill="#3b5bdb" stroke="none" />
-    <circle cx="15" cy="13" r="1.5" fill="#3b5bdb" stroke="none" />
-    <path d="M9 17h6" strokeLinecap="round" />
-    <path d="M12 8v1" strokeLinecap="round" />
-  </svg>
-);
-const ShieldIcon = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-  </svg>
-);
-const MailIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#888"
-    strokeWidth="1.6"
-  >
-    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-    <polyline points="22,6 12,13 2,6" />
-  </svg>
-);
-const QuestionBoxIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#888"
-    strokeWidth="1.6"
-  >
-    <rect x="3" y="3" width="18" height="18" rx="2" />
-    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-    <line x1="12" y1="17" x2="12.01" y2="17" />
-  </svg>
-);
-const ShieldFootIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="#888"
-    strokeWidth="1.6"
-  >
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-  </svg>
-);
-
 export default function EventKitGenerator() {
-  const [items, setItems] = useState(initialItems);
-  const [activeNav, setActiveNav] = useState("Event Kit Generator");
+  const { darkMode } = useTheme();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { addToCart } = useCart();
+  
+  const rawItems = location.state?.kitData?.items || initialItems;
+  const rawSuppliers = location.state?.kitData?.suppliers || suppliersList;
+  const eventDesc = location.state?.eventDescription || "Outdoor Career Fair for 200 students";
+
+  const [items, setItems] = useState(rawItems);
 
   const toggleCheck = (id) => {
     setItems((prev) =>
@@ -272,579 +105,240 @@ export default function EventKitGenerator() {
 
   const totalEstimate = items
     .filter((i) => i.checked)
-    .reduce((sum, i) => sum + i.price, 0);
+    .reduce((sum, i) => sum + (i.price * i.qty), 0);
 
-  const navIcons = {
-    Products: <GridIcon />,
-    "Event Kit Generator": <SparkleIcon />,
-    Suppliers: <BuildingIcon />,
-    History: <ClockIcon />,
+  const handleEditDescription = () => {
+    navigate("/rental/kit-generator/input", { state: { initialDescription: eventDesc } });
   };
 
+  const handleAddToCart = (item) => {
+    const product = {
+      productID: item.id,
+      name: item.name,
+      price: item.price,
+      image: item.img,
+      supplierEmail: item.supplierEmail
+    };
+    addToCart(product, item.qty);
+    toast.success(`Added ${item.qty} x ${item.name} to cart`);
+  };
+
+  const handleBulkAddToCart = () => {
+    const selectedItems = items.filter(i => i.checked);
+    if (selectedItems.length === 0) {
+      toast.error("No items selected");
+      return;
+    }
+    selectedItems.forEach(item => {
+      addToCart({
+        productID: item.id,
+        name: item.name,
+        price: item.price,
+        image: item.img,
+        supplierEmail: item.supplierEmail
+      }, item.qty);
+    });
+    toast.success(`Successfully added ${selectedItems.length} items to your cart!`);
+    navigate("/rental/cart");
+  };
+
+  const handleViewSupplier = (supplier) => {
+    navigate(`/rental/supplier-details?email=${supplier.id}`);
+  };
+
+  const textPrimary = darkMode ? 'white' : '#0f172a';
+  const textSecondary = '#64748b';
+
   return (
-    <div
-      style={{
-        fontFamily: "'Segoe UI', sans-serif",
-        background: "#f0f2f5",
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-      }}
-    >
-      <Navbar />
-
-      <div style={{ display: "flex", flex: 1, alignItems: "stretch" }}>
-        <Sidebar />
-
-        {/* Right side: content + bottom bar + footer stacked */}
-        <div
-          style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            background: "#f0f2f5",
+    <div className="page-wrapper pb-40 pt-10 anim-fadeIn">
+      {/* Top Navigation */}
+      <div className="max-w-7xl mx-auto mb-10">
+        <Link to="/rental/kit-generator/input" 
+          style={{ 
+            display: 'flex', alignItems: 'center', gap: '8px', 
+            textDecoration: 'none', transition: 'all 0.2s ease', color: darkMode ? '#94a3b8' : '#64748b'
           }}
+          className="group hover:opacity-80"
         >
-          {/* Scrollable main content */}
-          <div
-            style={{
-              flex: 1,
-              padding: "24px",
-              display: "flex",
-              flexDirection: "column",
-              gap: "20px",
-            }}
-          >
-            {/* Event Header Card */}
-            <div
-              style={{
-                background: "#fff",
-                borderRadius: "12px",
-                padding: "20px 24px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
-              }}
-            >
-              <div
-                style={{ display: "flex", alignItems: "center", gap: "16px" }}
-              >
-                <div
-                  style={{
-                    width: "48px",
-                    height: "48px",
-                    background: "#eef0fb",
-                    borderRadius: "10px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <RobotIcon />
+          <BiArrowBack className="text-lg group-hover:-translate-x-1 transition-transform" />
+          <span style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Adjust Requirements</span>
+        </Link>
+      </div>
+
+      <div className="max-w-7xl mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: '64px' }}>
+        {/* Cinematic Output Header */}
+        <section style={{ 
+          position: 'relative', 
+          padding: '60px', 
+          background: darkMode ? 'linear-gradient(135deg, #1e3a8a 0%, #172554 100%)' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)',
+          borderRadius: '48px',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '64px',
+          border: darkMode ? '1px solid rgba(255,255,255,0.05)' : 'none',
+          boxShadow: darkMode ? '0 40px 100px -20px rgba(0,0,0,0.5)' : '0 40px 100px -20px rgba(99, 102, 241, 0.3)'
+        }}>
+          <div style={{ flex: 1, position: 'relative', zIndex: 2 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ padding: '8px 16px', borderRadius: '100px', backgroundColor: 'rgba(255, 255, 255, 0.1)', color: 'white', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '0.2em', backdropFilter: 'blur(10px)' }}>
+                  Synthesized Result
                 </div>
-                <div>
-                  <div
-                    style={{
-                      fontWeight: "700",
-                      fontSize: "18px",
-                      color: "#111",
-                    }}
-                  >
-                    Event: Outdoor Career Fair for 200 students
-                  </div>
-                  <div
-                    style={{
-                      color: "#888",
-                      fontSize: "14px",
-                      marginTop: "2px",
-                    }}
-                  >
-                    AI generated kit based on your specific space and attendance
-                    requirements.
-                  </div>
-                </div>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'white', boxShadow: '0 0 10px white' }} />
+                <span style={{ fontSize: '11px', fontWeight: '800', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Protocol: AI Logistics Manifest</span>
               </div>
-              <button
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  border: "1px solid #d0d4e0",
-                  background: "#fff",
-                  borderRadius: "8px",
-                  padding: "8px 14px",
-                  cursor: "pointer",
-                  fontSize: "13px",
-                  color: "#333",
-                  fontWeight: "500",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                <EditIcon /> Edit Description
-              </button>
-            </div>
-
-            {/* Two-column layout */}
-            <div
-              style={{ display: "flex", gap: "20px", alignItems: "flex-start" }}
-            >
-              {/* Recommended Items Table */}
-              <div
-                style={{
-                  flex: 1,
-                  background: "#fff",
-                  borderRadius: "12px",
-                  padding: "20px 24px",
-                  boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: "16px",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontWeight: "700",
-                        fontSize: "17px",
-                        color: "#111",
-                      }}
-                    >
-                      Recommended Rental Items
-                    </span>
-                    <span
-                      style={{
-                        background: "#f0f2f5",
-                        color: "#555",
-                        fontSize: "12px",
-                        fontWeight: "600",
-                        padding: "2px 10px",
-                        borderRadius: "20px",
-                      }}
-                    >
-                      8 Items
-                    </span>
-                  </div>
-                  <button
-                    onClick={selectAll}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      color: "#1a3bbf",
-                      fontWeight: "600",
-                      fontSize: "14px",
-                      cursor: "pointer",
-                    }}
-                  >
-                    Select All
-                  </button>
+              <h1 style={{ fontSize: 'clamp(24px, 4vw, 40px)', fontWeight: '950', color: 'white', letterSpacing: '-0.03em', lineHeight: '1.2', margin: 0 }}>
+                Event: "{eventDesc}"
+              </h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <button onClick={handleEditDescription} style={{ padding: '12px 24px', borderRadius: '12px', backgroundColor: 'rgba(255,255,255,0.1)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', fontSize: '11px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', transition: 'all 0.2s ease' }} className="hover:bg-white hover:text-blue-900">
+                  <BiEditAlt size={18} />
+                  <span>Edit prompt</span>
+                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'rgba(255,255,255,0.5)', fontSize: '11px', fontWeight: '700' }}>
+                  <BiCheck size={18} className="text-emerald-400" />
+                  Logic validated by Neural Engine
                 </div>
-
-                {/* Column Headers */}
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "32px 1fr 80px 100px 60px",
-                    alignItems: "center",
-                    padding: "0 0 8px 0",
-                    borderBottom: "1px solid #eef0f4",
-                  }}
-                >
-                  <div />
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: "700",
-                      color: "#aaa",
-                      letterSpacing: "0.08em",
-                    }}
-                  >
-                    ITEM DETAILS
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: "700",
-                      color: "#aaa",
-                      letterSpacing: "0.08em",
-                      textAlign: "center",
-                    }}
-                  >
-                    QTY
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: "700",
-                      color: "#aaa",
-                      letterSpacing: "0.08em",
-                      textAlign: "center",
-                    }}
-                  >
-                    PRICE
-                  </div>
-                  <div
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: "700",
-                      color: "#aaa",
-                      letterSpacing: "0.08em",
-                      textAlign: "center",
-                    }}
-                  >
-                    ACTION
-                  </div>
-                </div>
-
-                {items.map((item) => (
-                  <div
-                    key={item.id}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "32px 1fr 80px 100px 60px",
-                      alignItems: "center",
-                      padding: "14px 0",
-                      borderBottom: "1px solid #f5f6fa",
-                    }}
-                  >
-                    <div
-                      onClick={() => toggleCheck(item.id)}
-                      style={{
-                        width: "20px",
-                        height: "20px",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                        background: item.checked ? "#1a3bbf" : "#fff",
-                        border: item.checked
-                          ? "2px solid #1a3bbf"
-                          : "2px solid #ccc",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      {item.checked && (
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 12 12"
-                          fill="none"
-                        >
-                          <path
-                            d="M2 6l3 3 5-5"
-                            stroke="#fff"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "12px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: "52px",
-                          height: "48px",
-                          borderRadius: "6px",
-                          overflow: "hidden",
-                          flexShrink: 0,
-                          background: "#eee",
-                        }}
-                      >
-                        <img
-                          src={item.img}
-                          alt={item.name}
-                          style={{
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                          }}
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                          }}
-                        />
-                      </div>
-                      <div>
-                        <div
-                          style={{
-                            fontWeight: "600",
-                            fontSize: "14px",
-                            color: "#111",
-                          }}
-                        >
-                          {item.name}
-                        </div>
-                        <div
-                          style={{
-                            fontSize: "12px",
-                            color: "#999",
-                            marginTop: "2px",
-                          }}
-                        >
-                          {item.subtitle}
-                        </div>
-                      </div>
-                    </div>
-                    <div
-                      style={{
-                        textAlign: "center",
-                        fontSize: "14px",
-                        color: "#333",
-                      }}
-                    >
-                      {item.qty}
-                    </div>
-                    <div
-                      style={{
-                        textAlign: "center",
-                        fontSize: "14px",
-                        fontWeight: "500",
-                        color: "#333",
-                      }}
-                    >
-                      ${item.price.toFixed(2)}
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "center" }}>
-                      <button
-                        style={{
-                          background: "none",
-                          border: "none",
-                          cursor: "pointer",
-                          color: "#1a3bbf",
-                        }}
-                      >
-                        <CartIcon />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Suggested Suppliers */}
-              <div style={{ width: "280px", flexShrink: 0 }}>
-                <div
-                  style={{
-                    fontWeight: "700",
-                    fontSize: "17px",
-                    color: "#111",
-                    marginBottom: "16px",
-                  }}
-                >
-                  Suggested Suppliers
-                </div>
-                {suppliers.map((supplier) => (
-                  <div
-                    key={supplier.id}
-                    style={{
-                      background: "#fff",
-                      borderRadius: "12px",
-                      padding: "16px",
-                      marginBottom: "14px",
-                      boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "flex-start",
-                        justifyContent: "space-between",
-                        marginBottom: "10px",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "10px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            width: "40px",
-                            height: "40px",
-                            background: "#eef0fb",
-                            borderRadius: "8px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: "20px",
-                          }}
-                        >
-                          {supplier.icon}
-                        </div>
-                        <div>
-                          <div
-                            style={{
-                              fontWeight: "700",
-                              fontSize: "14px",
-                              color: "#111",
-                            }}
-                          >
-                            {supplier.name}
-                          </div>
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "4px",
-                              marginTop: "2px",
-                            }}
-                          >
-                            <span
-                              style={{ color: "#f5a623", fontSize: "13px" }}
-                            >
-                              ★
-                            </span>
-                            <span
-                              style={{
-                                fontSize: "13px",
-                                fontWeight: "600",
-                                color: "#333",
-                              }}
-                            >
-                              {supplier.rating}
-                            </span>
-                            <span style={{ fontSize: "12px", color: "#888" }}>
-                              ({supplier.reviews} reviews)
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      {supplier.topRated && (
-                        <span
-                          style={{
-                            background: "#1a3bbf",
-                            color: "#fff",
-                            fontSize: "10px",
-                            fontWeight: "700",
-                            padding: "3px 8px",
-                            borderRadius: "4px",
-                            letterSpacing: "0.03em",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          TOP RATED
-                        </span>
-                      )}
-                    </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "6px",
-                        flexWrap: "wrap",
-                        marginBottom: "12px",
-                      }}
-                    >
-                      {supplier.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          style={{
-                            background: "#f5f6fa",
-                            color: "#555",
-                            fontSize: "11px",
-                            padding: "3px 10px",
-                            borderRadius: "20px",
-                            fontWeight: "500",
-                          }}
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    <button
-                      style={{
-                        width: "100%",
-                        padding: "9px",
-                        border: "1.5px solid #1a3bbf",
-                        borderRadius: "8px",
-                        background: "#fff",
-                        color: "#1a3bbf",
-                        fontWeight: "700",
-                        fontSize: "13px",
-                        cursor: "pointer",
-                      }}
-                    >
-                      View Supplier
-                    </button>
-                  </div>
-                ))}
               </div>
             </div>
           </div>
+        </section>
 
-          {/* Bottom Bar — inside right column, below content */}
-          {/* <div
-            style={{
-              background: "#fff",
-              borderTop: "1px solid #e8eaf0",
-              padding: "16px 32px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  fontSize: "11px",
-                  fontWeight: "700",
-                  color: "#aaa",
-                  letterSpacing: "0.08em",
-                }}
-              >
-                TOTAL ESTIMATED RENTAL
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '48px', alignItems: 'start' }}>
+          {/* Main Item List */}
+          <div style={{ backgroundColor: darkMode ? '#0f172a' : 'white', borderRadius: '32px', border: darkMode ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e2e8f0', overflow: 'hidden' }}>
+            <div style={{ padding: '32px 40px', borderBottom: darkMode ? '1px solid rgba(255,255,255,0.03)' : '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', backgroundColor: 'rgba(37, 99, 235, 0.1)', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <BiPackage size={24} />
+                </div>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: '950', color: textPrimary, margin: 0, letterSpacing: '-0.02em' }}>Recommended Stack</h2>
+                  <p style={{ fontSize: '11px', color: textSecondary, fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>{items.length} Engineered Components</p>
+                </div>
               </div>
-              <div
-                style={{ fontSize: "28px", fontWeight: "700", color: "#111" }}
-              >
-                $
-                {totalEstimate.toLocaleString("en-US", {
-                  minimumFractionDigits: 2,
-                })}
+              <button onClick={selectAll} style={{ fontSize: '10px', fontWeight: '900', color: '#2563eb', textTransform: 'uppercase', letterSpacing: '0.1em', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <BiCheck size={18} /> Select All
+              </button>
+            </div>
+
+            <div style={{ padding: '0 40px' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ borderBottom: darkMode ? '1px solid rgba(255,255,255,0.03)' : '1px solid #f1f5f9' }}>
+                    <th style={{ padding: '24px 0', width: '48px' }}></th>
+                    <th style={{ padding: '24px 0', textAlign: 'left', fontSize: '10px', fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Allocation Details</th>
+                    <th style={{ padding: '24px 0', textAlign: 'center', fontSize: '10px', fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: '0.1em', width: '100px' }}>Density</th>
+                    <th style={{ padding: '24px 0', textAlign: 'right', fontSize: '10px', fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: '0.1em', width: '150px' }}>Valuation</th>
+                    <th style={{ padding: '24px 0', width: '80px' }}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item) => (
+                    <tr key={item.id} style={{ borderBottom: darkMode ? '1px solid rgba(255,255,255,0.02)' : '1px solid #f8fafc' }} className="group">
+                      <td style={{ padding: '24px 0' }}>
+                        <div 
+                          onClick={() => toggleCheck(item.id)}
+                          style={{ 
+                            width: '20px', height: '20px', borderRadius: '6px', 
+                            border: item.checked ? '2px solid #2563eb' : (darkMode ? '2px solid rgba(255,255,255,0.1)' : '2px solid #e2e8f0'),
+                            backgroundColor: item.checked ? '#2563eb' : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.2s ease'
+                          }}
+                        >
+                          {item.checked && <BiCheck size={16} color="white" />}
+                        </div>
+                      </td>
+                      <td style={{ padding: '24px 0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                          <div style={{ width: '56px', height: '56px', borderRadius: '12px', overflow: 'hidden', border: darkMode ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e2e8f0' }}>
+                            <img src={item.img} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                            <div style={{ fontSize: '15px', fontWeight: '900', color: textPrimary }}>{item.name}</div>
+                            <div style={{ fontSize: '12px', color: textSecondary, fontWeight: '600' }}>{item.subtitle}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td style={{ padding: '24px 0', textAlign: 'center' }}>
+                        <span style={{ fontSize: '14px', fontWeight: '950', color: textPrimary }}>{item.qty}</span>
+                      </td>
+                      <td style={{ padding: '24px 0', textAlign: 'right' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '15px', fontWeight: '950', color: '#2563eb' }}>LKR {(item.price * item.qty).toLocaleString()}</span>
+                          <span style={{ fontSize: '10px', color: textSecondary, fontWeight: '800', textTransform: 'uppercase' }}>LKR {item.price.toLocaleString()} unit</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: '24px 0', textAlign: 'right' }}>
+                        <button onClick={() => handleAddToCart(item)} style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'transparent', border: darkMode ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e2e8f0', color: textSecondary, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s ease' }} className="hover:border-blue-500 hover:text-blue-500">
+                          <BiPlus size={20} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Suppliers Column */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <p style={{ fontSize: '10px', fontWeight: '950', color: textSecondary, textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Recommended Partners</p>
+            {rawSuppliers.map((supplier) => (
+              <div key={supplier.id} style={{ backgroundColor: darkMode ? '#0f172a' : 'white', borderRadius: '24px', padding: '24px', border: darkMode ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', backgroundColor: darkMode ? 'rgba(255,255,255,0.02)' : '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>
+                    {supplier.icon}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '15px', fontWeight: '950', color: textPrimary }}>{supplier.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                      <BiStar className="text-amber-400" />
+                      <span style={{ fontSize: '12px', fontWeight: '800', color: textPrimary }}>{supplier.rating}</span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {supplier.tags.map(tag => (
+                    <span key={tag} style={{ fontSize: '9px', fontWeight: '900', textTransform: 'uppercase', padding: '4px 8px', borderRadius: '6px', backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.05)' : '#f1f5f9', color: textSecondary }}>{tag}</span>
+                  ))}
+                </div>
+                <button onClick={() => handleViewSupplier(supplier)} style={{ padding: '12px', borderRadius: '12px', backgroundColor: 'transparent', border: darkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid #e2e8f0', color: textPrimary, fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.1em', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }} className="hover:bg-blue-600 hover:text-white hover:border-blue-600">
+                  <span>View Portfolio</span>
+                  <BiChevronRight size={18} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Summary Bar */}
+      <div style={{ position: 'fixed', bottom: '40px', left: '50%', transform: 'translateX(-50%)', zIndex: 100, width: 'calc(100% - 80px)', maxWidth: '900px' }}>
+        <div style={{ backgroundColor: darkMode ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(20px)', borderRadius: '24px', padding: '20px 32px', border: darkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.5)', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '48px' }}>
+            <div>
+              <p style={{ fontSize: '9px', fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '4px' }}>Estimated Total</p>
+              <div style={{ fontSize: '28px', fontWeight: '950', color: textPrimary, letterSpacing: '-0.02em' }}>
+                <span style={{ fontSize: '14px', color: '#2563eb', marginRight: '4px' }}>LKR</span>
+                {totalEstimate.toLocaleString()}
               </div>
             </div>
-            <button
-              style={{
-                background: "#1a3bbf",
-                color: "#fff",
-                border: "none",
-                borderRadius: "10px",
-                padding: "14px 28px",
-                fontSize: "15px",
-                fontWeight: "700",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-              }}
-            >
-              Bulk Add to Cart <ArrowRightIcon />
-            </button>
-          </div> */}
-
-          
+            <div style={{ width: '1px', height: '40px', backgroundColor: darkMode ? 'rgba(255,255,255,0.1)' : '#e2e8f0' }} />
+            <div>
+              <p style={{ fontSize: '9px', fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: '0.2em', marginBottom: '4px' }}>Active Selection</p>
+              <div style={{ fontSize: '20px', fontWeight: '950', color: textPrimary }}>{items.filter(i => i.checked).length} Items</div>
+            </div>
+          </div>
+          <button onClick={handleBulkAddToCart} style={{ padding: '16px 40px', borderRadius: '16px', backgroundColor: '#2563eb', color: 'white', border: 'none', fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.15em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', boxShadow: '0 10px 20px rgba(37, 99, 235, 0.2)' }} className="hover:scale-[1.03] transition-transform">
+            <BiCartAlt size={22} />
+            <span>Deploy Manifest</span>
+            <BiChevronRight size={22} />
+          </button>
         </div>
-
       </div>
-      {/* <Footer /> */}
     </div>
   );
 }
-

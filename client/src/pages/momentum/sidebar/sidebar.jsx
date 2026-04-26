@@ -1,14 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { useNotifications } from "../../../context/NotificationContext";
 
 const PRIMARY = "#1a4fd6";
 
 const sidebarItems = [
-  { label: "Dashboard", path: "/dashboard" },
-  { label: "Study Tracker", path: "/tracker" },
-  { label: "Generate Workplan", path: "/workplan" },
-  { label: "Academic Vault", path: "/vault" },
+  { label: "Dashboard", path: "momentum/dashboard" },
+  { label: "Study Tracker", path: "momentum/tracker" },
+  { label: "Learning Journal", path: "momentum/learning-journal" },
+  { label: "Generate Workplan", path: "momentum/workplan" },
+  { label: "Academic Vault", path: "momentum/vault" },
+  { label: "FAQs", path: "momentum/faqs" },
 ];
+
 
 function Sidebar() {
   const location = useLocation();
@@ -115,6 +119,7 @@ function Sidebar() {
 
           {/* Spacer pushes user profile to bottom */}
           <div style={{ flex: 1 }} />
+
 
           {/* User Profile */}
           <div

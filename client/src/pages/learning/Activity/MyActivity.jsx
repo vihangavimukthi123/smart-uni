@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import "./MyActivity.css";
 import api from "../../../api/axios";
-import Navbar from "../../../components/layout/Navbar";
-import Sidebar from "../../../components/layout/Sidebar";
 
 const getProfile = () => {
   const saved = localStorage.getItem("studentProfile");
@@ -244,9 +242,11 @@ export default function MyActivity() {
     const peerName = (isSender ? req.receiverName : req.senderName) || "Peer";
     const peerEmail = (isSender ? req.receiverEmail : req.senderEmail) || "";
     setConversationReq({ ...req, peerName, peerEmail });
-    setConversationDraft(
-      `Hi ${peerName},\n\nYour request for "${req.skill || "General"}" was accepted. Let's coordinate a time to connect and work on this.\n\nBest,\n${currentUserName}`
-    );
+    const draft = isSender
+      ? `Hi ${peerName},\n\nThanks for accepting my request for "${req.skill || "General"}". Can we coordinate a time to connect and start working on this?\n\nBest,\n${currentUserName}`
+      : `Hi ${peerName},\n\nI accepted your request for "${req.skill || "General"}". Let's coordinate a time to connect and work on this.\n\nBest,\n${currentUserName}`;
+
+    setConversationDraft(draft);
   }
 
   async function handleSubmitReview() {
@@ -317,6 +317,30 @@ export default function MyActivity() {
     );
   }
 
+  async function handleCopyConversationEmail() {
+    if (!conversationReq?.peerEmail) {
+      showToast("No peer email found for this request.", "error");
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(conversationReq.peerEmail);
+      showToast("Peer email copied.", "success");
+    } catch (err) {
+      console.error(err);
+      showToast("Could not copy email.", "error");
+    }
+  }
+
+  function handleOpenEmailClient() {
+    if (!conversationReq?.peerEmail) {
+      showToast("No peer email found for this request.", "error");
+      return;
+    }
+    const subject = encodeURIComponent(`SmartCampus collaboration on ${conversationReq.skill || "task"}`);
+    const body = encodeURIComponent(conversationDraft);
+    window.location.href = `mailto:${conversationReq.peerEmail}?subject=${subject}&body=${body}`;
+  }
+
   const filteredReceived = received.filter(
     (r) =>
       r && (
@@ -326,11 +350,7 @@ export default function MyActivity() {
   );
 
   return (
-    <div className="lms-layout">
-      <Navbar />
-      <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
-        <div className="main-content aa-main-col">
+    <main className="activity-content aa-main-col">
           {toast && (
             <Toast
               key={toast.key}
@@ -402,7 +422,7 @@ export default function MyActivity() {
                         <th>Recipient</th>
                         <th>Skill</th>
                         <th>Status</th>
-                        <th>Action</th>
+                        <th className="aa-table__right aa-table__actions-col">Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -411,9 +431,46 @@ export default function MyActivity() {
                           <td>{s.receiverName}</td>
                           <td>{s.skill}</td>
                           <td>{s.status}</td>
-                          <td>
-                            {s.status === "PENDING" && <button onClick={() => handleCancelSent(s._id)}>Cancel</button>}
-                            {s.status === "ACCEPTED" && <button onClick={() => openConversation(s)}>Chat</button>}
+                          <td className="aa-table__right aa-table__actions-cell">
+                            {s.status === "PENDING" && (
+                              <div className="aa-row-actions">
+                                <button className="aa-action-btn aa-action-btn--edit" onClick={() => handleEdit(s)}>
+                                  Edit
+                                </button>
+                                <button className="aa-action-btn aa-action-btn--danger" onClick={() => handleCancelSent(s._id)}>
+                                  Cancel
+                                </button>
+                              </div>
+                            )}
+
+                            {s.status === "ACCEPTED" && (
+                              <div className="aa-row-actions">
+                                <button className="aa-action-btn aa-action-btn--chat" onClick={() => openConversation(s)}>
+                                  Start Conversation
+                                </button>
+                                <button className="aa-action-btn aa-action-btn--success" onClick={() => handleMarkCompleted(s)}>
+                                  Mark Completed
+                                </button>
+                              </div>
+                            )}
+
+                            {s.status === "COMPLETED" && (
+                              <div className="aa-row-actions">
+                                <span className="aa-action-note">Completed</span>
+                              </div>
+                            )}
+
+                            {s.status === "DECLINED" && (
+                              <div className="aa-row-actions">
+                                <span className="aa-action-note">No actions</span>
+                              </div>
+                            )}
+
+                            {!s.status && (
+                              <div className="aa-row-actions">
+                                <span className="aa-action-note">No actions</span>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -422,9 +479,152 @@ export default function MyActivity() {
                 </div>
               </div>
             </section>
+
+            <section className="aa-bottom-grid">
+              <div className="aa-task-section">
+                <h3 className="aa-subsection-title">Recent Posted Tasks</h3>
+                <div className="aa-posted-tasks-list">
+                  {myTasks.length > 0 ? (
+                    myTasks.map((t) => (
+                      <div className="aa-task-card" key={t._id}>
+                        <div className="aa-task-card__header">
+                          <h4 className="aa-task-card__title">{t.title}</h4>
+                          <span className="aa-badge aa-badge--open">{t.category}</span>
+                        </div>
+                        <p className="aa-task-card__desc">{t.description}</p>
+                        <div className="aa-task-card__footer">
+                          <div className="aa-task-card__meta">
+                            <span>
+                              <span className="material-symbols-outlined">calendar_today</span>
+                              {" "}
+                              {toUiDeadline(t.deadlineDate, t.deadline)}
+                            </span>
+                          </div>
+                          <div className="aa-task-card__actions">
+                            <button className="aa-action-btn aa-action-btn--edit" onClick={() => handleEditTask(t)}>Edit</button>
+                            <button className="aa-action-btn aa-action-btn--danger" onClick={() => handleDeleteTask(t._id)}>Delete</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="aa-empty-state">
+                      <p>No tasks posted yet.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="aa-replies-section">
+                <h3 className="aa-subsection-title">Latest Replies</h3>
+                <div className="aa-replies-list">
+                  {taskApplications.map((app) => (
+                    <div key={`task-app-${app._id}`} className="aa-reply aa-reply--task-app">
+                      <div className="aa-avatar aa-avatar--md aa-initials aa-initials--secondary">
+                        {(app.senderName || "Peer")
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .slice(0, 2)
+                          .toUpperCase()}
+                      </div>
+                      <div className="aa-reply__body">
+                        <div className="aa-reply__top">
+                          <span className="aa-reply__name">{app.senderName || "Peer"} applied to help</span>
+                          <span className="aa-reply__time">{new Date(app.createdAt || app.date || Date.now()).toLocaleString()}</span>
+                        </div>
+                        <p className="aa-reply__preview">
+                          "{app.senderName || "A peer"} applied for your task: {app.taskTitle || app.skill || "Untitled task"}."
+                        </p>
+                        <div className="aa-reply__actions">
+                          <button className="aa-action-btn aa-action-btn--primary" onClick={() => openTaskApplicationConversation(app)}>
+                            <span className="material-symbols-outlined" style={{ fontSize: "14px", marginRight: "4px" }}>forum</span>
+                            Contact
+                          </button>
+                          <button className="aa-action-btn aa-action-btn--primary" onClick={() => copyTaskApplicantEmail(app.senderEmail)}>
+                            <span className="material-symbols-outlined" style={{ fontSize: "14px", marginRight: "4px" }}>content_copy</span>
+                            Copy Email
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {taskApplications.length === 0 && (
+                    <div className="aa-empty-state">
+                      <p>No any replies yet.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
           </main>
-        </div>
-      </div>
-    </div>
+
+          {editingReq && (
+            <div className="aa-modal-bg" onClick={() => setEditingReq(null)}>
+              <div className="aa-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="aa-modal__header">
+                  <h3>Edit Request</h3>
+                  <button className="aa-modal__close" onClick={() => setEditingReq(null)}>×</button>
+                </div>
+                <div className="aa-modal__body">
+                  <label className="aa-modal__label">Update your message for <strong>{editingReq.receiverName}</strong>:</label>
+                  <textarea
+                    className="aa-modal__textarea"
+                    value={editingMsg}
+                    onChange={(e) => setEditingMsg(e.target.value)}
+                    placeholder="Type your message here..."
+                  />
+                </div>
+                <div className="aa-modal__footer">
+                  <button className="aa-btn aa-btn--ghost" onClick={() => setEditingReq(null)}>Cancel</button>
+                  <button className="aa-btn aa-btn--primary" onClick={handleUpdate}>Update Message</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {conversationReq && (
+            <div className="aa-modal-bg" onClick={() => setConversationReq(null)}>
+              <div className="aa-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="aa-modal__header">
+                  <h3>Start Conversation</h3>
+                  <button className="aa-modal__close" onClick={() => setConversationReq(null)}>×</button>
+                </div>
+                <div className="aa-modal__body">
+                  <div className="aa-convo-box__peer">
+                    <div className="aa-avatar aa-avatar--md aa-initials aa-initials--primary">
+                      {(conversationReq.peerName || "Peer")
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2)
+                        .toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="aa-convo-box__peer-name">{conversationReq.peerName || "Peer"}</div>
+                      <div className="aa-convo-box__peer-email">{conversationReq.peerEmail || "Email unavailable"}</div>
+                    </div>
+                  </div>
+
+                  <label className="aa-modal__label" style={{ marginTop: "14px" }}>Message Draft</label>
+                  <textarea
+                    className="aa-convo-box__draft"
+                    value={conversationDraft}
+                    onChange={(e) => setConversationDraft(e.target.value)}
+                    placeholder="Write your first collaboration message..."
+                  />
+                </div>
+                <div className="aa-modal__footer aa-modal__footer--between">
+                  <button className="aa-btn aa-btn--ghost" onClick={handleCopyConversationEmail}>Copy Email</button>
+                  <div className="aa-row-actions">
+                    <button className="aa-btn aa-btn--ghost" onClick={() => setConversationReq(null)}>Close</button>
+                    <button className="aa-btn aa-btn--primary" onClick={handleOpenEmailClient}>Open Email</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+    </main>
   );
 }

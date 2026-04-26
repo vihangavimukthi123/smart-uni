@@ -1,60 +1,52 @@
+// kitGeneratorInput.jsx
 import { useState, useEffect, useRef } from "react";
-import Navbar from "../../components/layout/Navbar";
-import Sidebar from "../../components/layout/Sidebar";
-import { useNavigate } from "react-router-dom";
+import api from "../../api/axios";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { 
+  BiStar, BiChevronRight, BiPackage, BiBuildings, 
+  BiMoney, BiAlignLeft, BiCheck, BiBot, BiArrowBack, 
+  BiInfoCircle, BiSearch, BiRefresh, BiChip, BiAnalyse, BiTask
+} from "react-icons/bi";
+import { useTheme } from "../../context/ThemeContext";
 
-// ── Sidebar icons ─────────────────────────────────────────────────────────────
-const GridIcon    = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>;
-const SparkleIcon = ({ size = 18, color = "white" }) => <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>;
-const BoxIcon     = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>;
-const HistoryIcon = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>;
-const ArrowIcon   = () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
-
-const sidebarItems = [
-  { label: "Products",             icon: "grid"    },
-  { label: "Event Kit\nGenerator", icon: "sparkle", active: true },
-  { label: "Suppliers",            icon: "box"     },
-  { label: "History",              icon: "history" },
-];
-
-// ── Example prompts that cycle ────────────────────────────────────────────────
 const EXAMPLES = [
   "A 200-person outdoor graduation ceremony with live music and a stage...",
   "Tech conference for 500 students, multiple breakout rooms, projectors needed...",
   "Freshmen welcome mixer in the main hall, casual vibe, 150 attendees...",
   "Annual gala dinner for 300 guests, formal setting, full AV setup...",
   "Career fair across 3 rooms, 80 company booths, lighting and tables...",
+  "Workshop with projectors & mics...",
 ];
 
-// ── What the generator produces — shown as animated cards ────────────────────
 const OUTPUTS = [
-  { icon: "📦", title: "Equipment List",   desc: "Tailored items matched to your event size and type" },
-  { icon: "🏢", title: "Supplier Matches", desc: "Top campus-verified suppliers for your needs"        },
-  { icon: "💰", title: "Cost Estimate",    desc: "Transparent pricing before you commit to anything"   },
-  { icon: "🧾", title: "Rental Quote",     desc: "Itemised quote with supplier details for every item"  },
+  { icon: <BiPackage size={32} />, title: "Hardware Stack", desc: "Tailored equipment matched to your event scale and logistics type" },
+  { icon: <BiBuildings size={32} />, title: "Partner Match", desc: "Top campus-verified suppliers synchronized for your requirements" },
+  { icon: <BiMoney size={32} />, title: "Financial Audit", desc: "Transparent, real-time pricing and university discount estimates" },
+  { icon: <BiAlignLeft size={32} />, title: "Logistics Quote", desc: "Itemized manifest with procurement paths for every component" },
 ];
 
-// ── Quick-start suggestion chips ─────────────────────────────────────────────
 const QUICK_STARTS = [
   "Outdoor graduation ceremony",
   "Tech conference, 500 students",
   "Formal gala dinner, 300 guests",
   "Career fair with 80 booths",
-  "Welcome mixer, casual, 150 people",
-  "Workshop with projectors & mics",
+  "Welcome mixer, 150 people",
+  "Workshop with projectors",
 ];
 
 export default function EventKitGeneratorPage() {
-  const [description, setDescription]   = useState("");
-  const [placeholder, setPlaceholder]   = useState(EXAMPLES[0]);
-  const [exIdx, setExIdx]               = useState(0);
-  const [fadePlaceholder, setFade]      = useState(true);
-  const [charCount, setCharCount]       = useState(0);
-  const [focused, setFocused]           = useState(false);
-  const [loading, setLoading]           = useState(false);
-  const textareaRef                     = useRef(null);
+  const { darkMode } = useTheme();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [description, setDescription] = useState(location.state?.initialDescription || "");
+  const [placeholder, setPlaceholder] = useState(EXAMPLES[0]);
+  const [exIdx, setExIdx] = useState(0);
+  const [fadePlaceholder, setFade] = useState(true);
+  const [charCount, setCharCount] = useState(location.state?.initialDescription?.length || 0);
+  const [focused, setFocused] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const textareaRef = useRef(null);
 
-  // Cycle placeholder examples
   useEffect(() => {
     const interval = setInterval(() => {
       setFade(false);
@@ -81,217 +73,262 @@ export default function EventKitGeneratorPage() {
     textareaRef.current?.focus();
   };
 
-  const handleGenerate = () => {
-  if (!description.trim()) return;
+  const handleGenerate = async () => {
+    if (!description.trim()) return;
+    setLoading(true);
+    try {
+      const response = await api.post("/rental/products/generate-kit", { description });
+      navigate("/rental/kit-generator", { state: { kitData: response.data, eventDescription: description } });
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message || "Error generating kit";
+      alert(`${errorMsg}. Please try again later.`);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  setLoading(true);
+  const cardStyle = {
+    backgroundColor: darkMode ? '#0f172a' : 'white',
+    borderRadius: '32px',
+    border: darkMode ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e2e8f0',
+    boxShadow: darkMode ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' : '0 20px 40px -10px rgba(0, 0, 0, 0.05)',
+    overflow: 'hidden'
+  };
 
-  setTimeout(() => {
-    setLoading(false);
-    navigate("/kit-generator"); // ✅ correct navigation
-  }, 2000);
-};
-
-const navigate = useNavigate();
+  const textPrimary = darkMode ? 'white' : '#0f172a';
+  const textSecondary = '#64748b';
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", fontFamily: "'Segoe UI', sans-serif", backgroundColor: "#F3F4F6" }}>
+    <div className="page-wrapper pb-32 pt-10 anim-fadeIn">
+      {/* Top Navigation */}
+      <div className="max-w-6xl mx-auto mb-10">
+        <Link to="/rental/items" 
+          style={{ 
+            display: 'flex', alignItems: 'center', gap: '8px', 
+            textDecoration: 'none', transition: 'all 0.2s ease', color: darkMode ? '#94a3b8' : '#64748b'
+          }}
+          className="group hover:opacity-80"
+        >
+          <BiArrowBack className="text-lg group-hover:-translate-x-1 transition-transform" />
+          <span style={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase', letterSpacing: '0.12em' }}>Back to Inventory</span>
+        </Link>
+      </div>
 
-      <Navbar />
+      <div className="max-w-6xl mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: '80px' }}>
+        {/* Cinematic Header Section */}
+        <section style={{ 
+          position: 'relative', 
+          padding: '80px 60px', 
+          background: darkMode ? 'linear-gradient(135deg, #1e3a8a 0%, #172554 100%)' : 'linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)',
+          borderRadius: '48px',
+          overflow: 'hidden',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '64px',
+          border: darkMode ? '1px solid rgba(255,255,255,0.05)' : 'none',
+          boxShadow: darkMode ? '0 40px 100px -20px rgba(0,0,0,0.5)' : '0 40px 100px -20px rgba(99, 102, 241, 0.3)'
+        }}>
+          {/* Abstract Neural Decorations */}
+          <div style={{ position: 'absolute', top: '-100px', right: '-100px', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(255, 255, 255, 0.15) 0%, transparent 70%)', borderRadius: '50%' }} />
+          <div style={{ position: 'absolute', bottom: '-50px', left: '20%', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%)', borderRadius: '50%' }} />
 
-      <div style={{ display: "flex", flex: 1 }}>
-
-        <Sidebar />
-
-        {/* ── Main ── */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto" }}>
-
-          {/* ── Hero band ── */}
-          <div style={{
-            backgroundColor: "#FFFFFF",
-            padding: "40px 52px 44px",
-            position: "relative",
-            overflow: "hidden",
-            borderBottom: "1px solid #E5E7EB",
-          }}>
- 
-            {/* Heading */}
-            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
-              <div style={{ width: "40px", height: "40px", backgroundColor: "#EFF6FF", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <SparkleIcon size={20} color="#1E40AF" />
+          <div style={{ flex: 1, position: 'relative', zIndex: 2 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ padding: '8px 16px', borderRadius: '100px', backgroundColor: 'rgba(255, 255, 255, 0.15)', color: 'white', fontSize: '11px', fontWeight: '950', textTransform: 'uppercase', letterSpacing: '0.2em', backdropFilter: 'blur(10px)' }}>
+                  Next-Gen Logistics
+                </div>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'white', boxShadow: '0 0 10px white' }} />
+                <span style={{ fontSize: '11px', fontWeight: '800', color: darkMode ? '#94a3b8' : 'rgba(255,255,255,0.8)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Neural Engine v2.0</span>
               </div>
-              <h1 style={{ fontSize: "28px", fontWeight: "800", color: "#111827", margin: 0, letterSpacing: "-0.4px" }}>
-                Event Kit Generator
+              <h1 style={{ fontSize: 'clamp(32px, 5vw, 60px)', fontWeight: '950', color: 'white', letterSpacing: '-0.04em', lineHeight: '1.05', margin: 0 }}>
+                Build Your Event <span style={{ color: darkMode ? '#6366f1' : '#c7d2fe' }}>With AI Precision</span>
               </h1>
-            </div>
-            <p style={{ fontSize: "15px", color: "#6B7280", margin: "0 0 28px 52px", maxWidth: "520px", lineHeight: "1.6" }}>
-              Describe your event in plain language. Our AI will instantly build a complete equipment kit, match suppliers, and estimate costs.
-            </p>
-
-            {/* ── The textarea card ── */}
-            <div style={{
-              backgroundColor: "#FAFAFA",
-              borderRadius: "14px",
-              border: focused ? "1.5px solid #1E40AF" : "1.5px solid #E5E7EB",
-              boxShadow: focused ? "0 0 0 3px rgba(191,219,254,0.5)" : "0 1px 4px rgba(0,0,0,0.05)",
-              overflow: "hidden",
-              transition: "border-color 0.2s, box-shadow 0.2s",
-            }}>
-              {/* Textarea top bar */}
-              <div style={{ padding: "13px 18px 0", display: "flex", alignItems: "center", gap: "8px" }}>
-                <SparkleIcon size={14} color="#1152D4" />
-                <span style={{ fontSize: "11px", fontWeight: "700", color: "#1152D4", letterSpacing: "0.7px", textTransform: "uppercase" }}>Describe your event</span>
-              </div>
-
-              <textarea
-                ref={textareaRef}
-                value={description}
-                onChange={handleInput}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                maxLength={800}
-                rows={5}
-                placeholder={placeholder}
-                style={{
-                  width: "100%",
-                  padding: "12px 18px 8px",
-                  border: "none",
-                  outline: "none",
-                  resize: "none",
-                  fontSize: "15px",
-                  color: "#111827",
-                  lineHeight: "1.7",
-                  fontFamily: "'Segoe UI', sans-serif",
-                  backgroundColor: "transparent",
-                  boxSizing: "border-box",
-                  transition: "opacity 0.3s",
-                  opacity: fadePlaceholder ? 1 : 0.6,
-                }}
-              />
-
-              {/* Bottom bar of textarea */}
-              <div style={{ padding: "10px 18px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: "1px solid #F3F4F6" }}>
-                <span style={{ fontSize: "12px", color: "#9CA3AF" }}>
-                  {charCount}/800 characters
-                </span>
-                <button
-                  onClick={handleGenerate}
-                  disabled={!description.trim() || loading}
-                  style={{
-                    display: "flex", alignItems: "center", gap: "8px",
-                    padding: "10px 24px",
-                    backgroundColor: description.trim() ? "#1152D4" : "#BFDBFE",
-                    border: "none", borderRadius: "9px",
-                    color: "#FFFFFF", fontSize: "14px", fontWeight: "700",
-                    cursor: description.trim() ? "pointer" : "not-allowed",
-                    transition: "background-color 0.2s, transform 0.1s",
-                    transform: loading ? "scale(0.97)" : "scale(1)",
-                  }}
-                >
-                  {loading ? (
-                    <>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" style={{ animation: "spin 0.8s linear infinite" }}>
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56"/>
-                      </svg>
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <SparkleIcon size={16} />
-                      Generate My Kit
-                      <ArrowIcon />
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Quick-start chips */}
-            <div style={{ marginTop: "18px" }}>
-              <p style={{ fontSize: "11px", color: "#9CA3AF", margin: "0 0 10px 0", fontWeight: "700", letterSpacing: "0.6px", textTransform: "uppercase" }}>Try an example</p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {QUICK_STARTS.map((qs) => (
-                  <button
-                    key={qs}
-                    onClick={() => handleQuickStart(qs)}
-                    style={{
-                      padding: "6px 14px",
-                      backgroundColor: "#EFF6FF",
-                      border: "1px solid #BFDBFE",
-                      borderRadius: "20px",
-                      fontSize: "12px",
-                      color: "#1E40AF",
-                      cursor: "pointer",
-                      fontFamily: "inherit",
-                      fontWeight: "500",
-                      transition: "background-color 0.15s",
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.backgroundColor = "#DBEAFE"}
-                    onMouseLeave={e => e.currentTarget.style.backgroundColor = "#EFF6FF"}
-                  >
-                    {qs}
-                  </button>
-                ))}
-              </div>
+              <p style={{ fontSize: '18px', color: darkMode ? '#94a3b8' : 'rgba(255,255,255,0.9)', lineHeight: '1.7', fontWeight: '500', maxWidth: '600px', margin: 0 }}>
+                Describe your event requirements in natural language. Our neural engine will architect a complete list of items in seconds.
+              </p>
             </div>
           </div>
 
-          {/* ── What you'll get section ── */}
-          <div style={{ padding: "40px 52px 20px" }}>
-            <p style={{ fontSize: "11px", fontWeight: "700", color: "#9CA3AF", letterSpacing: "1px", textTransform: "uppercase", margin: "0 0 20px 0" }}>
-              What the generator produces
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px", marginBottom: "40px" }}>
-              {OUTPUTS.map((o, i) => (
-                <div key={i} style={{
-                  backgroundColor: "#FFFFFF",
-                  borderRadius: "12px",
-                  padding: "20px 18px",
-                  border: "1px solid #E5E7EB",
-                  position: "relative",
-                  overflow: "hidden",
-                }}>
-                  {/* Top accent line */}
-                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: "3px", backgroundColor: "#1E40AF", borderRadius: "12px 12px 0 0" }} />
-                  <div style={{ fontSize: "26px", marginBottom: "10px" }}>{o.icon}</div>
-                  <div style={{ fontSize: "13px", fontWeight: "700", color: "#111827", marginBottom: "5px" }}>{o.title}</div>
-                  <div style={{ fontSize: "12px", color: "#6B7280", lineHeight: "1.5" }}>{o.desc}</div>
-                </div>
+
+        </section>
+
+        {/* Input & Presets Group */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '64px' }}>
+          {/* Textarea Input Card */}
+          <div style={{ 
+            ...cardStyle, 
+            padding: '2px', 
+            transition: 'all 0.3s ease',
+            border: focused ? '1px solid #6366f1' : (darkMode ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e2e8f0'),
+            boxShadow: focused ? '0 0 40px rgba(99, 102, 241, 0.15)' : (darkMode ? '0 25px 50px -12px rgba(0, 0, 0, 0.5)' : '0 20px 40px -10px rgba(0, 0, 0, 0.05)')
+          }}>
+            <div style={{ padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: darkMode ? '1px solid rgba(255,255,255,0.03)' : '1px solid #f1f5f9', backgroundColor: darkMode ? 'rgba(255,255,255,0.01)' : '#fafafa' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <BiChip style={{ color: '#6366f1' }} size={20} />
+                <span style={{ fontSize: '10px', fontWeight: '900', color: '#6366f1', textTransform: 'uppercase', letterSpacing: '0.15em' }}>System Input: Requirement Definition</span>
+              </div>
+              <div style={{ fontSize: '9px', fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: '0.2em', opacity: '0.5' }}>
+                Neural Engine: Active
+              </div>
+            </div>
+
+            <textarea
+              ref={textareaRef}
+              value={description}
+              onChange={handleInput}
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              maxLength={800}
+              rows={2}
+              placeholder={placeholder}
+              style={{ 
+                width: '100%', 
+                backgroundColor: 'transparent', 
+                border: 'none', 
+                outline: 'none', 
+                padding: '24px 32px', 
+                fontSize: '18px', 
+                fontWeight: '500', 
+                color: textPrimary, 
+                resize: 'none', 
+                lineHeight: '1.8',
+                opacity: fadePlaceholder ? 1 : 0.4,
+                transition: 'opacity 0.4s ease'
+              }}
+            />
+
+            <div style={{ padding: '16px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: darkMode ? '1px solid rgba(255,255,255,0.03)' : '1px solid #f1f5f9', backgroundColor: darkMode ? 'rgba(255,255,255,0.01)' : '#fafafa' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#6366f1', boxShadow: '0 0 10px #6366f1' }} />
+                <span style={{ fontSize: '10px', fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                  {charCount} / 800 Tokens Utilized
+                </span>
+              </div>
+              <button
+                onClick={handleGenerate}
+                disabled={!description.trim() || loading}
+                style={{ 
+                  padding: '14px 40px', borderRadius: '16px', 
+                  backgroundColor: !description.trim() || loading ? (darkMode ? 'rgba(255,255,255,0.05)' : '#f1f5f9') : '#6366f1', 
+                  color: !description.trim() || loading ? '#64748b' : 'white', 
+                  fontSize: '12px', fontWeight: '900', textTransform: 'uppercase', 
+                  letterSpacing: '0.2em', border: 'none', 
+                  cursor: !description.trim() || loading ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  boxShadow: !description.trim() || loading ? 'none' : '0 10px 20px rgba(99, 102, 241, 0.2)',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                {loading ? (
+                  <>
+                    <div style={{ width: '16px', height: '16px', border: '2px solid rgba(255,255,255,0.3)', borderTop: '2px solid white', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                    <span>Synthesizing...</span>
+                  </>
+                ) : (
+                  <>
+                    <BiStar size={18} />
+                    <span>Generate Kit</span>
+                    <BiChevronRight size={18} />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Quick Start Chips */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '0 8px' }}>
+            <p style={{ fontSize: '9px', fontWeight: '900', color: textSecondary, textTransform: 'uppercase', letterSpacing: '0.3em', opacity: '0.5' }}>System Presets / Rapid Prototyping</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
+              {QUICK_STARTS.map((qs) => (
+                <button
+                  key={qs}
+                  onClick={() => handleQuickStart(qs)}
+                  style={{ 
+                    padding: '14px 28px', 
+                    backgroundColor: darkMode ? 'rgba(255,255,255,0.02)' : 'white', 
+                    border: darkMode ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e2e8f0', 
+                    borderRadius: '100px', 
+                    fontSize: '11px', 
+                    fontWeight: '800', 
+                    color: textSecondary, 
+                    cursor: 'pointer', 
+                    transition: 'all 0.2s ease',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#6366f1'; e.currentTarget.style.color = '#6366f1'; e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.05)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = darkMode ? 'rgba(255,255,255,0.05)' : '#e2e8f0'; e.currentTarget.style.color = textSecondary; e.currentTarget.style.backgroundColor = darkMode ? 'rgba(255,255,255,0.02)' : 'white'; }}
+                >
+                  {qs}
+                </button>
               ))}
             </div>
-
-            {/* ── How it works strip ── */}
-            <div style={{ backgroundColor: "#FFFFFF", borderRadius: "12px", border: "1px solid #E5E7EB", padding: "24px 28px", marginBottom: "20px" }}>
-              <p style={{ fontSize: "13px", fontWeight: "700", color: "#374151", margin: "0 0 18px 0" }}>How it works</p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr auto 1fr auto 1fr auto 1fr", alignItems: "center", gap: "0" }}>
-                {[
-                  { step: "1", label: "Describe",  sub: "Write about your event in plain English"     },
-                  { step: "2", label: "Analyse",   sub: "AI reads event type, size & requirements"   },
-                  { step: "3", label: "Generate",  sub: "Kit is built with matched suppliers"         },
-                  { step: "4", label: "Book",       sub: "Confirm and reserve everything in one click" },
-                ].map((s, i) => (
-                  <>
-                    <div key={s.step} style={{ textAlign: "center", padding: "0 8px" }}>
-                      <div style={{ width: "32px", height: "32px", backgroundColor: "#EFF6FF", border: "2px solid #BFDBFE", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 8px", fontSize: "13px", fontWeight: "800", color: "#1E40AF" }}>
-                        {s.step}
-                      </div>
-                      <div style={{ fontSize: "13px", fontWeight: "700", color: "#111827", marginBottom: "3px" }}>{s.label}</div>
-                      <div style={{ fontSize: "11px", color: "#9CA3AF", lineHeight: "1.4" }}>{s.sub}</div>
-                    </div>
-                    {i < 3 && (
-                      <div key={`arrow-${i}`} style={{ textAlign: "center", paddingBottom: "20px" }}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#BFDBFE" strokeWidth="2.5" strokeLinecap="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                      </div>
-                    )}
-                  </>
-                ))}
-              </div>
-            </div>
-
           </div>
-
         </div>
+
+        {/* WHAT THE GENERATOR PRODUCES */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+          <p style={{ fontSize: '11px', fontWeight: '950', color: textSecondary, textTransform: 'uppercase', letterSpacing: '0.15em', opacity: '0.8' }}>What the generator produces</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px' }}>
+            {[
+              { title: "Equipment List", desc: "Tailored items matched to your event size and type", icon: <BiPackage size={24} />, color: "#2563eb" },
+              { title: "Supplier Matches", desc: "Top campus-verified suppliers for your needs", icon: <BiBuildings size={24} />, color: "#2563eb" },
+              { title: "Cost Estimate", desc: "Transparent pricing before you commit to anything", icon: <BiMoney size={24} />, color: "#2563eb" },
+              { title: "Rental Quote", desc: "Itemised quote with supplier details for every item", icon: <BiTask size={24} />, color: "#2563eb" },
+            ].map((item, i) => (
+              <div key={i} style={{ 
+                backgroundColor: darkMode ? '#0f172a' : 'white', 
+                borderRadius: '16px', 
+                padding: '32px', 
+                border: darkMode ? '1px solid rgba(255,255,255,0.05)' : '1px solid #e2e8f0',
+                borderTop: `4px solid ${item.color}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '16px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.03)'
+              }}>
+                <div style={{ color: item.color, opacity: 0.8 }}>{item.icon}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <h4 style={{ fontSize: '15px', fontWeight: '900', color: textPrimary, margin: 0 }}>{item.title}</h4>
+                  <p style={{ fontSize: '13px', color: textSecondary, margin: 0, lineHeight: '1.5', fontWeight: '500' }}>{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* How it works */}
+        <div style={{ ...cardStyle, padding: '48px 40px', backgroundColor: darkMode ? '#0f172a' : 'white' }}>
+          <p style={{ fontSize: '11px', fontWeight: '950', color: textSecondary, textTransform: 'uppercase', letterSpacing: '0.15em', opacity: '0.8', marginBottom: '40px' }}>How it works</p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px', flexWrap: 'wrap' }}>
+            {[
+              { step: 1, label: "Describe" },
+              { step: 2, label: "Analyse" },
+              { step: 3, label: "Generate" },
+              { step: 4, label: "Book" },
+            ].map((s, i, arr) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', flex: 1, gap: '20px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                  <div style={{ width: '44px', height: '44px', borderRadius: '50%', backgroundColor: 'rgba(37, 99, 235, 0.08)', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '900', fontSize: '14px', border: '1px solid rgba(37, 99, 235, 0.15)' }}>
+                    {s.step}
+                  </div>
+                  <span style={{ fontSize: '12px', fontWeight: '900', color: textPrimary, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</span>
+                </div>
+                {i < arr.length - 1 && (
+                  <div style={{ flex: 1, height: '1px', backgroundColor: darkMode ? 'rgba(255,255,255,0.1)' : '#e2e8f0', position: 'relative', marginBottom: '24px' }}>
+                    <div style={{ position: 'absolute', right: 0, top: '-3px', width: '6px', height: '6px', borderTop: `2px solid ${darkMode ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}`, borderRight: `2px solid ${darkMode ? 'rgba(255,255,255,0.1)' : '#e2e8f0'}`, transform: 'rotate(45deg)' }} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+
       </div>
+      <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }

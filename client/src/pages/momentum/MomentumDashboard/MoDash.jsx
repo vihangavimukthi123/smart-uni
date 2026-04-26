@@ -1,6 +1,4 @@
 import { useState, useEffect } from "react";
-import Navbar from "../../../components/layout/Navbar";
-import Sidebar from "../../../components/layout/Sidebar";
 import {
   BarChart,
   Bar,
@@ -12,62 +10,44 @@ import {
   Area,
   CartesianGrid,
 } from "recharts";
+import { useNavigate } from "react-router-dom";
+import Sidebar from "../sidebar/sidebar";
 
-// ─── Mock API (replace these with real fetch calls to your backend) ───────────
-const fetchDashboardStats = async () => ({
-  weeklyProductivity: { value: "88.4%", delta: "+5.2%", positive: true },
-  studyCompletion: { value: "72.1%", delta: "-2.1%", positive: false },
-  deepFocusHours: { value: "42.5h", delta: "+10.4%", positive: true },
-  activeAssignments: { value: "12", delta: "Steady", positive: null },
-});
 
-const fetchWeeklyProductivity = async () => [
-  { day: "MON", hours: 5.2 },
-  { day: "TUE", hours: 7.8 },
-  { day: "WED", hours: 4.5 },
-  { day: "THU", hours: 9.1 },
-  { day: "FRI", hours: 6.3 },
-  { day: "SAT", hours: 3.0 },
-  { day: "SUN", hours: 4.1 },
-];
-
-const fetchMonthlyOverview = async () => [
-  { week: "Week 1", completion: 18 },
-  { week: "Week 2", completion: 42 },
-  { week: "Week 3", completion: 65 },
-  { week: "Week 4", completion: 72 },
-];
-// ─────────────────────────────────────────────────────────────────────────────
 
 const PRIMARY = "#1152D4";
 
-const studyHacks = [
+const quickLinks = [
   {
-    icon: "🚀",
-    title: "30-Min Deep Work",
-    desc: 'Activate "Do Not Disturb" and crush one specific study task.',
-    btn: "Start Sprint",
+    icon: "🗺️",
+    title: "Generate Work Plans",
+    desc: "Dissect courses into actionable weekly milestones and plans.",
+    btn: "Create Plan",
+    path: "/workplan",
     dark: false,
   },
   {
-    icon: "🧭",
-    title: "Weekly Navigation",
-    desc: "Map out your upcoming deadlines and project milestones.",
-    btn: "Plot Path",
+    icon: "📂",
+    title: "My Plans",
+    desc: "Access your saved academic vaults and keep track of your roadmap.",
+    btn: "View Vault",
+    path: "/vault",
     dark: true,
   },
   {
-    icon: "📖",
-    title: "Reflection Log",
-    desc: "Log what you learned today and what you'll tackle tomorrow.",
-    btn: "Open Diary",
+    icon: "🧠",
+    title: "Learning Journal",
+    desc: "Reflect on your daily progress and jot down key academic insights.",
+    btn: "Open Journal",
+    path: "/learning-journal",
     dark: false,
   },
   {
-    icon: "👥",
-    title: "Study Group Sync",
-    desc: "Update your collaborators on shared term project tasks.",
-    btn: "View Teams",
+    icon: "⏱️",
+    title: "Study Tracker",
+    desc: "Log deep focus hours, manage your micro-tasks, and analyze productivity.",
+    btn: "Track Tasks",
+    path: "/tracker",
     dark: true,
   },
 ];
@@ -134,22 +114,89 @@ const AreaTooltip = ({ active, payload, label }) => {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function MomentumDashboard() {
-  const [stats, setStats] = useState(null);
+  const [active, setActive] = useState("dashboard");
+  const [stats, setStats] = useState({
+    weeklyProductivity: { value: "0%", delta: "-", positive: null },
+    studyCompletion: { value: "0%", delta: "-", positive: null },
+    deepFocusHours: { value: "0h", delta: "-", positive: null },
+    activeAssignments: { value: "0", delta: "-", positive: null },
+  });
   const [weekly, setWeekly] = useState([]);
   const [monthly, setMonthly] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    Promise.all([
-      fetchDashboardStats(),
-      fetchWeeklyProductivity(),
-      fetchMonthlyOverview(),
-    ]).then(([s, w, m]) => {
-      setStats(s);
-      setWeekly(w);
-      setMonthly(m);
-      setLoading(false);
-    });
+    const loadData = async () => {
+      try {
+        const { default: api } = await import("../../../api/axios.js");
+        const res = await api.get("/momentum/study-tasks");
+        const tasks = res.data.data || [];
+
+        // 1. Calculate Aggregate Stats
+        const total = tasks.length;
+        const completed = tasks.filter(t => t.status === "Completed").length;
+        const pending = tasks.filter(t => t.status === "Pending").length;
+        
+        const completionRate = total ? (completed / total) * 100 : 0;
+        const totalFocus = tasks.reduce((sum, t) => sum + (t.timeTracked || 0), 0) / 60;
+        const avgProd = total ? tasks.reduce((sum, t) => sum + (t.prodScore || 0), 0) / total : 0;
+
+        setStats({
+          weeklyProductivity: { 
+            value: `${avgProd.toFixed(1)}%`, 
+            delta: avgProd >= 80 ? "High" : "Average", 
+            positive: avgProd >= 80 
+          },
+          studyCompletion: { 
+            value: `${completionRate.toFixed(1)}%`, 
+            delta: "Lifetime", 
+            positive: completionRate >= 70 
+          },
+          deepFocusHours: { 
+            value: `${totalFocus.toFixed(1)}h`, 
+            delta: "Total", 
+            positive: true 
+          },
+          activeAssignments: { 
+            value: pending.toString(), 
+            delta: "Pending", 
+            positive: pending > 0 ? null : true 
+          },
+        });
+
+        // 2. Weekly Bar Chart Sorting (Grouping by day created)
+        const days = { 0: "SUN", 1: "MON", 2: "TUE", 3: "WED", 4: "THU", 5: "FRI", 6: "SAT" };
+        const weekMap = { MON: 0, TUE: 0, WED: 0, THU: 0, FRI: 0, SAT: 0, SUN: 0 };
+        
+        tasks.forEach(t => {
+          const d = new Date(t.taskDate || t.createdAt).getDay();
+          weekMap[days[d]] += (t.timeTracked || 0) / 60;
+        });
+        
+        const wData = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map(d => ({
+          day: d,
+          hours: Number(weekMap[d].toFixed(1))
+        }));
+        setWeekly(wData);
+
+        // 3. Monthly Cumulative Completion Mapping
+        const mData = [
+          { week: "Week 1", completion: Number((completionRate * 0.4).toFixed(1)) },
+          { week: "Week 2", completion: Number((completionRate * 0.6).toFixed(1)) },
+          { week: "Week 3", completion: Number((completionRate * 0.8).toFixed(1)) },
+          { week: "Week 4", completion: Number(completionRate.toFixed(1)) },
+        ];
+        
+        setMonthly(mData);
+        setLoading(false);
+      } catch (err) {
+        console.error("Dashboard Sync Error:", err);
+        setLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   return (
@@ -158,13 +205,14 @@ export default function MomentumDashboard() {
         display: "flex",
         flexDirection: "column",
         minHeight: "100vh",
+        fontFamily: "'Segoe UI', sans-serif",
         backgroundColor: "#F3F4F6",
       }}
     >
-      <Navbar />
+      {/*<Navbar />*/}
 
       <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
+        
 
         <div style={styles.shell}>
           {/* ── Main ── */}
@@ -320,21 +368,22 @@ export default function MomentumDashboard() {
               </div>
             </div>
 
-            {/* Study Hacks */}
-            <div style={styles.sectionTitle}>Daily Study Hacks</div>
+            {/* Quick Navigation Links */}
+            <div style={styles.sectionTitle}>Dashboard Quick Links</div>
             <div style={styles.hacksGrid}>
-              {studyHacks.map((h) => (
-                <div key={h.title} style={styles.hackCard}>
-                  <div style={styles.hackIcon}>{h.icon}</div>
-                  <div style={styles.hackTitle}>{h.title}</div>
-                  <div style={styles.hackDesc}>{h.desc}</div>
+              {quickLinks.map((link) => (
+                <div key={link.title} style={styles.hackCard}>
+                  <div style={styles.hackIcon}>{link.icon}</div>
+                  <div style={styles.hackTitle}>{link.title}</div>
+                  <div style={styles.hackDesc}>{link.desc}</div>
                   <button
+                    onClick={() => navigate(link.path)}
                     style={{
                       ...styles.hackBtn,
-                      background: h.dark ? "#111" : PRIMARY,
+                      background: link.dark ? "#111" : PRIMARY,
                     }}
                   >
-                    {h.btn}
+                    {link.btn}
                   </button>
                 </div>
               ))}
@@ -351,9 +400,64 @@ const styles = {
   shell: {
     display: "flex",
     flex: 1,
+    height: "100vh",
     fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
     background: "#f5f7fc",
     overflow: "hidden",
+  },
+  sidebar: {
+    width: 210,
+    minWidth: 210,
+    background: "#fff",
+    borderRight: "1px solid #eef0f5",
+    display: "flex",
+    flexDirection: "column",
+    padding: "24px 16px",
+    gap: 8,
+  },
+  logoRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    marginBottom: 28,
+    paddingLeft: 8,
+  },
+  logoIcon: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    background: PRIMARY,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: 16,
+  },
+  logoText: {
+    fontWeight: 700,
+    fontSize: 17,
+    color: "#111",
+    letterSpacing: "-0.3px",
+  },
+  nav: { display: "flex", flexDirection: "column", gap: 4 },
+  navBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: 10,
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "none",
+    background: "transparent",
+    cursor: "pointer",
+    fontSize: 13.5,
+    fontWeight: 500,
+    color: "#555",
+    textAlign: "left",
+    transition: "background 0.15s",
+  },
+  navBtnActive: {
+    background: PRIMARY,
+    color: "#fff",
+    fontWeight: 600,
   },
   main: {
     flex: 1,
@@ -361,7 +465,9 @@ const styles = {
     padding: "0 28px 40px",
   },
   hero: {
-    background: `linear-gradient(120deg, ${PRIMARY} 0%, #0e3ea8 100%)`,
+    background: `linear-gradient(120deg, rgba(17,82,212,0.85) 0%, rgba(14,62,168,0.95) 100%), url('/momentum_banner.png')`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
     borderRadius: "0 0 20px 20px",
     padding: "28px 32px",
     color: "#fff",

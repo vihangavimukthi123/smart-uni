@@ -1,14 +1,18 @@
 //reviewController.js
 const Review = require('../models/Review');
 
+// @POST /api/rental/reviews
 async function createReview(req, res) {
   try {
-    // Identity from token (student or any logged in user can review per user request)
-    const user = req.student;
+    // Enable all authenticated users to post reviews
+    const user = req.user;
+    console.log(`[REVIEW] Creating review for user: ${user?.email || 'unknown'}`);
     
-    if (!user || user.role !== "student") {
-      return res.status(401).json({ message: "Only students are authorized to post reviews." });
+    if (!user) {
+
+      return res.status(401).json({ message: "You must be logged in to post a review." });
     }
+
 
     const { supplierEmail, rating, comment, productID, productName } = req.body;
 
@@ -53,5 +57,61 @@ async function getReviewsByProduct(req, res) {
   }
 }
 
-module.exports = { createReview, getSupplierReviews, getReviewsByProduct };
+async function getAdminReviews(req, res) {
+  try {
+    const reviews = await Review.aggregate([
+      {
+        $lookup: {
+          from: "users",
+          localField: "studentEmail",
+          foreignField: "email",
+          as: "studentInfo"
+        }
+      },
+      {
+        $lookup: {
+          from: "suppliers",
+          localField: "supplierEmail",
+          foreignField: "semail",
+          as: "supplierInfo"
+        }
+      },
+      {
+        $lookup: {
+          from: "products",
+          localField: "productID",
+          foreignField: "productID",
+          as: "productInfo"
+        }
+      },
+      {
+        $addFields: {
+          studentName: { $ifNull: [{ $arrayElemAt: ["$studentInfo.name", 0] }, "$studentEmail"] },
+          supplierName: { 
+            $cond: {
+              if: { $gt: [{ $size: "$supplierInfo" }, 0] },
+              then: { $concat: [{ $arrayElemAt: ["$supplierInfo.firstName", 0] }, " ", { $arrayElemAt: ["$supplierInfo.lastName", 0] }] },
+              else: "System Admin"
+            }
+          },
+          // productName is already in the schema but we can ensure it's accurate from Product info if available
+          productDisplayName: { $ifNull: [{ $arrayElemAt: ["$productInfo.name", 0] }, "$productName", "General Review"] }
+        }
+      },
+      {
+        $project: {
+          studentInfo: 0,
+          supplierInfo: 0,
+          productInfo: 0
+        }
+      },
+      { $sort: { createdAt: -1 } }
+    ]);
+    res.status(200).json(reviews);
+  } catch (error) {
+    res.status(500).json({ message: "Failed to fetch admin reviews", error: error.message });
+  }
+}
+
+module.exports = { createReview, getSupplierReviews, getReviewsByProduct, getAdminReviews };
 
