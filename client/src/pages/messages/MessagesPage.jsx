@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useSocket } from '../../context/SocketContext';
 import api from '../../api/axios';
 import toast from 'react-hot-toast';
-import { MdSend, MdPerson, MdCheck, MdDoneAll } from 'react-icons/md';
+import { MdSend, MdPerson, MdCheck, MdDoneAll, MdChat } from 'react-icons/md';
 
 export default function MessagesPage() {
   const { user } = useAuth();
@@ -14,6 +14,7 @@ export default function MessagesPage() {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
+  const notificationSound = useRef(new Audio('https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3'));
 
   const isAdmin = user?.role === 'admin' || user?.role === 'scheduler';
 
@@ -41,6 +42,11 @@ export default function MessagesPage() {
         }
       }
       
+      // Play sound if message is from someone else
+      if (msg.sender._id !== user?._id) {
+        notificationSound.current.play().catch(e => console.log("Sound play failed:", e));
+      }
+
       if (isAdmin && msg.sender._id !== user?._id) {
         fetchAdminConversations(); // refresh sidebar ordering
       }
@@ -98,39 +104,57 @@ export default function MessagesPage() {
   };
 
   return (
-    <div className="flex bg-surface" style={{ height: 'calc(100vh - 120px)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border)' }}>
+    <div className="flex bg-surface" style={{ height: 'calc(100vh - 120px)', borderRadius: 'var(--radius-lg)', overflow: 'hidden', border: '1px solid var(--border)', boxShadow: 'var(--shadow-lg)' }}>
       
       {/* ── Admin Sidebar (WhatsApp Web Style) ── */}
       {isAdmin && (
-        <div style={{ width: '320px', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', background: 'var(--bg-elevated)' }}>
-          <div style={{ padding: 'var(--space-md)', borderBottom: '1px solid var(--border)' }}>
-            <h2 style={{ fontSize: '1.2rem' }}>Helpdesk Inbox</h2>
+        <div style={{ width: '350px', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', background: 'var(--bg-elevated)' }}>
+          <div style={{ padding: 'var(--space-md)', background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>Messages</h2>
+            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--bg-glass)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <MdChat size={18} className="text-secondary" />
+            </div>
+          </div>
+          <div style={{ padding: '10px 15px' }}>
+            <div className="input-wrapper">
+              <input type="text" className="form-input" placeholder="Search or start new chat" style={{ borderRadius: '20px', padding: '8px 15px', fontSize: '0.8rem' }} />
+            </div>
           </div>
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {conversations.length === 0 ? (
-              <p style={{ padding: 'var(--space-md)', textAlign: 'center', color: 'var(--text-muted)' }}>No active conversations</p>
+              <div style={{ padding: 'var(--space-xl)', textAlign: 'center' }}>
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No active conversations</p>
+              </div>
             ) : (
               conversations.map(c => (
                 <div 
                   key={c.user._id} 
                   onClick={() => fetchChat(c.user._id)}
                   style={{ 
-                    padding: 'var(--space-md)', 
+                    padding: '12px 16px', 
                     borderBottom: '1px solid var(--border)',
                     cursor: 'pointer',
                     background: activeChat === c.user._id ? 'var(--bg-glass)' : 'transparent',
-                    borderLeft: activeChat === c.user._id ? '3px solid var(--indigo)' : '3px solid transparent'
+                    display: 'flex',
+                    gap: '12px',
+                    transition: 'var(--transition-fast)'
                   }}
+                  className="hover-bg-glass"
                 >
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold truncate">{c.user.name}</span>
-                    <span className="text-xs text-muted">
-                      {new Date(c.lastMessage.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                    </span>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--grad-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
+                    <MdPerson size={24} />
                   </div>
-                  <p className="text-sm text-muted truncate mt-1">
-                    {c.lastMessage.sender === user?.id ? 'You: ' : ''}{c.lastMessage.content}
-                  </p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold truncate" style={{ fontSize: '0.95rem' }}>{c.user.name}</span>
+                      <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                        {new Date(c.lastMessage.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted truncate mt-1" style={{ fontSize: '0.85rem' }}>
+                      {c.lastMessage.sender === user?.id ? 'You: ' : ''}{c.lastMessage.content}
+                    </p>
+                  </div>
                 </div>
               ))
             )}
@@ -139,49 +163,61 @@ export default function MessagesPage() {
       )}
 
       {/* ── Chat Window ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg-base)' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: 'var(--bg-base)', position: 'relative' }}>
         
+        {/* Chat Background Pattern (Subtle Gradient/Overlay) */}
+        <div style={{ position: 'absolute', inset: 0, opacity: 0.03, pointerEvents: 'none', background: 'url("https://www.transparenttextures.com/patterns/cubes.png")' }} />
+
         {/* Chat Header */}
-        <div style={{ padding: 'var(--space-md)', borderBottom: '1px solid var(--border)', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--grad-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
-            <MdPerson size={24} />
-          </div>
-          <div>
-            <h3 style={{ fontSize: '1.1rem', margin: 0 }}>
-              {!isAdmin ? 'System Admin (Support)' : conversations.find(c => c.user._id === activeChat)?.user.name || 'User'}
-            </h3>
-            <p className="text-xs text-emerald font-semibold">Online</p>
+        <div style={{ padding: '10px 20px', borderBottom: '1px solid var(--border)', background: 'var(--bg-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--grad-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+              <MdPerson size={24} />
+            </div>
+            <div>
+              <h3 style={{ fontSize: '1rem', margin: 0, fontWeight: 600 }}>
+                {!isAdmin ? 'MATRIX CORP Support' : conversations.find(c => c.user._id === activeChat)?.user.name || 'Select a chat'}
+              </h3>
+              <p className="text-xs text-emerald" style={{ fontWeight: 500 }}>Online</p>
+            </div>
           </div>
         </div>
 
         {/* Chat Messages */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--space-xl)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 30px', display: 'flex', flexDirection: 'column', gap: '8px', zIndex: 10 }}>
           {loading ? (
-            <p className="text-center text-muted">Loading messages...</p>
+            <div className="flex justify-center items-center h-full">
+              <span className="spinner indigo" />
+            </div>
           ) : messages.length === 0 ? (
-            <div className="empty-state">
-              <p>Say hello! Need help with your scheduling?</p>
+            <div className="empty-state" style={{ marginTop: 'auto', marginBottom: 'auto' }}>
+              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>👋</div>
+              <h3>Welcome to MATRIX CORP Support</h3>
+              <p>Type below to chat with the administrator about your requests or schedules.</p>
             </div>
           ) : (
             messages.map((msg, i) => {
               const isMine = msg.sender._id === user?._id;
               return (
-                <div key={msg._id || i} style={{ alignSelf: isMine ? 'flex-end' : 'flex-start', maxWidth: '70%' }}>
+                <div key={msg._id || i} style={{ alignSelf: isMine ? 'flex-end' : 'flex-start', maxWidth: '65%', position: 'relative' }}>
                   <div style={{ 
-                    padding: '12px 18px', 
-                    borderRadius: isMine ? '20px 20px 0 20px' : '20px 20px 20px 0',
-                    background: isMine ? 'var(--indigo)' : 'var(--bg-glass)',
+                    padding: '8px 12px', 
+                    borderRadius: '8px',
+                    background: isMine ? 'var(--indigo)' : 'var(--bg-elevated)',
                     color: isMine ? '#fff' : 'var(--text-primary)',
-                    boxShadow: 'var(--shadow-sm)',
-                    border: isMine ? 'none' : '1px solid var(--border)'
+                    boxShadow: '0 1px 0.5px rgba(0,0,0,0.13)',
+                    border: isMine ? 'none' : '1px solid var(--border)',
+                    position: 'relative'
                   }}>
-                    <p style={{ margin: 0, wordWrap: 'break-word', color: isMine ? '#fff' : 'var(--text-primary)' }}>
+                    <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.4', wordWrap: 'break-word' }}>
                       {msg.content}
                     </p>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: isMine ? 'flex-end' : 'flex-start', gap: '4px', marginTop: '4px' }}>
-                    <span className="text-xs text-muted">{new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                    {isMine && (msg.isRead ? <MdDoneAll className="text-indigo" size={14}/> : <MdCheck className="text-muted" size={14}/>)}
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                      <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>
+                        {new Date(msg.createdAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      </span>
+                      {isMine && (msg.isRead ? <MdDoneAll size={14} style={{ color: '#4fc3f7' }}/> : <MdCheck size={14} style={{ opacity: 0.7 }}/>)}
+                    </div>
                   </div>
                 </div>
               );
@@ -191,17 +227,24 @@ export default function MessagesPage() {
         </div>
 
         {/* Chat Input */}
-        <div style={{ padding: 'var(--space-md)', borderTop: '1px solid var(--border)', background: 'var(--bg-elevated)' }}>
-          <form onSubmit={handleSend} style={{ display: 'flex', gap: '10px' }}>
-            <input 
-              type="text" 
-              className="form-input" 
-              placeholder="Type your message..." 
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              style={{ borderRadius: '24px', paddingLeft: '20px' }}
-            />
-            <button type="submit" disabled={!newMessage.trim()} className="btn btn-primary" style={{ borderRadius: '50%', width: '48px', height: '48px', padding: 0, justifyContent: 'center' }}>
+        <div style={{ padding: '12px 20px', background: 'var(--bg-elevated)', borderTop: '1px solid var(--border)', zIndex: 10 }}>
+          <form onSubmit={handleSend} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ flex: 1, position: 'relative' }}>
+               <input 
+                type="text" 
+                className="form-input" 
+                placeholder="Type a message" 
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                style={{ borderRadius: '24px', padding: '12px 20px', background: 'var(--bg-surface)', border: 'none' }}
+              />
+            </div>
+            <button 
+              type="submit" 
+              disabled={!newMessage.trim()} 
+              className="btn btn-primary" 
+              style={{ borderRadius: '50%', width: '45px', height: '45px', padding: 0, justifyContent: 'center', flexShrink: 0 }}
+            >
               <MdSend size={20} />
             </button>
           </form>

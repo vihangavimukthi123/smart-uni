@@ -400,7 +400,9 @@ export default function CheckoutPage() {
     try {
       const res = await api.post("/rental/orders/resend-otp", { orderId: otpOrderId });
       if (res.data.success) { toast.success("Code resent!"); setResendCooldown(60); setOtp(["", "", "", "", "", ""]); }
-    } catch (error) { toast.error("Resend failed"); } finally { setResending(false); }
+    } catch (error) { 
+      toast.error(error.response?.data?.message || "Resend failed"); 
+    } finally { setResending(false); }
   }
 
   useEffect(() => {

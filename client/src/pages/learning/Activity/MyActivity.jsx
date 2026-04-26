@@ -336,7 +336,7 @@ export default function MyActivity() {
       showToast("No peer email found for this request.", "error");
       return;
     }
-    const subject = encodeURIComponent(`SmartCampus collaboration on ${conversationReq.skill || "task"}`);
+    const subject = encodeURIComponent(`MATRIX CORP collaboration on ${conversationReq.skill || "task"}`);
     const body = encodeURIComponent(conversationDraft);
     window.location.href = `mailto:${conversationReq.peerEmail}?subject=${subject}&body=${body}`;
   }

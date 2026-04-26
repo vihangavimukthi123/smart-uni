@@ -29,12 +29,8 @@ const validateDomain = async (email) => {
 
         return { isValid: true };
     } catch (error) {
-        console.error("DNS MX Lookup Error:", error);
-        // We treat ENOTFOUND or ENODATA as "No MX records"
-        if (error.code === 'ENOTFOUND' || error.code === 'ENODATA') {
-            return { isValid: false, error: "Email domain does not exist or has no mail servers" };
-        }
-        // For other errors (timeout, etc.), we allow it as a "soft fail"
+        console.warn(`[DNS WARNING] MX Lookup for ${domain} failed: ${error.code || error.message}`);
+        // We'll allow it as a "soft fail" to prevent local network/DNS issues from blocking users
         return { isValid: true, warning: "Domain validation in-conclusive, proceeding with OTP" };
     }
 };

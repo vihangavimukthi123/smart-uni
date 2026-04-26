@@ -77,9 +77,9 @@ export default function RegisterPage() {
         transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
       >
         <div className="auth-logo">
-          <div className="auth-logo-icon">SC</div>
+          <img src="/logo.png" alt="Logo" style={{ width: 38, height: 38, borderRadius: 8 }} />
           <div>
-            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#fff' }}>SmartCampus</div>
+            <div style={{ fontWeight: 800, fontSize: '1.1rem', color: '#fff' }}>MATRIX CORP</div>
             <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.65)' }}>Create your account</div>
           </div>
         </div>

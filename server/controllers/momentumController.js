@@ -1,146 +1,239 @@
-const Journal = require('../models/Journal');
-const StudyTask = require('../models/StudyTask');
-const Faq = require('../models/Faq');
-const { asyncHandler } = require('../middleware/errorHandler');
+const FAQ = require('../models/FAQ');
+const MomentumTask = require('../models/MomentumTask');
+const JournalEntry = require('../models/JournalEntry');
 
-// ─── Journal Controllers ──────────────────────────────────────────────────────
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+// Simple wrapper to avoid try/catch blocks if desired, 
+// but we'll use standard try/catch here for simplicity as per existing pattern.
 
-// @GET /api/momentum/journals
-const getJournals = asyncHandler(async (req, res) => {
-  const journals = await Journal.find().sort('-entryDate');
-  res.json({ success: true, data: journals });
-});
+// ── FAQ CONTROLLERS ─────────────────────────────────────────────────────────
 
-// @POST /api/momentum/journals
-const createJournal = asyncHandler(async (req, res) => {
-  const journal = await Journal.create(req.body);
-  res.status(201).json({ success: true, data: journal });
-});
-
-// @PUT /api/momentum/journals/:id
-const updateJournal = asyncHandler(async (req, res) => {
-  const journal = await Journal.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
-  if (!journal) {
-    return res.status(404).json({ success: false, message: 'Journal not found' });
+// Fetch all published FAQs
+const getPublicFaqs = async (req, res) => {
+  try {
+    const faqs = await FAQ.find({ isPublished: true }).sort({ createdAt: -1 });
+    res.json({ success: true, data: faqs });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-  res.json({ success: true, data: journal });
-});
+};
 
-// @DELETE /api/momentum/journals/:id
-const deleteJournal = asyncHandler(async (req, res) => {
-  const journal = await Journal.findByIdAndDelete(req.params.id);
-  if (!journal) {
-    return res.status(404).json({ success: false, message: 'Journal not found' });
+// Fetch pending FAQs for a user
+const getMyPendingFaqs = async (req, res) => {
+  try {
+    const { ids } = req.body;
+    const userId = req.user?._id;
+    
+    let filter = { isPublished: false };
+    if (userId) {
+      filter.userId = userId;
+    } else if (ids && Array.isArray(ids)) {
+      filter._id = { $in: ids };
+    } else {
+      return res.status(200).json({ success: true, data: [] });
+    }
+
+    const pendingFaqs = await FAQ.find(filter).sort({ createdAt: -1 });
+    res.json({ success: true, data: pendingFaqs });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-  res.json({ success: true, message: 'Journal entry deleted' });
-});
+};
 
-// ─── Study Task Controllers ───────────────────────────────────────────────────
-
-// @GET /api/momentum/study-tasks
-const getStudyTasks = asyncHandler(async (req, res) => {
-  const tasks = await StudyTask.find().sort('-createdAt');
-  res.json({ success: true, data: tasks });
-});
-
-// @POST /api/momentum/study-tasks
-const createStudyTask = asyncHandler(async (req, res) => {
-  const task = await StudyTask.create(req.body);
-  res.status(201).json({ success: true, data: task });
-});
-
-// @DELETE /api/momentum/study-tasks/:id
-const deleteStudyTask = asyncHandler(async (req, res) => {
-  const task = await StudyTask.findByIdAndDelete(req.params.id);
-  if (!task) {
-    return res.status(404).json({ success: false, message: 'Task not found' });
+// Fetch all submitted FAQs for admin review
+const getAdminFaqs = async (req, res) => {
+  try {
+    const faqs = await FAQ.find({ submittedByUser: true }).sort({ createdAt: -1 });
+    res.json({ success: true, data: faqs });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-  res.json({ success: true, message: 'Study task deleted' });
-});
+};
 
-// @PUT /api/momentum/study-tasks/:id
-const updateStudyTask = asyncHandler(async (req, res) => {
-  const task = await StudyTask.findByIdAndUpdate(req.params.id, req.body, {
-    new: true,
-    runValidators: true,
-  });
-  if (!task) {
-    return res.status(404).json({ success: false, message: 'Task not found' });
+// Fetch all FAQs (Admin view)
+const getFaqs = async (req, res) => {
+  try {
+    const faqs = await FAQ.find().sort({ createdAt: -1 });
+    res.json({ success: true, data: faqs });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-  res.json({ success: true, data: task });
-});
+};
 
-// ─── FAQ Controllers ──────────────────────────────────────────────────────────
-
-// @GET /api/momentum/faqs (Admin)
-const getFaqs = asyncHandler(async (req, res) => {
-  const faqs = await Faq.find().sort('order');
-  res.json({ success: true, data: faqs });
-});
-
-// @GET /api/momentum/faqs/public (Public)
-const getPublicFaqs = asyncHandler(async (req, res) => {
-  const faqs = await Faq.find({ isPublished: true }).sort('order');
-  res.json({ success: true, data: faqs });
-});
-
-// @GET /api/momentum/faqs/admin — all user-submitted questions for admin review
-const getAdminFaqs = asyncHandler(async (req, res) => {
-  const faqs = await Faq.find({ submittedByUser: true }).sort('-createdAt');
-  res.json({ success: true, data: faqs });
-});
-
-// @POST /api/momentum/faqs/my-pending (Public)
-const getMyPendingFaqs = asyncHandler(async (req, res) => {
-  const { ids } = req.body;
-  const faqs = await Faq.find({ _id: { $in: ids } }).sort('-createdAt');
-  res.json({ success: true, data: faqs });
-});
-
-// @POST /api/momentum/faqs
-const createFaq = asyncHandler(async (req, res) => {
-  const faq = await Faq.create(req.body);
-  res.status(201).json({ success: true, data: faq });
-});
-
-// @PUT /api/momentum/faqs/:id
-const updateFaq = asyncHandler(async (req, res) => {
-  // Auto-publish when admin provides a non-empty answer
-  const update = { ...req.body };
-  if (update.answer && update.answer.trim() !== '') {
-    update.isPublished = true;
+// Create a new FAQ
+const createFaq = async (req, res) => {
+  try {
+    const { question, category } = req.body;
+    const newFaq = await FAQ.create({
+      question,
+      category,
+      isPublished: false,
+      submittedByUser: true,
+      userId: req.user?._id
+    });
+    res.status(201).json({ success: true, data: newFaq });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-  const faq = await Faq.findByIdAndUpdate(req.params.id, update, {
-    new: true,
-    runValidators: true,
-  });
-  if (!faq) {
-    return res.status(404).json({ success: false, message: 'FAQ not found' });
-  }
-  res.json({ success: true, data: faq });
-});
+};
 
-// @DELETE /api/momentum/faqs/:id
-const deleteFaq = asyncHandler(async (req, res) => {
-  const faq = await Faq.findByIdAndDelete(req.params.id);
-  if (!faq) {
-    return res.status(404).json({ success: false, message: 'FAQ not found' });
+// Update an FAQ (Admin or Owner)
+const updateFaq = async (req, res) => {
+  try {
+    let updateData = { ...req.body };
+    
+    // Auto-publish if an answer is provided
+    if (updateData.answer && updateData.answer.trim() !== '') {
+      updateData.isPublished = true;
+    }
+
+    const faq = await FAQ.findById(req.params.id);
+    if (!faq) return res.status(404).json({ success: false, message: "FAQ not found" });
+
+    // Authorization: Admin or the Student who submitted it
+    if (req.user.role !== 'admin' && (!faq.userId || faq.userId.toString() !== req.user._id.toString())) {
+      return res.status(403).json({ success: false, message: "Not authorized to update this inquiry" });
+    }
+
+    const updated = await FAQ.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
-  res.json({ success: true, message: 'FAQ deleted' });
-});
+};
+
+// Delete an FAQ
+const deleteFaq = async (req, res) => {
+  try {
+    const faq = await FAQ.findById(req.params.id);
+    if (!faq) return res.status(404).json({ success: false, message: "FAQ not found" });
+
+    if (req.user.role !== 'admin' && (!faq.userId || faq.userId.toString() !== req.user._id.toString())) {
+      return res.status(403).json({ success: false, message: "Not authorized to delete this inquiry" });
+    }
+
+    await faq.deleteOne();
+    res.json({ success: true, message: "FAQ record removed successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ── STUDY TASK CONTROLLERS ──────────────────────────────────────────────────
+
+// Fetch study tasks for current user
+const getStudyTasks = async (req, res) => {
+  try {
+    const tasks = await MomentumTask.find({ userId: req.user._id }).sort({ createdAt: -1 });
+    res.json({ success: true, data: tasks });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Create a study task
+const createStudyTask = async (req, res) => {
+  try {
+    const taskData = { ...req.body, userId: req.user._id };
+    const task = await MomentumTask.create(taskData);
+    res.status(201).json({ success: true, data: task });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Update a study task
+const updateStudyTask = async (req, res) => {
+  try {
+    const task = await MomentumTask.findById(req.params.id);
+    if (!task) return res.status(404).json({ success: false, message: "Task not found" });
+
+    if (task.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: "Not authorized" });
+    }
+
+    const updated = await MomentumTask.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Delete a study task
+const deleteStudyTask = async (req, res) => {
+  try {
+    const task = await MomentumTask.findById(req.params.id);
+    if (!task) return res.status(404).json({ success: false, message: "Task not found" });
+
+    if (task.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: "Not authorized" });
+    }
+
+    await task.deleteOne();
+    res.json({ success: true, message: "Task deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// ── JOURNAL ENTRY CONTROLLERS ──────────────────────────────────────────────
+
+// Fetch journal entries for current user
+const getJournals = async (req, res) => {
+  try {
+    const entries = await JournalEntry.find({ userId: req.user._id }).sort({ entryDate: -1 });
+    res.json({ success: true, data: entries });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Create a journal entry
+const createJournal = async (req, res) => {
+  try {
+    const entryData = { ...req.body, userId: req.user._id };
+    const entry = await JournalEntry.create(entryData);
+    res.status(201).json({ success: true, data: entry });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Update a journal entry
+const updateJournal = async (req, res) => {
+  try {
+    const entry = await JournalEntry.findById(req.params.id);
+    if (!entry) return res.status(404).json({ success: false, message: "Journal entry not found" });
+
+    if (entry.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: "Not authorized" });
+    }
+
+    const updated = await JournalEntry.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json({ success: true, data: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Delete a journal entry
+const deleteJournal = async (req, res) => {
+  try {
+    const entry = await JournalEntry.findById(req.params.id);
+    if (!entry) return res.status(404).json({ success: false, message: "Journal entry not found" });
+
+    if (entry.userId.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: "Not authorized" });
+    }
+
+    await entry.deleteOne();
+    res.json({ success: true, message: "Journal entry deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
 module.exports = {
-  getJournals,
-  createJournal,
-  updateJournal,
-  deleteJournal,
-  getStudyTasks,
-  createStudyTask,
-  deleteStudyTask,
-  updateStudyTask,
   getFaqs,
   getPublicFaqs,
   getAdminFaqs,
@@ -148,4 +241,12 @@ module.exports = {
   createFaq,
   updateFaq,
   deleteFaq,
+  getStudyTasks,
+  createStudyTask,
+  updateStudyTask,
+  deleteStudyTask,
+  getJournals,
+  createJournal,
+  updateJournal,
+  deleteJournal,
 };

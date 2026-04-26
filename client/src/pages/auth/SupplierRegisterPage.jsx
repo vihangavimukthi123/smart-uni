@@ -93,9 +93,9 @@ export default function SupplierRegisterPage() {
         style={{ maxWidth: 500 }}
       >
         <div className="auth-logo">
-          <div className="auth-logo-icon" style={{ background: 'var(--grad-success)' }}>🏢</div>
+          <img src="/logo.png" alt="Logo" style={{ width: 42, height: 42, borderRadius: 8 }} />
           <div>
-            <div style={{ fontWeight: 800, fontSize: '1.2rem', color: '#fff' }}>SmartCampus</div>
+            <div style={{ fontWeight: 800, fontSize: '1.2rem', color: '#fff' }}>MATRIX CORP</div>
             <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.65)' }}>Supplier Registration</div>
           </div>
         </div>

@@ -13,8 +13,8 @@ const adminNav = [
     { label: 'Manage Rooms', to: '/admin/rooms', icon: <MdMeetingRoom /> },
     { label: 'Event Requests', to: '/admin/events', icon: <MdEvent /> },
     { label: 'Schedule Matrix', to: '/admin/schedules', icon: <MdCalendarMonth /> },
-    { label: 'User Analytics', to: '/admin/analytics', icon: <MdAnalytics /> },
     { label: 'User Mgt', to: '/admin/users', icon: <MdPeople /> },
+    { label: 'Support Messages', to: '/messages', icon: <MdChat /> },
   ]},
   { section: 'Rental Admin', items: [
     { label: 'Products', to: '/admin/rental/products', icon: <MdPeople /> },
@@ -35,10 +35,11 @@ const adminNav = [
 ];
 
 const studentNav = [
-  { section: 'My Portal', items: [
+  { section: 'Main Control', items: [
     { label: 'My Dashboard', to: '/dashboard', icon: <MdDashboard />, end: true },
-    { label: 'Room Requests', to: '/dashboard/requests', icon: <MdEvent /> },
     { label: 'My Schedule', to: '/dashboard/schedule', icon: <MdCalendarMonth /> },
+    { label: 'Event Requests', to: '/dashboard/requests', icon: <MdEvent /> },
+    { label: 'Support Messages', to: '/messages', icon: <MdChat /> },
   ]},
   { section: 'Rental Store', items: [
     { label: 'Browse Rentals', to: '/rental/items', icon: <MdDashboard /> },
@@ -72,7 +73,8 @@ const supplierNav = [
     { label: 'Special Offers', to: '/supplier/offers', icon: <MdBarChart /> },
     { label: 'Manage Orders', to: '/supplier/orders', icon: <MdHistory /> },
     { label: 'Reviews', to: '/supplier/reviews', icon: <MdBarChart /> },
-    { label: 'Profile Settings', to: '/supplier/profile', icon: <MdPerson /> },
+    { label: 'Profile Settings', to: '/profile', icon: <MdPerson /> },
+    { label: 'Messages', to: '/messages', icon: <MdChat /> },
   ]}
 ];
 
@@ -90,10 +92,10 @@ export default function Sidebar({ collapsed, onToggle }) {
   return (
     <aside className={`sidebar${collapsed ? ' collapsed' : ''}`}>
       <div className="sidebar-header">
-        <div className="sidebar-logo">SC</div>
+        <img src="/logo.png" alt="Logo" style={{ width: 32, height: 32, borderRadius: 6 }} />
         {!collapsed && (
           <div className="sidebar-brand">
-            SmartCampus
+            MATRIX CORP
             <span>Unified Platform</span>
           </div>
         )}
