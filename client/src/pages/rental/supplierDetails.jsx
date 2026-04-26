@@ -152,7 +152,10 @@ export default function SupplierDetails() {
             <div style={{ width: '160px', height: '160px', borderRadius: '40px', backgroundColor: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.2)', padding: '8px', boxShadow: '0 20px 40px rgba(0,0,0,0.1)' }}>
               <div style={{ width: '100%', height: '100%', borderRadius: '32px', overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {supplier.profileImage ? (
-                  <img src={supplier.profileImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img 
+                    src={supplier.profileImage ? (supplier.profileImage.startsWith('http') ? supplier.profileImage : (supplier.profileImage.startsWith('/') ? supplier.profileImage : `/${supplier.profileImage}`)) : "https://images.unsplash.com/photo-1545167622-3a6ac756afa4?w=400&h=400&fit=crop"} 
+                    alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                  />
                 ) : (
                   <div style={{ fontSize: '48px', fontWeight: '950', color: 'white', textTransform: 'uppercase' }}>{supplier.firstName?.charAt(0)}{supplier.lastName?.charAt(0)}</div>
                 )}
@@ -267,7 +270,11 @@ export default function SupplierDetails() {
                       boxShadow: '0 10px 30px -10px rgba(0,0,0,0.05)'
                     }} className="group hover:shadow-2xl">
                       <div style={{ aspectRatio: '4/3', borderRadius: '16px', overflow: 'hidden', border: darkMode ? '1px solid rgba(255,255,255,0.05)' : '1px solid #f1f5f9' }}>
-                        <img src={p.images?.[0]} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.7s ease' }} className="group-hover:scale-110" alt="" />
+                        <img 
+                          src={p.images?.[0] ? (p.images[0].startsWith('http') ? p.images[0] : (p.images[0].startsWith('/') ? p.images[0] : `/${p.images[0]}`)) : "https://images.unsplash.com/photo-1545167622-3a6ac756afa4?w=800&h=600&fit=crop"} 
+                          style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top', transition: 'transform 0.7s ease' }} 
+                          className="group-hover:scale-110" alt="" 
+                        />
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                         <h3 style={{ fontSize: '16px', fontWeight: '950', color: darkMode ? 'white' : '#0f172a', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.name}</h3>

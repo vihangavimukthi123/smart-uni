@@ -1,6 +1,6 @@
 //itemList.jsx
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../../api/axios";
 import { BiPackage, BiCheckCircle, BiStar, BiChevronRight, BiChevronLeft, BiShoppingBag, BiSearch } from "react-icons/bi";
 import { useTheme } from "../../../context/ThemeContext";
@@ -44,6 +44,7 @@ function ProductCard({ product, darkMode, borderColor, textPrimary, textSecondar
             width: "100%",
             height: "100%",
             objectFit: "cover",
+            objectPosition: 'top',
             transition: 'transform 0.5s ease'
           }}
           className="group-hover:scale-110"
@@ -133,6 +134,12 @@ export default function ItemList() {
   const textSecondary = '#64748b';
   const bgColor = darkMode ? '#0f172a' : 'white';
   const borderColor = darkMode ? 'rgba(255,255,255,0.05)' : '#e2e8f0';
+
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.key]);
 
   useEffect(() => {
     document.title = "UniEvent Rentals – Item List";
@@ -280,7 +287,13 @@ export default function ItemList() {
                   name: product.name,
                   desc: product.description,
                   price: product.price,
-                  image: product.images?.[0] || "",
+                  image: (() => {
+                    const img = product.images?.[0];
+                    if (!img) return "https://images.unsplash.com/photo-1545167622-3a6ac756afa4?w=800&h=600&fit=crop";
+                    if (img.startsWith('http')) return img;
+                    const normalized = img.replace(/\\/g, '/');
+                    return normalized.startsWith('/') ? normalized : `/${normalized}`;
+                  })(),
                   tag: product.category?.toUpperCase() || "General",
                   rating: 4.5,
                   reviews: 0,
