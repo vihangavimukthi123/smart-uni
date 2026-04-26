@@ -2,6 +2,8 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { validationResult } = require('express-validator');
 const User = require('../models/User');
+const Supplier = require('../models/Supplier');
+const Product = require('../models/Product');
 const { asyncHandler } = require('../middleware/errorHandler');
 
 const generateTokens = (userId) => {
@@ -146,5 +148,23 @@ const updateSettings = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Settings updated', data: { user } });
 });
 
-module.exports = { register, login, refreshToken, logout, getMe, getAllUsers, updateUserRole, updateProfile, updatePassword, updateSettings };
+// @DELETE /api/auth/users/:id (Admin Only)
+const deleteUser = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.params.id);
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' });
+  }
+
+  // Cleanup if user is a supplier
+  if (user.role === 'supplier') {
+    await Supplier.deleteOne({ semail: user.email });
+    await Product.deleteMany({ supplierEmail: user.email });
+  }
+
+  await User.findByIdAndDelete(req.params.id);
+
+  res.json({ success: true, message: 'User deleted successfully' });
+});
+
+module.exports = { register, login, refreshToken, logout, getMe, getAllUsers, updateUserRole, updateProfile, updatePassword, updateSettings, deleteUser };
 
