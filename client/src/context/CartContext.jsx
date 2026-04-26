@@ -31,7 +31,13 @@ export function CartProvider({ children }) {
           pricePerDay: product.price,
           qty: qty,
           total: product.price * qty,
-          image: product.image || product.images?.[0],
+          image: (() => {
+            const img = product.images?.[0] || product.image;
+            if (!img) return "https://images.unsplash.com/photo-1545167622-3a6ac756afa4?w=800&h=600&fit=crop";
+            if (img.startsWith('http')) return img;
+            const normalized = img.replace(/\\/g, '/');
+            return normalized.startsWith('/') ? normalized : `/${normalized}`;
+          })(),
           supplierEmail: product.supplierEmail,
           dates: "Select dates",
         },
@@ -76,7 +82,13 @@ export function CartProvider({ children }) {
       pricePerDay: item.price,
       qty: item.qty,
       total: item.price * item.qty,
-      image: item.image,
+      image: (() => {
+        const img = item.image;
+        if (!img) return "https://images.unsplash.com/photo-1545167622-3a6ac756afa4?w=800&h=600&fit=crop";
+        if (img.startsWith('http')) return img;
+        const normalized = img.replace(/\\/g, '/');
+        return normalized.startsWith('/') ? normalized : `/${normalized}`;
+      })(),
       supplierEmail: item.supplierEmail,
     }));
     setCartItems(items);
@@ -91,7 +103,13 @@ export function CartProvider({ children }) {
       pricePerDay: item.price,
       qty: item.qty,
       total: item.price * item.qty,
-      image: item.image,
+      image: (() => {
+        const img = item.image;
+        if (!img) return "https://images.unsplash.com/photo-1545167622-3a6ac756afa4?w=800&h=600&fit=crop";
+        if (img.startsWith('http')) return img;
+        const normalized = img.replace(/\\/g, '/');
+        return normalized.startsWith('/') ? normalized : `/${normalized}`;
+      })(),
       supplierEmail: item.supplierEmail,
     }));
     setCartItems(items);
