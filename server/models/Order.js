@@ -50,6 +50,67 @@ const orderSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  appliedPackageId: { type: String, default: null },
+  appliedOfferId: { type: String, default: null },
+  discountSource: { 
+    type: String, 
+    enum: ['PACKAGE', 'ITEM', 'ORDER', null], 
+    default: null 
+  },
+  originalPrice: { type: Number, required: true },
+  discountAmount: { type: Number, default: 0 },
+  finalPrice: { type: Number, required: true },
+  priceBreakdown: {
+    basePrice: { type: Number },
+    packageDiscount: { type: Number },
+    itemDiscounts: { type: Number },
+    offerDiscount: { type: Number },
+    finalAdjustment: { type: Number }
+  },
+  // Email Verification Fields
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
+  hashedOTP: {
+    type: String,
+    default: null
+  },
+  otpCreatedAt: {
+    type: Date,
+    default: null
+  },
+  otpExpiresAt: {
+    type: Date,
+    default: null
+  },
+  otpAttempts: {
+    type: Number,
+    default: 0
+  },
+  otpResendCount: {
+    type: Number,
+    default: 0
+  },
+  cooldownUntil: {
+    type: Date,
+    default: null
+  },
+  // Reminder metadata
+  reminderScheduledAt: {
+    type: Date,
+    index: true,
+    default: null
+  },
+  reminderStatus: {
+    type: String,
+    enum: ["NONE", "SCHEDULED", "SENT", "FAILED"],
+    default: "NONE"
+  },
+  reminderRetryCount: {
+    type: Number,
+    default: 0
+  },
   status: {
     type: String,
     default: "Pending",
