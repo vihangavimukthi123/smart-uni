@@ -1,6 +1,5 @@
 import { useState } from "react";
-import Navbar from "../../../components/layout/Navbar";
-import Sidebar from "../../../components/layout/Sidebar";
+import Sidebar from "../sidebar/sidebar";
 
 const PRIMARY = "#1152D4";
 
@@ -386,13 +385,11 @@ export default function Planner() {
         display: "flex",
         flexDirection: "column",
         minHeight: "100vh",
+        fontFamily: "'Segoe UI', sans-serif",
         backgroundColor: "#F3F4F6",
       }}
     >
-      <Navbar />
-
       <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
         
 
         <div style={styles.main}>
@@ -499,13 +496,13 @@ export default function Planner() {
               {/* Actions */}
               <div style={{ display: "flex", gap: 12 }}>
                 <button
-                  style={styles.outlineBtn}
+                  style={styles.actionBtnOutline}
                   onClick={() => setShowEdit(true)}
                 >
                   ✏️ Edit Plan
                 </button>
-                <button style={styles.outlineBtn}>⬇️ Download PDF</button>
-                <button style={styles.primaryBtn}>💾 Save Workplan</button>
+                <button style={styles.actionBtnOutline}>⬇️ Download PDF</button>
+                <button style={styles.actionBtnPrimary}>💾 Save Workplan</button>
               </div>
             </div>
 
@@ -552,97 +549,33 @@ const styles = {
     minHeight: "100vh",
     fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
     background: "#f5f7fc",
-    color: "#111",
+    color: "#111"
   },
-
-  sidebar: {
-    width: 220,
-    background: "#fff",
-    borderRight: "1px solid #e5e7eb",
-    display: "flex",
-    flexDirection: "column",
-    padding: "24px 0",
-    flexShrink: 0,
-  },
-  logoWrap: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "0 20px 22px",
-    borderBottom: "1px solid #f1f4fa",
-  },
-  logoMark: {
-    width: 32,
-    height: 32,
-    background: PRIMARY,
-    borderRadius: 8,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#fff",
-    fontWeight: 800,
-    fontSize: 16,
-  },
-  logoText: { fontWeight: 700, fontSize: 16, color: "#111" },
-  navBtn: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "11px 20px",
-    border: "none",
-    borderRadius: 0,
-    fontSize: 13.5,
-    cursor: "pointer",
-    textAlign: "left",
-    width: "100%",
-    transition: "all 0.12s",
-  },
-  userRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "16px 20px 0",
-    borderTop: "1px solid #f1f4fa",
-    marginTop: "auto",
-  },
-  avatar: {
-    width: 34,
-    height: 34,
-    borderRadius: "50%",
-    background: `linear-gradient(135deg, ${PRIMARY}, #3b6fe8)`,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#fff",
-    fontWeight: 700,
-    fontSize: 13,
-    flexShrink: 0,
-  },
-  userName: { fontWeight: 700, fontSize: 13, color: "#111" },
-  userRole: { fontSize: 11, color: "#9ca3af" },
-
   main: {
     flex: 1,
     overflowY: "auto",
     display: "flex",
-    flexDirection: "column",
+    flexDirection: "column"
   },
-
   hero: {
     background: `linear-gradient(120deg, ${PRIMARY} 0%, #0e3ea8 100%)`,
     padding: "30px 36px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    color: "#fff",
+    color: "#fff"
   },
   heroTitle: {
     fontSize: 22,
     fontWeight: 800,
     margin: "0 0 8px",
-    letterSpacing: "-0.4px",
+    letterSpacing: "-0.4px"
   },
-  heroSub: { fontSize: 13.5, opacity: 0.82, margin: 0 },
+  heroSub: {
+    fontSize: 13.5,
+    opacity: 0.82,
+    margin: 0
+  },
   heroIconBtn: {
     width: 34,
     height: 34,
@@ -651,14 +584,13 @@ const styles = {
     border: "none",
     color: "#fff",
     cursor: "pointer",
-    fontSize: 16,
+    fontSize: 16
   },
-
   statRow: {
     display: "flex",
     gap: 16,
     padding: "20px 28px 0",
-    flexWrap: "wrap",
+    flexWrap: "wrap"
   },
   statCard: {
     background: "#fff",
@@ -666,38 +598,39 @@ const styles = {
     padding: "14px 20px",
     flex: 1,
     minWidth: 160,
-    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06)"
   },
   statLabel: {
     fontSize: 11,
     fontWeight: 700,
     color: "#9ca3af",
-    letterSpacing: "0.5px",
+    letterSpacing: 0.5,
     marginBottom: 6,
-    textTransform: "uppercase",
+    textTransform: "uppercase"
   },
-  statValue: { fontSize: 15, fontWeight: 800, color: "#111" },
-
+  statValue: {
+    fontSize: 15,
+    fontWeight: 800,
+    color: "#111"
+  },
   grid: {
     display: "grid",
     gridTemplateColumns: "1fr 280px",
     gap: 20,
-    padding: "20px 28px 36px",
+    padding: "20px 28px 36px"
   },
-
   card: {
     background: "#fff",
     borderRadius: 14,
     padding: "22px 24px",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.06)",
+    boxShadow: "0 1px 4px rgba(0,0,0,0.06)"
   },
   cardTitle: {
     fontSize: 15.5,
     fontWeight: 700,
     color: "#111",
-    marginBottom: 18,
+    marginBottom: 18
   },
-
   dayLabel: {
     fontSize: 11,
     fontWeight: 700,
@@ -707,7 +640,7 @@ const styles = {
     marginBottom: 10,
     display: "flex",
     alignItems: "center",
-    gap: 8,
+    gap: 8
   },
   dayDot: {
     width: 6,
@@ -715,87 +648,79 @@ const styles = {
     borderRadius: "50%",
     background: PRIMARY,
     display: "inline-block",
-    flexShrink: 0,
+    flexShrink: 0
   },
   scheduleRow: {
     display: "flex",
     alignItems: "flex-start",
     gap: 14,
     padding: "11px 14px",
-    borderRadius: 10,
+    borderRadius: 10
   },
   timeLabel: {
     fontSize: 12,
     color: "#9ca3af",
     fontWeight: 500,
     minWidth: 54,
-    paddingTop: 2,
+    paddingTop: 2
   },
-  itemDesc: { fontSize: 12, color: "#9ca3af", marginTop: 2 },
+  itemDesc: {
+    fontSize: 12,
+    color: "#9ca3af",
+    marginTop: 2
+  },
   duration: {
     fontSize: 12,
     color: "#9ca3af",
     whiteSpace: "nowrap",
-    paddingTop: 2,
+    paddingTop: 2
   },
   badge: {
     padding: "3px 10px",
     borderRadius: 20,
     fontSize: 11,
     fontWeight: 700,
-    whiteSpace: "nowrap",
+    whiteSpace: "nowrap"
   },
-
   stepNum: {
     width: 28,
     height: 28,
     borderRadius: "50%",
-    background: `${PRIMARY}12`,
+    background: "rgba(17,82,212,0.12)",
     color: PRIMARY,
     fontWeight: 700,
     fontSize: 13,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    flexShrink: 0,
+    flexShrink: 0
   },
   stepTitle: {
     fontWeight: 700,
     fontSize: 13.5,
     color: "#111",
-    marginBottom: 3,
+    marginBottom: 3
   },
-  stepDesc: { fontSize: 13, color: "#64748b", lineHeight: 1.6 },
-
-  tipCard: { borderRadius: 12, padding: "14px 16px" },
-  tipTitle: { fontWeight: 700, fontSize: 13.5, color: "#111" },
-  tipDesc: { fontSize: 12.5, color: "#475569", margin: 0, lineHeight: 1.6 },
-
-  outlineBtn: {
-    flex: 1,
-    padding: "11px 16px",
+  stepDesc: {
+    fontSize: 13,
+    color: "#64748b",
+    lineHeight: 1.6
+  },
+  tipCard: {
     borderRadius: 12,
-    border: `1.5px solid ${PRIMARY}`,
-    background: "#fff",
-    color: PRIMARY,
+    padding: "14px 16px"
+  },
+  tipTitle: {
     fontWeight: 700,
     fontSize: 13.5,
-    cursor: "pointer",
-    whiteSpace: "nowrap",
+    color: "#111"
   },
-  primaryBtn: {
-    flex: 2,
-    padding: "11px 20px",
-    borderRadius: 12,
-    border: "none",
-    background: PRIMARY,
-    color: "#fff",
-    fontWeight: 700,
-    fontSize: 13.5,
-    cursor: "pointer",
-    boxShadow: `0 4px 14px ${PRIMARY}44`,
+  tipDesc: {
+    fontSize: 12.5,
+    color: "#475569",
+    margin: 0,
+    lineHeight: 1.6
   },
-
   overlay: {
     position: "fixed",
     inset: 0,
@@ -804,7 +729,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    zIndex: 1000,
+    zIndex: 1000
   },
   modal: {
     background: "#fff",
@@ -817,15 +742,23 @@ const styles = {
     flexDirection: "column",
     gap: 18,
     maxHeight: "90vh",
-    overflowY: "auto",
+    overflowY: "auto"
   },
   modalHeader: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "flex-start"
   },
-  modalTitle: { fontSize: 18, fontWeight: 800, color: "#111" },
-  modalSub: { fontSize: 13, color: "#9ca3af", marginTop: 3 },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 800,
+    color: "#111"
+  },
+  modalSub: {
+    fontSize: 13,
+    color: "#9ca3af",
+    marginTop: 3
+  },
   closeBtn: {
     border: "none",
     background: "#f3f4f6",
@@ -837,10 +770,18 @@ const styles = {
     color: "#555",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "center"
   },
-  fieldGroup: { display: "flex", flexDirection: "column", gap: 6 },
-  label: { fontSize: 12.5, fontWeight: 700, color: "#374151" },
+  fieldGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6
+  },
+  label: {
+    fontSize: 12.5,
+    fontWeight: 700,
+    color: "#374151"
+  },
   input: {
     border: "1.5px solid #e5e7eb",
     borderRadius: 10,
@@ -848,11 +789,21 @@ const styles = {
     fontSize: 13.5,
     color: "#111",
     outline: "none",
-    fontFamily: "inherit",
+    transition: "border 0.15s",
+    fontFamily: "inherit"
   },
-  inputError: { borderColor: "#ef4444" },
-  errorMsg: { fontSize: 11.5, color: "#ef4444" },
-  row2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
+  inputError: {
+    borderColor: "#ef4444"
+  },
+  errorMsg: {
+    fontSize: 11.5,
+    color: "#ef4444"
+  },
+  row2: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: 16
+  },
   statusBtn: {
     padding: "8px 20px",
     borderRadius: 10,
@@ -860,13 +811,13 @@ const styles = {
     fontWeight: 600,
     fontSize: 13,
     cursor: "pointer",
-    transition: "all 0.15s",
+    transition: "all 0.15s"
   },
   modalFooter: {
     display: "flex",
     justifyContent: "flex-end",
     gap: 12,
-    marginTop: 4,
+    marginTop: 4
   },
   cancelBtn: {
     padding: "10px 22px",
@@ -876,7 +827,7 @@ const styles = {
     color: "#555",
     fontWeight: 600,
     fontSize: 13.5,
-    cursor: "pointer",
+    cursor: "pointer"
   },
   submitBtn: {
     padding: "10px 24px",
@@ -886,7 +837,32 @@ const styles = {
     color: "#fff",
     fontWeight: 700,
     fontSize: 13.5,
-    cursor: "pointer",
+    cursor: "pointer"
   },
+  actionBtnOutline: {
+    flex: 1,
+    padding: "11px 16px",
+    borderRadius: 12,
+    border: "1.5px solid #d1d5db",
+    background: "#fff",
+    color: "#4b5563",
+    fontWeight: 700,
+    fontSize: 13.5,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    transition: "all 0.2s ease"
+  },
+  actionBtnPrimary: {
+    flex: 2,
+    padding: "11px 20px",
+    borderRadius: 12,
+    border: "none",
+    background: "#e5e7eb",
+    color: "#4b5563",
+    fontWeight: 700,
+    fontSize: 13.5,
+    cursor: "pointer",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+    transition: "all 0.2s ease"
+  }
 };
-

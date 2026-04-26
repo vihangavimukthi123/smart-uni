@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import "./AcademicTask.css";
 import api from "../../../api/axios";
-import Navbar from "../../../components/layout/Navbar";
-import Sidebar from "../../../components/layout/Sidebar";
 
 const getProfile = () => {
   const saved = localStorage.getItem("studentProfile");
@@ -355,11 +353,8 @@ export default function AcademicTask() {
   };
 
   return (
-    <div className="lms-layout">
-      <Navbar />
-      <div style={{ display: "flex", flex: 1 }}>
-        <Sidebar />
-        <main className="main-content academic-page">
+    <>
+      <main className="academic-content academic-page">
           <div className="main-header">
             <div>
               <h1 className="main-title">Academic Tasks</h1>
@@ -425,8 +420,7 @@ export default function AcademicTask() {
           {filteredTasks.length === 0 && (
             <div className="task-empty-state">No tasks found.</div>
           )}
-        </main>
-      </div>
+      </main>
 
       {/* TASK DETAILS MODAL */}
       {detailsTask && (
@@ -577,6 +571,6 @@ export default function AcademicTask() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }

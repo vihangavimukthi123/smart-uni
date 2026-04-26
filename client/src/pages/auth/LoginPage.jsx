@@ -118,12 +118,18 @@ export default function LoginPage() {
                     <MdEmail className="input-icon" size={20} />
                     <input
                       type="email"
+                      list="known-campus-emails"
                       className={`form-input${errors.email ? ' error' : ''}`}
                       placeholder="name@campus.edu"
                       value={form.email}
                       onChange={handleChange('email')}
                       autoFocus
                     />
+                    <datalist id="known-campus-emails">
+                      <option value="user@campus.edu" />
+                      <option value="shanilka.samarakoon@campus.edu" />
+                      <option value="dinusha.fernando@campus.edu" />
+                    </datalist>
                   </div>
                   <AnimatePresence>
                     {errors.email && (
