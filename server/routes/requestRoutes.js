@@ -4,11 +4,20 @@ const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
+const User = require('../models/User');
+
 // CREATE request
 router.post("/", protect, async (req, res) => {
   try {
+    const { receiverEmail } = req.body;
+    
+    // Find receiver user ID by email
+    const receiverUser = await User.findOne({ email: receiverEmail.toLowerCase().trim() });
+    
     const requestData = {
       ...req.body,
+      sender: req.user._id,
+      receiver: receiverUser ? receiverUser._id : null,
       senderEmail: req.user.email.toLowerCase().trim(),
       senderName: req.user.name
     };
@@ -16,6 +25,7 @@ router.post("/", protect, async (req, res) => {
     const saved = await request.save();
     res.json(saved);
   } catch (err) {
+    console.error('Request creation error:', err);
     res.status(500).json(err);
   }
 });

@@ -228,6 +228,7 @@ const moduleSkillMapping = {
       moduleLabels: profile.moduleLabels || [],
       selectedYear: profile.selectedYear || "",
       selectedSemester: profile.selectedSemester || "",
+      degreeProgram: profile.degreeProgram || "",
     };
   };
 
@@ -236,7 +237,8 @@ const moduleSkillMapping = {
   useEffect(() => {
     setFilterYear(currentProfile.selectedYear ? String(currentProfile.selectedYear) : "");
     setFilterSemester(currentProfile.selectedSemester ? String(currentProfile.selectedSemester) : "");
-  }, [currentProfile.selectedYear, currentProfile.selectedSemester]);
+    setFilterSpecialization(currentProfile.degreeProgram || "");
+  }, [currentProfile.selectedYear, currentProfile.selectedSemester, currentProfile.degreeProgram]);
 
   useEffect(() => {
     const fetchPeers = async () => {
@@ -347,10 +349,16 @@ const moduleSkillMapping = {
       const skillMatch = filterSkill ? (p.skills || []).some(s => s && s.includes(filterSkill)) : true;
       const yearMatch = filterYear ? String(p.year) === String(filterYear) : true;
       const semMatch = filterSemester ? String(p.semester) === String(filterSemester) : true;
-      return nameMatch && moduleMatch && skillMatch && yearMatch && semMatch;
+      
+      // Specialization match (only for Year 3 & 4)
+      const specMatch = (filterSpecialization && (filterYear === "3" || filterYear === "4")) 
+        ? (p.degreeProgram || "").toUpperCase() === filterSpecialization.toUpperCase() 
+        : true;
+
+      return nameMatch && moduleMatch && skillMatch && yearMatch && semMatch && specMatch;
     });
     setFilteredPeers(temp);
-  }, [searchName, filterModule, filterSkill, filterYear, filterSemester, dbPeers]);
+  }, [searchName, filterModule, filterSkill, filterYear, filterSemester, filterSpecialization, dbPeers]);
 
   // Get current datetime for min attribute
   const nowISO = new Date().toISOString().slice(0, 16);

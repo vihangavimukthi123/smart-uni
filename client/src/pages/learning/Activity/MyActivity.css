@@ -187,17 +187,19 @@ body {
 
 .aa-initials {
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   font-weight: 800;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   flex-shrink: 0;
-  color: #fff;
+  color: #ffffff !important;
+  line-height: 1;
+  text-align: center;
 }
 
 .aa-initials--primary {
-  background: linear-gradient(135deg, #2563eb, #60a5fa);
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
 }
 
 .aa-initials--secondary {
@@ -1200,3 +1202,85 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+/* Conversations List */
+.aa-conversations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.aa-convo-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.aa-convo-item:hover {
+  border-color: #3b82f6;
+  background: #f8fafc;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.aa-convo-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.aa-convo-name {
+  font-weight: 600;
+  font-size: 14px;
+  color: #1e293b;
+}
+
+.aa-convo-last-msg {
+  font-size: 12px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.aa-convo-item--unread {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.aa-convo-item--unread .aa-convo-name {
+  color: #2563eb;
+}
+
+.aa-unread-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #ef4444;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+.aa-header-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #ef4444;
+  border-radius: 50%;
+  margin-left: 8px;
+  vertical-align: middle;
+}

@@ -3,6 +3,7 @@ import "./MyActivity.css";
 import api from "../../../api/axios";
 
 import { useAuth } from "../../../context/AuthContext";
+import Chat from "../Messaging/Chat";
 
 const getProfile = () => {
   const saved = localStorage.getItem("studentProfile");
@@ -92,14 +93,34 @@ export default function MyActivity() {
   const [reviewedRequestIds, setReviewedRequestIds] = useState(new Set());
   const [myReviews, setMyReviews] = useState([]);
   const [myTasks,       setMyTasks]       = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const [activeChat, setActiveChat] = useState(null);
 
   useEffect(() => {
     if (currentUserId && currentUserId !== "local-user") {
       fetchRequests();
       fetchMyTasks();
       fetchMyReviews();
+      fetchConversations();
+
+      const interval = setInterval(() => {
+        fetchConversations();
+      }, 10000);
+
+      return () => clearInterval(interval);
     }
   }, [currentUserId]);
+
+  const fetchConversations = async () => {
+    try {
+      const res = await api.get("/messages/conversations");
+      if (res.data.success) {
+        setConversations(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching conversations:", err);
+    }
+  };
 
   const fetchRequests = async () => {
     try {
@@ -241,18 +262,39 @@ export default function MyActivity() {
     setReviewComment("");
   }
 
-  function openConversation(req) {
+  async function openConversation(req) {
     const isSender =
       (req.senderEmail && req.senderEmail === currentUserId) ||
       req.senderName === currentUserName;
+    
     const peerName = (isSender ? req.receiverName : req.senderName) || "Peer";
     const peerEmail = (isSender ? req.receiverEmail : req.senderEmail) || "";
-    setConversationReq({ ...req, peerName, peerEmail });
-    const draft = isSender
-      ? `Hi ${peerName},\n\nThanks for accepting my request for "${req.skill || "General"}". Can we coordinate a time to connect and start working on this?\n\nBest,\n${currentUserName}`
-      : `Hi ${peerName},\n\nI accepted your request for "${req.skill || "General"}". Let's coordinate a time to connect and work on this.\n\nBest,\n${currentUserName}`;
+    
+    // If we have the ID directly from the request model update
+    let peerId = isSender ? req.receiver : req.sender;
 
-    setConversationDraft(draft);
+    // Fallback: If ID is missing (old request), resolve it by email
+    if (!peerId) {
+        try {
+            const res = await api.get(`/auth/find-user/${encodeURIComponent(peerEmail)}`);
+            if (res.data.success) {
+                peerId = res.data.data._id;
+            }
+        } catch (err) {
+            console.error("Could not resolve peer ID:", err);
+        }
+    }
+
+    if (peerId) {
+        setActiveChat({ peerId, peerName, requestId: req._id });
+    } else {
+        // Legacy fallback: Show email modal only if user cannot be found in database
+        setConversationReq({ ...req, peerName, peerEmail });
+        const draft = isSender
+          ? `Hi ${peerName},\n\nThanks for accepting my request for "${req.skill || "General"}". Can we coordinate a time to connect and start working on this?\n\nBest,\n${currentUserName}`
+          : `Hi ${peerName},\n\nI accepted your request for "${req.skill || "General"}". Let's coordinate a time to connect and work on this.\n\nBest,\n${currentUserName}`;
+        setConversationDraft(draft);
+    }
   }
 
   async function handleSubmitReview() {
@@ -530,6 +572,34 @@ export default function MyActivity() {
                     </div>
                   )}
                 </div>
+
+                <div className="aa-section__header" style={{ marginTop: '30px' }}>
+                  <h3 className="aa-subsection-title">
+                    Active Conversations
+                    {conversations.some(c => c.unreadCount > 0) && <span className="aa-header-dot"></span>}
+                  </h3>
+                </div>
+                <div className="aa-conversations-list">
+                  {conversations.length > 0 ? (
+                    conversations.map((conv) => (
+                      <div className={`aa-convo-item ${conv.unreadCount > 0 ? 'aa-convo-item--unread' : ''}`} key={conv.user._id} onClick={() => setActiveChat({ peerId: conv.user._id, peerName: conv.user.name })}>
+                        <div className="aa-avatar aa-avatar--sm aa-initials aa-initials--primary">
+                          {conv.user.name?.charAt(0).toUpperCase()}
+                          {conv.unreadCount > 0 && <span className="aa-unread-badge">{conv.unreadCount}</span>}
+                        </div>
+                        <div className="aa-convo-info">
+                          <div className="aa-convo-name">{conv.user.name}</div>
+                          <div className="aa-convo-last-msg">{conv.lastMessage.content}</div>
+                        </div>
+                        <button className="aa-btn aa-btn--ghost aa-btn--sm">Open</button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="aa-empty-state">
+                      <p>No active conversations.</p>
+                    </div>
+                  )}
+                </div>
               </div>
 
             <section className="aa-section">
@@ -742,6 +812,17 @@ export default function MyActivity() {
                 </div>
               </div>
             </div>
+          )}
+          {activeChat && (
+            <Chat 
+                peerId={activeChat.peerId} 
+                peerName={activeChat.peerName} 
+                requestId={activeChat.requestId}
+                onClose={() => {
+                    setActiveChat(null);
+                    fetchConversations();
+                }} 
+            />
           )}
     </main>
   );

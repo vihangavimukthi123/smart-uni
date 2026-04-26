@@ -146,5 +146,12 @@ const updateSettings = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Settings updated', data: { user } });
 });
 
-module.exports = { register, login, refreshToken, logout, getMe, getAllUsers, updateUserRole, updateProfile, updatePassword, updateSettings };
+// @GET /api/auth/find-user/:email
+const getUserByEmail = asyncHandler(async (req, res) => {
+  const user = await User.findOne({ email: req.params.email.toLowerCase().trim() });
+  if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+  res.json({ success: true, data: { _id: user._id, name: user.name } });
+});
+
+module.exports = { register, login, refreshToken, logout, getMe, getAllUsers, updateUserRole, updateProfile, updatePassword, updateSettings, getUserByEmail };
 
