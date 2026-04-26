@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext";
 import { useCart } from "../../../context/CartContext";
 import Sidebar from "../../../components/layout/Sidebar";
 import Navbar from "../../../components/layout/Navbar";

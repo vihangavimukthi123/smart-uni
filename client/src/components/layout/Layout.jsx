@@ -62,7 +62,7 @@ export default function Layout() {
     setUnreadCount((c) => Math.max(0, c - 1));
   };
 
-  const title = pageTitles[location.pathname] || 'SmartCampus';
+  const title = pageTitles[location.pathname] || 'MATRIX CORP';
 
   return (
     <div className="app-shell">

@@ -1,41 +1,45 @@
 const express = require('express');
 const {
-  getJournals,
-  createJournal,
-  updateJournal,
-  deleteJournal,
-  getStudyTasks,
-  createStudyTask,
-  deleteStudyTask,
-  updateStudyTask,
-  getFaqs,
   getPublicFaqs,
   getMyPendingFaqs,
   createFaq,
   updateFaq,
   deleteFaq,
+  getStudyTasks,
+  createStudyTask,
+  updateStudyTask,
+  deleteStudyTask,
+  getJournals,
+  createJournal,
+  updateJournal,
+  deleteJournal,
 } = require('../controllers/momentumController');
+const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Journal routes
-router.get('/journals', getJournals);
-router.post('/journals', createJournal);
-router.put('/journals/:id', updateJournal);
-router.delete('/journals/:id', deleteJournal);
+// Public Routes
+router.get('/faqs/public', getPublicFaqs);
 
-// Study Task routes
+// Protected Routes
+router.use(protect);
+
+// FAQ Routes
+router.post('/faqs/my-pending', getMyPendingFaqs);
+router.post('/faqs', createFaq);
+router.put('/faqs/:id', updateFaq);
+router.delete('/faqs/:id', deleteFaq);
+
+// Study Task Routes
 router.get('/study-tasks', getStudyTasks);
 router.post('/study-tasks', createStudyTask);
 router.put('/study-tasks/:id', updateStudyTask);
 router.delete('/study-tasks/:id', deleteStudyTask);
 
-// FAQ routes
-router.get('/faqs', getFaqs);
-router.get('/faqs/public', getPublicFaqs);
-router.post('/faqs/my-pending', getMyPendingFaqs);
-router.post('/faqs', createFaq);
-router.put('/faqs/:id', updateFaq);
-router.delete('/faqs/:id', deleteFaq);
+// Journal Routes
+router.get('/journals', getJournals);
+router.post('/journals', createJournal);
+router.put('/journals/:id', updateJournal);
+router.delete('/journals/:id', deleteJournal);
 
 module.exports = router;

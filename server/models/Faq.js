@@ -14,20 +14,17 @@ const faqSchema = new mongoose.Schema(
       type: String,
       default: "General",
     },
-    order: {
-      type: Number,
-      default: 0,
-    },
     isPublished: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+      required: false,
     },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Faq', faqSchema);
+module.exports = mongoose.model('FAQ', faqSchema);

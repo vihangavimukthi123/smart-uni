@@ -46,14 +46,14 @@ export default function UserDashboard() {
             <MdCalendarMonth />
           </div>
         </div>
-        <div className="stat-card">
+        <Link to="/dashboard/requests" style={{ textDecoration: 'none' }} className="stat-card">
           <div className="stat-label">Pending Requests</div>
           <div className="stat-value">{pendingCount}</div>
           <p className="text-xs text-muted mt-sm">Awaiting AI Allocation</p>
           <div className="stat-icon" style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--amber)' }}>
             <MdEvent />
           </div>
-        </div>
+        </Link>
         <Link to="/messages" style={{ textDecoration: 'none' }} className="stat-card">
           <div className="stat-label">Helpdesk</div>
           <div className="stat-value">Support</div>

@@ -16,6 +16,7 @@ const eventRoutes = require('./routes/eventRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const messageRoutes = require('./routes/messageRoutes');
+const momentumRoutes = require('./routes/momentumRoutes');
 
 // Rental Routes
 const productRoutes = require('./routes/productRoutes');
@@ -29,7 +30,6 @@ const peerRoutes = require('./routes/peerRoutes');
 const peerReviewRoutes = require('./routes/peerReviewRoutes');
 const requestRoutes = require('./routes/requestRoutes');
 const taskRoutes = require('./routes/taskRoutes');
-const momentumRoutes = require('./routes/momentumRoutes');
 
 // ── Initialize App ──────────────────────────────────────────────────────────
 const app = express();
@@ -114,7 +114,7 @@ if (process.env.NODE_ENV === 'development') {
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
-    message: '🏫 Smart Campus API is running',
+    message: '🏢 MATRIX CORP API is running',
     timestamp: new Date().toISOString(),
     version: '1.0.0',
   });
@@ -127,6 +127,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/momentum', momentumRoutes);
 
 // Rental API
 app.use('/api/rental/products', productRoutes);
@@ -140,7 +141,6 @@ app.use('/api/learning/peers', peerRoutes);
 app.use('/api/learning/peerreviews', peerReviewRoutes);
 app.use('/api/learning/requests', requestRoutes);
 app.use('/api/learning/tasks', taskRoutes);
-app.use('/api/momentum', momentumRoutes);
 
 // ── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {
