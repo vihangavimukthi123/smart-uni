@@ -378,7 +378,7 @@ export default function AcademicTask() {
       alert("Poster email is not available for this task.");
       return;
     }
-    const subject = encodeURIComponent(`SmartCampus help request: ${task.title || "Task"}`);
+    const subject = encodeURIComponent(`MATRIX CORP help request: ${task.title || "Task"}`);
     const body = encodeURIComponent(
       `Hi ${task.author || "there"},\n\nI saw your task "${task.title || "task"}" and I would like to discuss how I can help.\n\nBest,\n${currentProfile.name || "Student"}`
     );

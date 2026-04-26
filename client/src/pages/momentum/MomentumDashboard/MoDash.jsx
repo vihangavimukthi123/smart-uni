@@ -10,6 +10,7 @@ import {
   Area,
   CartesianGrid,
 } from "recharts";
+import { format, subDays, isSameDay, startOfDay, endOfDay, isWithinInterval } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../sidebar/sidebar";
 
@@ -165,28 +166,44 @@ export default function MomentumDashboard() {
           },
         });
 
-        // 2. Weekly Bar Chart Sorting (Grouping by day created)
-        const days = { 0: "SUN", 1: "MON", 2: "TUE", 3: "WED", 4: "THU", 5: "FRI", 6: "SAT" };
-        const weekMap = { MON: 0, TUE: 0, WED: 0, THU: 0, FRI: 0, SAT: 0, SUN: 0 };
-        
-        tasks.forEach(t => {
-          const d = new Date(t.taskDate || t.createdAt).getDay();
-          weekMap[days[d]] += (t.timeTracked || 0) / 60;
+        // 2. Weekly Bar Chart (Rolling last 7 days)
+        const wData = [...Array(7)].map((_, i) => {
+          const d = subDays(new Date(), 6 - i);
+          return {
+            day: format(d, "EEE").toUpperCase(),
+            fullDate: d,
+            hours: 0
+          };
         });
-        
-        const wData = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"].map(d => ({
-          day: d,
-          hours: Number(weekMap[d].toFixed(1))
-        }));
-        setWeekly(wData);
 
-        // 3. Monthly Cumulative Completion Mapping
-        const mData = [
-          { week: "Week 1", completion: Number((completionRate * 0.4).toFixed(1)) },
-          { week: "Week 2", completion: Number((completionRate * 0.6).toFixed(1)) },
-          { week: "Week 3", completion: Number((completionRate * 0.8).toFixed(1)) },
-          { week: "Week 4", completion: Number(completionRate.toFixed(1)) },
-        ];
+        tasks.forEach(t => {
+          const tDate = new Date(t.taskDate || t.createdAt);
+          const dayMatch = wData.find(w => isSameDay(w.fullDate, tDate));
+          if (dayMatch) {
+            dayMatch.hours += (t.timeTracked || 0) / 60;
+          }
+        });
+
+        setWeekly(wData.map(d => ({ ...d, hours: Number(d.hours.toFixed(1)) })));
+
+        // 3. Monthly Progression (Last 4 weeks)
+        const mData = [3, 2, 1, 0].map(wOffset => {
+          const end = endOfDay(subDays(new Date(), wOffset * 7));
+          const start = startOfDay(subDays(end, 6));
+          
+          const weekTasks = tasks.filter(t => 
+            isWithinInterval(new Date(t.taskDate || t.createdAt), { start, end })
+          );
+          
+          const wTotal = weekTasks.length;
+          const wCompleted = weekTasks.filter(t => t.status === "Completed").length;
+          const wRate = wTotal ? (wCompleted / wTotal) * 100 : 0;
+
+          return {
+            week: `Week ${4 - wOffset}`,
+            completion: Number(wRate.toFixed(1))
+          };
+        });
         
         setMonthly(mData);
         setLoading(false);

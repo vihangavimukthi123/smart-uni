@@ -70,9 +70,9 @@ export default function LoginPage() {
         transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
       >
         <div className="auth-logo">
-          <div className="auth-logo-icon">SC</div>
+          <img src="/logo.png" alt="MATRIX CORP Logo" style={{ width: 42, height: 42, borderRadius: 8 }} />
           <div>
-            <div style={{ fontWeight: 800, fontSize: '1.2rem', color: '#fff' }}>SmartCampus</div>
+            <div style={{ fontWeight: 800, fontSize: '1.2rem', color: '#fff' }}>MATRIX CORP</div>
             <div style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.65)' }}>Resource Optimization Platform</div>
           </div>
         </div>
@@ -90,6 +90,10 @@ export default function LoginPage() {
               <p className="mb-lg" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Please enter your details to sign in.</p>
 
               <form onSubmit={handleSubmit} className="flex-col gap-md">
+                {/* Dummy hidden input to deceive browser autofill */}
+                <input type="text" style={{ display: 'none' }} tabIndex="-1" autoComplete="off" />
+                <input type="password" style={{ display: 'none' }} tabIndex="-1" autoComplete="off" />
+
                 {/* Login Type Selector */}
                 <div className="form-group mb-md">
                   <label className="form-label">Login As</label>
@@ -117,19 +121,15 @@ export default function LoginPage() {
                   <div className="input-wrapper">
                     <MdEmail className="input-icon" size={20} />
                     <input
+                      name="sc_user_email_identity"
+                      id="sc_user_email_identity"
                       type="email"
-                      list="known-campus-emails"
                       className={`form-input${errors.email ? ' error' : ''}`}
-                      placeholder="name@campus.edu"
                       value={form.email}
                       onChange={handleChange('email')}
-                      autoFocus
+                      autoComplete="none"
                     />
-                    <datalist id="known-campus-emails">
-                      <option value="user@campus.edu" />
-                      <option value="shanilka@campus.edu" />
-                      <option value="nadeesha@campus.edu" />
-                    </datalist>
+
                   </div>
                   <AnimatePresence>
                     {errors.email && (
@@ -153,11 +153,13 @@ export default function LoginPage() {
                   <div className="input-wrapper">
                     <MdLock className="input-icon" size={20} />
                     <input
+                      name="sc_user_sec_token"
+                      id="sc_user_sec_token"
                       type={showPassword ? 'text' : 'password'}
                       className={`form-input${errors.password ? ' error' : ''}`}
-                      placeholder="••••••••••••"
                       value={form.password}
                       onChange={handleChange('password')}
+                      autoComplete="new-password"
                     />
                     <button 
                       type="button" 
@@ -210,7 +212,7 @@ export default function LoginPage() {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
             >
-              <h2 className="mb-sm" style={{ color: '#fff', fontWeight: 700 }}>Join SmartCampus</h2>
+              <h2 className="mb-sm" style={{ color: '#fff', fontWeight: 700 }}>Join MATRIX CORP</h2>
               <p className="mb-lg" style={{ color: 'rgba(255, 255, 255, 0.6)' }}>Select your account type to continue.</p>
 
               <div className="flex-col gap-md">
