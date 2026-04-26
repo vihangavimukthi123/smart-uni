@@ -48,6 +48,15 @@ const protect = async (req, res, next) => {
     req.user = user;
     if (user.role === 'supplier') req.supplier = user; // Compatibility for product routes
     if (user.role === 'student' || user.role === 'user') req.student = user; // Compatibility for review/order routes
+
+    // Update lastActiveAt (throttled to 2 mins)
+    const now = new Date();
+    const lastActive = user.lastActiveAt ? new Date(user.lastActiveAt) : null;
+    if (!lastActive || (now - lastActive) > 2 * 60 * 1000) {
+      // Fire and forget to avoid blocking the request
+      User.findByIdAndUpdate(user._id, { lastActiveAt: now }).catch(err => console.error('Activity track error:', err));
+    }
+
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {

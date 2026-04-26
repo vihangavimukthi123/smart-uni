@@ -54,7 +54,7 @@ const login = asyncHandler(async (req, res) => {
     return res.status(403).json({ success: false, message: 'Account is deactivated' });
   }
   const { accessToken, refreshToken } = generateTokens(user._id);
-  await User.findByIdAndUpdate(user._id, { refreshToken, lastLogin: new Date() });
+  await User.findByIdAndUpdate(user._id, { refreshToken, lastLogin: new Date(), lastActiveAt: new Date() });
   const userObj = user.toJSON();
   res.json({
     success: true,
@@ -148,6 +148,16 @@ const updateSettings = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Settings updated', data: { user } });
 });
 
+<<<<<<< HEAD
+// @GET /api/auth/find-user/:email
+const getUserByEmail = asyncHandler(async (req, res) => {
+  const user = await User.findOne({ email: req.params.email.toLowerCase().trim() });
+  if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+  res.json({ success: true, data: { _id: user._id, name: user.name } });
+});
+
+module.exports = { register, login, refreshToken, logout, getMe, getAllUsers, updateUserRole, updateProfile, updatePassword, updateSettings, getUserByEmail };
+=======
 // @DELETE /api/auth/users/:id (Admin Only)
 const deleteUser = asyncHandler(async (req, res) => {
   const user = await User.findById(req.params.id);
@@ -167,4 +177,5 @@ const deleteUser = asyncHandler(async (req, res) => {
 });
 
 module.exports = { register, login, refreshToken, logout, getMe, getAllUsers, updateUserRole, updateProfile, updatePassword, updateSettings, deleteUser };
+>>>>>>> 559b96d3abc906c898bc3dfe0ac0644db2c33c97
 

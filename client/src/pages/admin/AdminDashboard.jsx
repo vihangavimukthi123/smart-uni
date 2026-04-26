@@ -51,10 +51,10 @@ export default function AdminDashboard() {
   }, [lastEvent, fetchStats]);
 
   const statCards = stats ? [
-    { label: 'Active Rooms',    value: stats.rooms.active,    icon: <MdMeetingRoom />, color: '#6366f1', change: `${stats.rooms.total} total` },
-    { label: 'Total Events',    value: stats.events.total,    icon: <MdEvent />,       color: '#8b5cf6', change: `${stats.events.upcoming?.length || 0} upcoming` },
-    { label: 'Confirmed',       value: stats.schedules.confirmed, icon: <MdCalendarMonth />, color: '#10b981', change: `${stats.schedules.aiAcceptanceRate}% AI accepted` },
-    { label: 'AI Avg Score',    value: stats.schedules.avgAIScore, icon: <MdAutoAwesome />, color: '#f59e0b', change: 'Points out of 200' },
+    { label: 'Active Rooms', value: stats.rooms.active, icon: <MdMeetingRoom />, color: '#6366f1', change: `${stats.rooms.total} total` },
+    { label: 'Total Events', value: stats.events.total, icon: <MdEvent />, color: '#8b5cf6', change: `${stats.events.upcoming?.length || 0} upcoming` },
+    { label: 'Confirmed', value: stats.schedules.confirmed, icon: <MdCalendarMonth />, color: '#10b981', change: `${stats.schedules.aiAcceptanceRate}% AI accepted` },
+    { label: 'AI Avg Score', value: stats.schedules.avgAIScore, icon: <MdAutoAwesome />, color: '#f59e0b', change: 'Points out of 200' },
   ] : [];
 
   if (loading) {
@@ -64,7 +64,7 @@ export default function AdminDashboard() {
           <div className="page-header-left"><h1>Admin Dashboard</h1><p>Loading your workspace...</p></div>
         </div>
         <div className="grid-4" style={{ marginBottom: 24 }}>
-          {[0,1,2,3].map((i) => <div key={i} className="skeleton" style={{ height: 120, borderRadius: 16 }} />)}
+          {[0, 1, 2, 3].map((i) => <div key={i} className="skeleton" style={{ height: 120, borderRadius: 16 }} />)}
         </div>
       </div>
     );
@@ -113,7 +113,7 @@ export default function AdminDashboard() {
                 <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} tickLine={false} axisLine={false} />
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
                 <Tooltip contentStyle={{ background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text-primary)' }} cursor={{ fill: 'rgba(99,102,241,0.08)' }} />
-                <Bar dataKey="count" fill="url(#barGrad)" radius={[6,6,0,0]} />
+                <Bar dataKey="count" fill="url(#barGrad)" radius={[6, 6, 0, 0]} />
                 <defs>
                   <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#6366f1" />
@@ -180,8 +180,10 @@ export default function AdminDashboard() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {recentSchedules.map((s) => (
-                <div key={s._id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                  background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                <div key={s._id} style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                  background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)'
+                }}>
                   <div className="priority-ring medium">{s.event?.priority || '—'}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="truncate" style={{ fontWeight: 600, fontSize: '0.875rem' }}>{s.event?.name}</div>
@@ -206,8 +208,10 @@ export default function AdminDashboard() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {stats?.events?.upcoming?.map((ev, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
-                  background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px',
+                  background: 'var(--bg-glass)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)'
+                }}>
                   <div className={`priority-ring ${ev.priority >= 8 ? 'high' : ev.priority >= 5 ? 'medium' : 'low'}`}>{ev.priority}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div className="truncate" style={{ fontWeight: 600, fontSize: '0.875rem' }}>{ev.name}</div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import "./AcademicTask.css";
 import api from "../../../api/axios";
+import { useAuth } from "../../../context/AuthContext";
 
 const getProfile = () => {
   const saved = localStorage.getItem("studentProfile");
@@ -125,8 +126,9 @@ function TaskCard({ task, currentUserId, isApplied, onApply, onViewDetails }) {
 
 // --- MAIN ---
 export default function AcademicTask() {
+  const { user } = useAuth();
   const currentProfile = getProfile();
-  const currentUserId = currentProfile.email || "local-user";
+  const currentUserId = user?.email || currentProfile.email || "local-user";
   const moduleOptions = currentProfile.moduleLabels || [];
 
   const [search, setSearch] = useState("");
@@ -219,9 +221,18 @@ export default function AcademicTask() {
     }
   };
 
-  const recommendedTasks = tasks.map(t => {
-     if (!t) return null;
-     if ((t.userId || "") === currentUserId) return null;
+  const recommendedTasks = tasks.filter(t => {
+     if (!t) return false;
+     if ((t.userId || "").toLowerCase() === currentUserId.toLowerCase()) return false;
+     
+     // Filter out overdue tasks
+     if (t.deadlineDate) {
+       const d = new Date(t.deadlineDate);
+       const now = new Date();
+       now.setHours(0, 0, 0, 0); // Only compare dates, not times
+       if (d < now) return false;
+     }
+
      const searchModules = currentProfile.moduleLabels || currentProfile.selectedModules || [];
      const matchedModule = searchModules.find(m => 
        m && (
@@ -229,8 +240,17 @@ export default function AcademicTask() {
          (t.title || "").toLowerCase().includes(m.toLowerCase())
        )
      );
-     return matchedModule ? { ...t, matchedModule } : null;
-  }).filter(Boolean).slice(0, 2);
+     return !!matchedModule;
+  }).map(t => {
+     const searchModules = currentProfile.moduleLabels || currentProfile.selectedModules || [];
+     const matchedModule = searchModules.find(m => 
+       m && (
+         (t.module || t.category || "").toLowerCase().includes(m.toLowerCase()) || 
+         (t.title || "").toLowerCase().includes(m.toLowerCase())
+       )
+     );
+     return { ...t, matchedModule };
+  }).slice(0, 2);
 
   const handlePostTask = async (e) => {
     e.preventDefault();
@@ -320,6 +340,19 @@ export default function AcademicTask() {
       currentUserId &&
       (t.userId || "").toLowerCase() === currentUserId.toLowerCase();
     if (ownTask) return false;
+    
+    // Filter out overdue tasks
+    if (t.deadlineDate) {
+      const d = new Date(t.deadlineDate);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      if (d < now) return false;
+    }
+
+    // Deduplicate: If not searching, hide tasks already shown in recommended section
+    if (!search && recommendedTasks.some(rt => rt._id === t._id)) {
+      return false;
+    }
 
     const searchLower = (search || "").toLowerCase();
     return (
