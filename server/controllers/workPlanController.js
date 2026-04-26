@@ -91,6 +91,7 @@ ${lifeEventList}
 4. **Cognitive Load:** Never schedule more than 3 hours of High-Priority work back-to-back without a 30+ minute meal or rest break.
 5. **Rest:** Do not schedule study after bedtime or before wake-up.
 6. **Span:** Generate a plan starting from ${startDate} covering every day until the last deadline. Skip days with no availability.
+7. **Task Weighting:** Analyze the task name to determine effort. Assign extra study sessions ('High' weight) to keywords like 'Project,' 'Exam,' or 'Final.' Assign fewer sessions ('Low' weight) to 'Quiz,' 'Note,' or 'Meeting.' If the nature of the task is unclear, default to scheduling approximately a 2-hour total block of sessions for that task.
 
 ### REQUIRED OUTPUT FORMAT
 Respond ONLY with a valid JSON object in this exact structure. No markdown, no extra text:

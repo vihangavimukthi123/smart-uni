@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import api from "../../../api/axios";
 import "./MoDash.css";
+import studyImg from "../../../assets/collaborative_study.png";
 
 const PRIMARY = "#1152D4";
 
@@ -86,6 +87,7 @@ const BarTooltip = ({ active, payload, label }) => {
   }
   return null;
 };
+
 
 // ─── Main Component ────────────────────────────────────────────────────────────
 export default function MomentumDashboard() {
@@ -170,29 +172,24 @@ export default function MomentumDashboard() {
 
   return (
     <div className="dm-main">
-      {/* Hero Banner */}
-      <div className="dm-hero">
-        <div className="dm-hero-top">
-          <div>
-            <h1 className="dm-hero-title">
-              Keep the momentum going, <span className="gradient-text" style={{ filter: 'brightness(1.5)' }}>{user?.name?.split(' ')[0] || 'Scholar'}</span>! 🚀
-            </h1>
-            <div className="dm-hero-cards">
-              <div className="dm-hero-card">
-                <div className="dm-hero-card-title">Study Efficiency</div>
-                <div className="dm-hero-card-desc">Your average productivity is currently {stats.weeklyProductivity.value}.</div>
-              </div>
-              <div className="dm-hero-card">
-                <div className="dm-hero-card-title">Current Goal</div>
-                <div className="dm-hero-card-desc">You have {stats.activeAssignments.value} pending tasks in your tracker.</div>
-              </div>
-            </div>
-          </div>
-          <div className="dm-hero-actions">
-            <button className="dm-hero-icon-btn" title="Settings">⚙️</button>
+      {/* Smart Learning Hub Banner */}
+      <div className="dm-banner">
+        <div className="dm-banner-circle-1" />
+        <div className="dm-banner-circle-2" />
+        
+        <div className="dm-banner-left">
+          <h1 className="dm-banner-title">Momentum</h1>
+          <p className="dm-banner-subtitle" style={{ color: '#fff', opacity: 1 }}>
+            Keep the momentum going, <span style={{ fontWeight: 800, textDecoration: 'underline' }}>{user?.name?.split(' ')[0] || 'Scholar'}</span>! 
+            Collaborate with peers, share knowledge, and access academic resources in one integrated platform.
+          </p>
+        </div>
+
+        <div className="dm-banner-right">
+          <div className="dm-banner-img-frame">
+            <img src={studyImg} alt="Students studying" className="dm-banner-img" />
           </div>
         </div>
-        <div className="dm-hero-lamp"></div>
       </div>
 
       <div className="dm-content">

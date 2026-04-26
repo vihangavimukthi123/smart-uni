@@ -14,6 +14,7 @@ import {
 import { useAuth } from "../../../context/AuthContext";
 import api from "../../../api/axios";
 import "./studyTracker.css";
+import studyTrackerImg from "../../../assets/study_tracker_hero.png";
 
 const ICONS = ["📚", "💻", "🎨", "🔬", "📖", "🧠", "💪", "🎧", "✍️", "🧪"];
 
@@ -87,46 +88,12 @@ export default function StudyTracker() {
   };
 
   const handleSave = async (e) => {
-    e.preventDefault();
-    
-    // ─── Validation ──────────────────────────────────────────────────────────
-    if (!formData.title.trim() || !formData.subject.trim()) {
-      alert("Task Name and Subject are crucial. Please fill them.");
-      return;
-    }
-
-    if (formData.timeTracked === "" || formData.timeGoal === "") {
-        alert("Worked Time and Estimated Time are compulsory.");
-        return;
-    }
-
-    const worked = Number(formData.timeTracked);
-    const estimated = Number(formData.timeGoal);
-
-    if (worked < 0 || estimated <= 0) {
-      alert("Times must be positive. Estimated time cannot be zero.");
-      return;
-    }
-
-    if (worked > 1440) {
-      alert("Worked time cannot exceed 24 hours (1440 min) per task.");
-      return;
-    }
-    // ─────────────────────────────────────────────────────────────────────────
-
+    if (e) e.preventDefault();
     try {
-      const efficiency = Math.min(Math.round((worked / estimated) * 100), 100);
-
-      const payload = {
-        ...formData,
-        timeTracked: worked,
-        timeGoal: estimated,
-        prodScore: efficiency,
-        userId: user?._id
-      };
-      
-      console.log("Saving Task Payload:", payload);
-
+      const worked = Number(formData.timeTracked);
+      const estimated = Number(formData.timeGoal);
+      const efficiency = estimated > 0 ? Math.min(Math.round((worked / estimated) * 100), 100) : 0;
+      const payload = { ...formData, timeTracked: worked, timeGoal: estimated, prodScore: efficiency, userId: user?._id };
       if (editingTask) {
         const res = await api.put(`/momentum/study-tasks/${editingTask._id}`, payload);
         setTasks(prev => prev.map(t => t._id === editingTask._id ? res.data.data : t));
@@ -136,7 +103,7 @@ export default function StudyTracker() {
       }
       setIsModalOpen(false);
     } catch (err) {
-      alert("Error saving task: " + (err.response?.data?.message || err.message));
+      alert("Error saving: " + (err.response?.data?.message || err.message));
     }
   };
 
@@ -145,9 +112,7 @@ export default function StudyTracker() {
     try {
       await api.delete(`/momentum/study-tasks/${id}`);
       setTasks(prev => prev.filter(t => t._id !== id));
-    } catch (err) {
-      alert("Delete failed");
-    }
+    } catch (err) { alert("Delete failed"); }
   };
 
   const toggleStatus = async (task) => {
@@ -155,23 +120,29 @@ export default function StudyTracker() {
     try {
       const res = await api.put(`/momentum/study-tasks/${task._id}`, { ...task, status: newStatus });
       setTasks(prev => prev.map(t => t._id === task._id ? res.data.data : t));
-    } catch (err) {
-      alert("Update failed");
-    }
+    } catch (err) { alert("Update failed"); }
   };
 
   return (
     <div className="st-page">
-      {/* Hero Banner */}
-      <div className="st-hero">
-        <div>
-          <button onClick={() => navigate('/momentum')} className="st-icon-btn" style={{ marginBottom: 12, border: 'none', background: 'rgba(255,255,255,0.15)', color: '#fff' }}>
-            <MdArrowBack />
-          </button>
-          <h1 className="st-hero-title">Track Your Wins, {user?.name?.split(' ')[0] || 'Scholar'}! 🎯</h1>
-          <p className="st-hero-sub">Every small task completed brings you closer to your academic goals.</p>
+      {/* Smart Banner Style */}
+      <div className="dm-banner">
+        <div className="dm-banner-circle-1" />
+        <div className="dm-banner-circle-2" />
+        
+        <div className="dm-banner-left">
+          <h1 className="dm-banner-title">Study Tracker</h1>
+          <p className="dm-banner-subtitle" style={{ color: '#fff', opacity: 1 }}>
+            Track Your Wins, <span style={{ fontWeight: 800, textDecoration: 'underline' }}>{user?.name?.split(' ')[0] || 'Scholar'}</span>! 🎯
+            Monitor your focused sessions and academic efficiency with precision.
+          </p>
         </div>
-        <div className="st-hero-icon">⏱️</div>
+
+        <div className="dm-banner-right">
+          <div className="dm-banner-img-frame">
+            <img src={studyTrackerImg} alt="Study tracking illustration" className="dm-banner-img" />
+          </div>
+        </div>
       </div>
 
       {/* Toolbar */}

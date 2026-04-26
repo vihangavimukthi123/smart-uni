@@ -44,8 +44,11 @@ export default function Planner() {
     };
 
     const filtered = plans.filter(p => {
-        const title = p.workplan?.summary?.scope_value || "Strategy";
-        return title.toLowerCase().includes(search.toLowerCase());
+        const title = (p.workplan?.summary?.scope_value || "Strategy").toLowerCase();
+        const s = search.toLowerCase();
+        const matchesTitle = title.includes(s);
+        const matchesTasks = (p.inputs?.tasks || []).some(t => t.name.toLowerCase().includes(s));
+        return matchesTitle || matchesTasks;
     });
 
     if (loading) return (
@@ -56,35 +59,52 @@ export default function Planner() {
 
     return (
         <div className="page-container" style={{ padding: '0 0 40px', background: '#f5f7fc' }}>
-            {/* Hero */}
-            <div className="hero" style={{ padding: '40px 32px' }}>
-                <div>
-                    <h1 className="hero-title" style={{ fontSize: 28 }}>Academic Vault</h1>
-                    <p className="hero-sub">Access your AI-driven performance strategies and study roadmaps.</p>
+            {/* Momentum Banner ... */}
+            <div className="dm-banner">
+                <div className="dm-banner-circle-1" />
+                <div className="dm-banner-circle-2" />
+                
+                <div className="dm-banner-left">
+                    <h1 className="dm-banner-title" style={{ color: '#fff', fontSize: '36px' }}>Academic Vault</h1>
+                    <p className="dm-banner-subtitle" style={{ color: '#fff', opacity: 1, margin: 0 }}>
+                        Access your AI-driven performance strategies and study roadmaps.
+                    </p>
                 </div>
-                <button
-                    onClick={() => navigate('/momentum/workplan')}
-                    className="action-btn-primary"
-                    style={{ background: '#fff', color: PRIMARY, border: 'none', padding: '12px 24px' }}
-                >
-                    + NEW PLAN
-                </button>
+
+                <div className="dm-banner-right">
+                    <button
+                        onClick={() => navigate('/momentum/workplan')}
+                        className="dm-banner-btn"
+                        style={{ padding: '14px 28px' }}
+                    >
+                        + NEW PLAN
+                    </button>
+                </div>
             </div>
 
             {/* Toolbar */}
             <div style={{ padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ position: 'relative', width: 320 }}>
+                <div style={{ position: 'relative', width: 360 }}>
                     <input
-                        className="task-input"
-                        placeholder="Search your strategies..."
-                        style={{ paddingLeft: 40 }}
+                        className="st-search-input"
+                        placeholder="Search strategies or task names..."
+                        style={{ 
+                            background: '#fff',
+                            border: '1px solid #e2e8f0',
+                            padding: '14px 18px 14px 44px',
+                            borderRadius: '16px',
+                            fontSize: '14.5px',
+                            width: '100%',
+                            boxShadow: '0 4px 12px rgba(0,0,0,0.03)',
+                            outline: 'none'
+                        }}
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
                     />
-                    <span style={{ position: 'absolute', left: 14, top: 12, opacity: 0.5 }}>🔍</span>
+                    <span style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', fontSize: '18px', opacity: 0.4 }}>🔍</span>
                 </div>
-                <div style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>
-                    {filtered.length} STRATEGIES FOUND
+                <div style={{ fontSize: '13px', color: '#64748b', fontWeight: 700, letterSpacing: '0.02em' }}>
+                    {filtered.length} {filtered.length === 1 ? 'STRATEGY' : 'STRATEGIES'} FOUND
                 </div>
             </div>
 
@@ -186,41 +206,7 @@ export default function Planner() {
                                 {title}
                             </h3>
 
-                            {/* Row 3: Task chips — visually prominent */}
-                            {item.inputs?.tasks?.length > 0 && (
-                                <div style={{ margin: '12px 0 16px', display: 'flex', flexDirection: 'column', gap: 7 }}>
-                                    {item.inputs.tasks.map((t, i) => {
-                                        const priorityColors = {
-                                            High:   { bg: '#fff1f2', border: '#fecaca', dot: '#ef4444', label: '#dc2626' },
-                                            Medium: { bg: '#fffbeb', border: '#fde68a', dot: '#f59e0b', label: '#b45309' },
-                                            Low:    { bg: '#f0fdf4', border: '#bbf7d0', dot: '#22c55e', label: '#15803d' },
-                                        };
-                                        const c = priorityColors[t.priority] || priorityColors.Low;
-                                        return (
-                                            <div key={i} style={{
-                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                padding: '9px 12px',
-                                                background: c.bg,
-                                                border: `1px solid ${c.border}`,
-                                                borderRadius: 10,
-                                            }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: c.dot, flexShrink: 0 }} />
-                                                    <span style={{ fontSize: 13, fontWeight: 700, color: '#0f172a' }}>{t.name}</span>
-                                                    <span style={{ fontSize: 10, fontWeight: 800, color: c.label, background: c.border, padding: '2px 7px', borderRadius: 4 }}>
-                                                        {t.priority}
-                                                    </span>
-                                                </div>
-                                                <span style={{ fontSize: 11, color: '#64748b', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                                                    {t.deadline ? new Date(t.deadline).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}
-                                                </span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-
-                            {/* Row 4: Metrics — clearly separated from tasks above */}
+                            {/* Row 4: Metrics */}
                             <div style={{ display: 'flex', gap: 8, marginBottom: 16, paddingTop: 12, borderTop: '1px solid #f1f5f9' }}>
                                 <div style={{ flex: 1, background: '#f8fafc', border: '1px solid #f1f5f9', padding: '8px 10px', borderRadius: 8 }}>
                                     <div style={{ fontSize: 9, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Study Hours</div>

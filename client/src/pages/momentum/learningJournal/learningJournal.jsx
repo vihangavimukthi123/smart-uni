@@ -7,8 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import api from "../../../api/axios";
 import "./learningJournal.css";
+import journalImg from "../../../assets/learning_journal_hero.png";
 
-// const CATEGORIES = ["Lecture", "Self-Study", "Assignment", "Research", "Review", "Lab"];
 const MOODS = [
   { label: "Focused", icon: "🧠" },
   { label: "Struggling", icon: "😫" },
@@ -121,16 +121,24 @@ export default function LearningJournal() {
 
   return (
     <div className="lj-page">
-      {/* Hero */}
-      <div className="lj-hero">
-        <div>
-          <button onClick={() => navigate('/momentum')} className="st-icon-btn" style={{ marginBottom: 12, border: 'none', background: 'rgba(255,255,255,0.15)', color: '#fff' }}>
-            <MdArrowBack />
-          </button>
-          <h1 className="lj-hero-title">Reflect & Grow, {user?.name?.split(' ')[0]} ✍️</h1>
-          <p className="lj-hero-sub">The secret to mastery is reflection. Document your academic evolution.</p>
+      {/* Smart Banner Style */}
+      <div className="dm-banner">
+        <div className="dm-banner-circle-1" />
+        <div className="dm-banner-circle-2" />
+        
+        <div className="dm-banner-left">
+          <h1 className="dm-banner-title">Learning Journal</h1>
+          <p className="dm-banner-subtitle" style={{ color: '#fff', opacity: 1 }}>
+            Reflect & Grow, <span style={{ fontWeight: 800, textDecoration: 'underline' }}>{user?.name?.split(' ')[0]}</span>! 
+            The secret to mastery is reflection. Document your academic evolution and track your journey.
+          </p>
         </div>
-        <div className="lj-hero-icon" style={{ fontSize: '4rem', opacity: 0.2 }}>📓</div>
+
+        <div className="dm-banner-right">
+          <div className="dm-banner-img-frame">
+            <img src={journalImg} alt="Student with journal" className="dm-banner-img" />
+          </div>
+        </div>
       </div>
 
       <div className="lj-content">

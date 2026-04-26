@@ -373,13 +373,17 @@ export default function GenerateWorkplan() {
       <div style={{ display: "flex", flex: 1 }}>
         
         <div className="page">
-          {/* Hero */}
-          <div className="hero">
-            <h1 className="hero-title">AI Workplan Generator</h1>
-            <p className="hero-sub">
-              Let's build a work plan that fits your time and helps you stay
-              consistent.
-            </p>
+          {/* Momentum Banner */}
+          <div className="dm-banner">
+            <div className="dm-banner-circle-1" />
+            <div className="dm-banner-circle-2" />
+            
+            <div className="dm-banner-left">
+              <h1 className="dm-banner-title" style={{ color: '#fff', fontSize: '36px' }}>Workplan Generator</h1>
+              <p className="dm-banner-subtitle" style={{ color: '#fff', opacity: 1, margin: 0 }}>
+                Build a personalized academic strategy that fits your schedule and maximizes productivity.
+              </p>
+            </div>
           </div>
 
           {/* Card */}
