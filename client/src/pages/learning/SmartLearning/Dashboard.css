@@ -138,7 +138,7 @@ select {
   right: 240px;
   width: 200px;
   height: 200px;
-  background: rgba(255,255,255,0.07);
+  background: rgba(255, 255, 255, 0.07);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -150,7 +150,7 @@ select {
   left: 30%;
   width: 280px;
   height: 280px;
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -169,12 +169,12 @@ select {
   letter-spacing: -0.5px;
   line-height: 1.15;
   margin-bottom: 14px;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .hero-card__subtitle {
   font-size: 15px;
-  color: rgba(255,255,255,0.88);
+  color: rgba(255, 255, 255, 0.88);
   line-height: 1.65;
   margin-bottom: 28px;
 }
@@ -184,13 +184,13 @@ select {
   padding: 13px 32px;
   background: #ffffff !important;
   color: var(--primary) !important;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.18) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18) !important;
 }
 
 .hero-card__cta:hover {
   background: #f0f7ff !important;
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.22) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22) !important;
 }
 
 .hero-card__image-wrap {
@@ -199,8 +199,8 @@ select {
   height: 220px;
   border-radius: var(--radius-lg);
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
-  border: 3px solid rgba(255,255,255,0.25);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  border: 3px solid rgba(255, 255, 255, 0.25);
   position: relative;
   z-index: 1;
 }
@@ -376,13 +376,13 @@ select {
   font-size: 12px;
   font-weight: 700;
   border: none;
-  box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
   transition: background 0.2s, box-shadow 0.2s;
 }
 
 .profile-field__skill-add-btn:hover {
   background: var(--primary-hover);
-  box-shadow: 0 4px 12px rgba(37,99,235,0.35);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
 }
 
 /* Skill Tags */
@@ -465,9 +465,17 @@ select {
   transition: box-shadow 0.25s, transform 0.25s, border-top-color 0.25s;
 }
 
-.feature-card:nth-child(1) { border-top-color: #2563eb; }
-.feature-card:nth-child(2) { border-top-color: #7c3aed; }
-.feature-card:nth-child(3) { border-top-color: #0891b2; }
+.feature-card:nth-child(1) {
+  border-top-color: #2563eb;
+}
+
+.feature-card:nth-child(2) {
+  border-top-color: #7c3aed;
+}
+
+.feature-card:nth-child(3) {
+  border-top-color: #0891b2;
+}
 
 .feature-card:hover {
   box-shadow: var(--shadow-md);
@@ -833,8 +841,15 @@ select {
 }
 
 @keyframes slideIn {
-  from { opacity: 0; transform: translateY(-10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .module-option {
@@ -953,8 +968,15 @@ select {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .selected-module-item:hover {

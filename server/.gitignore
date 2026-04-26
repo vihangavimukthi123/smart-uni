@@ -34,4 +34,6 @@ package.json
 
 
 
+# Diagnostic Scripts
+scripts/diagnostics/
 

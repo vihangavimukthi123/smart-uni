@@ -10,19 +10,22 @@ const getMainAdminId = async () => {
 
 // @POST /api/messages
 const sendMessage = asyncHandler(async (req, res) => {
-  const { content } = req.body;
+  const { content, requestId } = req.body;
   let { receiverId } = req.body;
 
-  // Standard users always message the main admin
-  if (['student', 'user'].includes(req.user.role)) {
+  // Legacy fallback for standard users messaging admin if no receiverId provided
+  if (!receiverId && ['student', 'user'].includes(req.user.role)) {
     receiverId = await getMainAdminId();
   }
 
-  if (!receiverId) return res.status(400).json({ success: false, message: 'Receiver not found' });
+  if (!receiverId) {
+    return res.status(400).json({ success: false, message: 'Receiver not found' });
+  }
 
   const message = await Message.create({
     sender: req.user._id,
     receiver: receiverId,
+    requestId: requestId || null,
     content
   });
 
@@ -33,9 +36,7 @@ const sendMessage = asyncHandler(async (req, res) => {
   // Broadcast via Socket
   const io = req.app.get('io');
   if (io) {
-    // Send to recipient
     io.to(`user_${receiverId}`).emit('receiveMessage', populatedMsg);
-    // Send back to sender so other tabs update
     io.to(`user_${req.user._id}`).emit('receiveMessage', populatedMsg);
   }
 
@@ -43,7 +44,6 @@ const sendMessage = asyncHandler(async (req, res) => {
 });
 
 // @GET /api/messages/conversation/:id
-// ID can be 'admin' to auto-resolve the main admin
 const getConversation = asyncHandler(async (req, res) => {
   let otherUserId = req.params.id;
 
@@ -61,21 +61,20 @@ const getConversation = asyncHandler(async (req, res) => {
   })
   .populate('sender', 'name email role')
   .populate('receiver', 'name email role')
-  .sort({ createdAt: 1 }); // Oldest first for chat UI
+  .sort({ createdAt: 1 });
 
   res.json({ success: true, data: messages });
 });
 
 // @GET /api/messages/conversations
-// Admin only: Get list of users they have active chats with
-const getAdminConversations = asyncHandler(async (req, res) => {
-  const adminId = req.user._id;
+const getUserConversations = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
 
-  // Aggregate to get the latest message per user
+  // Aggregate to get the latest message and unread count per user
   const latestMessages = await Message.aggregate([
     {
       $match: {
-        $or: [{ receiver: adminId }, { sender: adminId }]
+        $or: [{ receiver: userId }, { sender: userId }]
       }
     },
     {
@@ -85,23 +84,33 @@ const getAdminConversations = asyncHandler(async (req, res) => {
       $group: {
         _id: {
           $cond: [
-            { $eq: ['$sender', adminId] },
+            { $eq: ['$sender', userId] },
             '$receiver',
             '$sender'
           ]
         },
-        latestMessage: { $first: '$$ROOT' }
+        latestMessage: { $first: '$$ROOT' },
+        unreadCount: {
+          $sum: {
+            $cond: [
+              { $and: [{ $eq: ['$receiver', userId] }, { $eq: ['$isRead', false] }] },
+              1,
+              0
+            ]
+          }
+        }
       }
     }
   ]);
 
   // Populate user data
-  await User.populate(latestMessages, { path: '_id', select: 'name email role' });
+  await User.populate(latestMessages, { path: '_id', select: 'name email role avatar' });
 
   // Format response
   const conversations = latestMessages.map(conv => ({
     user: conv._id,
-    lastMessage: conv.latestMessage
+    lastMessage: conv.latestMessage,
+    unreadCount: conv.unreadCount
   })).sort((a, b) => new Date(b.lastMessage.createdAt) - new Date(a.lastMessage.createdAt));
 
   res.json({ success: true, data: conversations });
@@ -122,6 +131,12 @@ const markAsRead = asyncHandler(async (req, res) => {
   res.json({ success: true, message: 'Messages marked as read' });
 });
 
-module.exports = { sendMessage, getConversation, getAdminConversations, markAsRead };
+module.exports = { 
+  sendMessage, 
+  getConversation, 
+  getUserConversations, 
+  markAsRead,
+  getAdminConversations: getUserConversations // Keep for backward compatibility if needed
+};
 
 

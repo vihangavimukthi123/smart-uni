@@ -109,8 +109,10 @@ router.post("/", async (req, res) => {
       return res.status(403).json({ message: "Only the requester can review the helper for this request" });
     }
 
+    // Automatically mark the request as COMPLETED when a review is submitted
     if ((request.status || "").toUpperCase() !== "COMPLETED") {
-      return res.status(400).json({ message: "Review can be added only after request is completed" });
+      request.status = "COMPLETED";
+      await request.save();
     }
 
     const existing = await PeerReview.findOne({ requestId: request._id });

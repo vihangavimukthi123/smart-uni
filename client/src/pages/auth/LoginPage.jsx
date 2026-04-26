@@ -127,8 +127,8 @@ export default function LoginPage() {
                     />
                     <datalist id="known-campus-emails">
                       <option value="user@campus.edu" />
-                      <option value="shanilka.samarakoon@campus.edu" />
-                      <option value="dinusha.fernando@campus.edu" />
+                      <option value="shanilka@campus.edu" />
+                      <option value="nadeesha@campus.edu" />
                     </datalist>
                   </div>
                   <AnimatePresence>

@@ -11,6 +11,10 @@ const messageSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  requestId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Request'
+  },
   content: {
     type: String,
     required: [true, 'Message content cannot be empty'],
@@ -24,6 +28,7 @@ const messageSchema = new mongoose.Schema({
 
 // Optimize pulling conversations
 messageSchema.index({ sender: 1, receiver: 1 });
+messageSchema.index({ requestId: 1 });
 messageSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Message', messageSchema);

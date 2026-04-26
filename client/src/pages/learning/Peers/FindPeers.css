@@ -3,18 +3,18 @@
 
 /* ── Variables ───────────────────────────────────────────── */
 :root {
-  --primary:       #2563eb;
+  --primary: #2563eb;
   --primary-hover: #1d4ed8;
   --primary-light: #eff6ff;
-  --bg:            #f1f5fc;
-  --surface:       #ffffff;
-  --border:        #dbeafe;
-  --text-heading:  #0f172a;
-  --text-body:     #475569;
-  --text-muted:    #94a3b8;
-  --radius-card:   16px;
-  --radius-btn:    8px;
-  --shadow-card:   0 2px 12px rgba(37, 99, 235, 0.08);
+  --bg: #f1f5fc;
+  --surface: #ffffff;
+  --border: #dbeafe;
+  --text-heading: #0f172a;
+  --text-body: #475569;
+  --text-muted: #94a3b8;
+  --radius-card: 16px;
+  --radius-btn: 8px;
+  --shadow-card: 0 2px 12px rgba(37, 99, 235, 0.08);
   --shadow-card-hover: 0 8px 28px rgba(37, 99, 235, 0.16);
 }
 
@@ -147,8 +147,10 @@ body {
   padding: 20px;
   width: 100%;
   box-sizing: border-box;
-  position: relative;         /* anchor for badge */
-  overflow: visible;          /* so badge at top can show */
+  position: relative;
+  /* anchor for badge */
+  overflow: visible;
+  /* so badge at top can show */
   transition: box-shadow 0.25s, transform 0.25s;
 }
 
@@ -199,7 +201,8 @@ body {
 
 .peer-info {
   flex: 1;
-  min-width: 0;           /* allow text truncation */
+  min-width: 0;
+  /* allow text truncation */
 }
 
 .peer-name {
@@ -366,7 +369,8 @@ body {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 28px;      /* more room so badge doesn't overlap header */
+  margin-bottom: 28px;
+  /* more room so badge doesn't overlap header */
   padding-bottom: 16px;
   border-bottom: 1.5px solid #bfdbfe;
 }
@@ -384,22 +388,36 @@ body {
 }
 
 @keyframes peer-pulse {
-  0%   { transform: scale(1);   opacity: 1;   }
-  50%  { transform: scale(1.1); opacity: 0.8; }
-  100% { transform: scale(1);   opacity: 1;   }
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }
 
 /* The wrapper just adds top padding so the badge above the card is not clipped */
 .recommendation-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 28px;              /* gap is vertical too, giving room for badge */
+  gap: 28px;
+  /* gap is vertical too, giving room for badge */
   width: 100%;
-  padding-top: 10px;      /* space above cards for the badge */
+  padding-top: 10px;
+  /* space above cards for the badge */
 }
 
 .recommended-card-wrapper {
-  padding-top: 12px;      /* pushes card down so top badge is fully visible */
+  padding-top: 12px;
+  /* pushes card down so top badge is fully visible */
 }
 
 /* Recommended cards get a blue border + slight gradient */
@@ -489,20 +507,40 @@ body {
   color: #64748b;
 }
 
+.peer-last-seen {
+  margin: 2px 0 0;
+  font-size: 0.72rem;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.table-last-seen {
+  margin-top: 2px;
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
 .table-rating {
   font-weight: 700;
   color: #92400e;
   background: #fefce8;
   border: 1px solid #fde68a;
   border-radius: 12px;
-  padding: 3px 10px;
-  display: inline-block;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 0.82rem;
+  white-space: nowrap;
 }
 
 .table-status {
   font-size: 0.82rem;
   font-weight: 600;
+}
+
+.table-status.online-now {
+  color: #16a34a;
 }
 
 .table-actions {
@@ -654,4 +692,62 @@ body {
   .peer-table-container {
     overflow-x: auto;
   }
+}
+
+/* ── Incomplete Profile Warning ─────────────────────────── */
+.incomplete-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff1f2;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 8px rgba(225, 29, 72, 0.1);
+}
+
+.incomplete-badge .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.incomplete-profile-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  text-align: center;
+  background: linear-gradient(135deg, #fffcfc 0%, #fff 100%);
+}
+
+.incomplete-profile-container .large-icon {
+  font-size: 64px;
+  color: #fda4af;
+  margin-bottom: 20px;
+  opacity: 0.8;
+}
+
+.incomplete-profile-container h3 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 10px;
+}
+
+.incomplete-profile-container p {
+  font-size: 1rem;
+  color: #64748b;
+  max-width: 400px;
+  margin: 0 0 24px;
+  line-height: 1.6;
+}
+
+.incomplete-profile-container .btn-primary {
+  padding: 12px 30px;
+  font-size: 1rem;
 }
