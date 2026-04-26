@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import "./MyActivity.css";
 import api from "../../../api/axios";
 
+import { useAuth } from "../../../context/AuthContext";
+import Chat from "../Messaging/Chat";
+
 const getProfile = () => {
   const saved = localStorage.getItem("studentProfile");
   return saved ? JSON.parse(saved) : { name: "", email: "" };
@@ -77,21 +80,47 @@ function RequestCard({ req, onAccept, onDecline, onStartConversation }) {
 
 /* ── Main Component ─────────────────────────────────────── */
 export default function MyActivity() {
+  const { user } = useAuth();
   const currentProfile = getProfile();
-  const currentUserName = currentProfile.name || "Student";
-  const currentUserId = currentProfile.email || "local-user";
+  
+  // Use auth context if available, fallback to localStorage
+  const currentUserId = user?.email || currentProfile.email || "local-user";
+  const currentUserName = user?.name || currentProfile.name || "Student";
   
   const [received,      setReceived]      = useState([]);
   const [sent, setSent] = useState([]);
   const [taskApplications, setTaskApplications] = useState([]);
   const [reviewedRequestIds, setReviewedRequestIds] = useState(new Set());
+  const [myReviews, setMyReviews] = useState([]);
   const [myTasks,       setMyTasks]       = useState([]);
+  const [conversations, setConversations] = useState([]);
+  const [activeChat, setActiveChat] = useState(null);
 
   useEffect(() => {
-    fetchRequests();
-    fetchMyTasks();
-    fetchMyReviews();
-  }, []);
+    if (currentUserId && currentUserId !== "local-user") {
+      fetchRequests();
+      fetchMyTasks();
+      fetchMyReviews();
+      fetchConversations();
+
+      const interval = setInterval(() => {
+        fetchConversations();
+      }, 10000);
+
+      return () => clearInterval(interval);
+    }
+  }, [currentUserId]);
+
+  const fetchConversations = async () => {
+    try {
+      const res = await api.get("/messages/conversations");
+      if (res.data.success) {
+        setConversations(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching conversations:", err);
+    }
+  };
 
   const fetchRequests = async () => {
     try {
@@ -105,15 +134,14 @@ export default function MyActivity() {
         all.filter(
           (r) =>
             !isTaskApplication(r) &&
-            (((r.senderEmail || "").toLowerCase() === (currentUserId || "").toLowerCase()) || r.senderName === currentUserName)
+            ((r.senderEmail || "").toLowerCase() === (currentUserId || "").toLowerCase())
         )
       );
       setReceived(
         all.filter(
           (r) =>
             !isTaskApplication(r) &&
-            ((r.receiverEmail && r.receiverEmail === currentUserId) || r.receiverName === currentUserName) &&
-            !((r.senderEmail && r.senderEmail === currentUserId) || r.senderName === currentUserName)
+            ((r.receiverEmail || "").toLowerCase() === (currentUserId || "").toLowerCase())
         )
       );
 
@@ -131,19 +159,24 @@ export default function MyActivity() {
 
   const fetchMyTasks = async () => {
     try {
-      const res = await api.get("/learning/tasks");
-      setMyTasks(res.data.filter((t) => (t.userId && t.userId === currentUserId) || t.author === currentUserName));
+      const res = await api.get(`/learning/tasks/user/${encodeURIComponent(currentUserId)}`);
+      setMyTasks(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
       console.error(err);
     }
   };
 
   const fetchMyReviews = async () => {
-    if (!currentUserId) return;
+    if (!currentUserId || currentUserId === "local-user") return;
     try {
-      const res = await api.get(`/learning/peerreviews/reviewer/${encodeURIComponent(currentUserId)}`);
-      const ids = new Set((Array.isArray(res.data) ? res.data : []).map((r) => String(r.requestId)));
+      // 1. Get IDs of requests I have ALREADY reviewed (to disable review button)
+      const resReviewer = await api.get(`/learning/peerreviews/reviewer/${encodeURIComponent(currentUserId)}`);
+      const ids = new Set((Array.isArray(resReviewer.data) ? resReviewer.data : []).map((r) => String(r.requestId)));
       setReviewedRequestIds(ids);
+
+      // 2. Get reviews received BY me (to display in the "Reviews" section)
+      const resPeer = await api.get(`/learning/peerreviews/peer/${encodeURIComponent(currentUserId)}`);
+      setMyReviews(Array.isArray(resPeer.data.reviews) ? resPeer.data.reviews : []);
     } catch (err) {
       console.error(err);
     }
@@ -219,14 +252,8 @@ export default function MyActivity() {
   }
 
   async function handleMarkCompleted(req) {
-    try {
-      await api.put(`/learning/requests/${req._id}`, { status: "COMPLETED" });
-      fetchRequests();
-      showToast("Request marked as completed.", "success");
-    } catch (err) {
-      console.error(err);
-      showToast("Failed to mark as completed.", "error");
-    }
+    // Instead of completing immediately, we open the review modal
+    openReviewModal(req);
   }
 
   function openReviewModal(req) {
@@ -235,23 +262,45 @@ export default function MyActivity() {
     setReviewComment("");
   }
 
-  function openConversation(req) {
+  async function openConversation(req) {
     const isSender =
       (req.senderEmail && req.senderEmail === currentUserId) ||
       req.senderName === currentUserName;
+    
     const peerName = (isSender ? req.receiverName : req.senderName) || "Peer";
     const peerEmail = (isSender ? req.receiverEmail : req.senderEmail) || "";
-    setConversationReq({ ...req, peerName, peerEmail });
-    const draft = isSender
-      ? `Hi ${peerName},\n\nThanks for accepting my request for "${req.skill || "General"}". Can we coordinate a time to connect and start working on this?\n\nBest,\n${currentUserName}`
-      : `Hi ${peerName},\n\nI accepted your request for "${req.skill || "General"}". Let's coordinate a time to connect and work on this.\n\nBest,\n${currentUserName}`;
+    
+    // If we have the ID directly from the request model update
+    let peerId = isSender ? req.receiver : req.sender;
 
-    setConversationDraft(draft);
+    // Fallback: If ID is missing (old request), resolve it by email
+    if (!peerId) {
+        try {
+            const res = await api.get(`/auth/find-user/${encodeURIComponent(peerEmail)}`);
+            if (res.data.success) {
+                peerId = res.data.data._id;
+            }
+        } catch (err) {
+            console.error("Could not resolve peer ID:", err);
+        }
+    }
+
+    if (peerId) {
+        setActiveChat({ peerId, peerName, requestId: req._id });
+    } else {
+        // Legacy fallback: Show email modal only if user cannot be found in database
+        setConversationReq({ ...req, peerName, peerEmail });
+        const draft = isSender
+          ? `Hi ${peerName},\n\nThanks for accepting my request for "${req.skill || "General"}". Can we coordinate a time to connect and start working on this?\n\nBest,\n${currentUserName}`
+          : `Hi ${peerName},\n\nI accepted your request for "${req.skill || "General"}". Let's coordinate a time to connect and work on this.\n\nBest,\n${currentUserName}`;
+        setConversationDraft(draft);
+    }
   }
 
   async function handleSubmitReview() {
     if (!reviewingReq) return;
     try {
+      // Submit the review (backend will automatically mark request as COMPLETED)
       await api.post("/learning/peerreviews", {
         requestId: reviewingReq._id,
         reviewerName: currentUserName,
@@ -261,12 +310,14 @@ export default function MyActivity() {
         rating: Number(reviewRating),
         comment: reviewComment,
       });
+
       setReviewingReq(null);
+      await fetchRequests();
       await fetchMyReviews();
-      showToast("Review submitted successfully.", "success");
+      showToast("Completed! Your review has been shared.", "success");
     } catch (err) {
       console.error(err);
-      showToast(err.response?.data?.message || err.message || "Failed to submit review.", "error");
+      showToast(err.response?.data?.message || err.message || "Failed to complete request.", "error");
     }
   }
 
@@ -276,7 +327,10 @@ export default function MyActivity() {
       await api.delete(`/learning/tasks/${id}`);
       fetchMyTasks();
       showToast("Task removed.", "error");
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err); 
+      showToast("Failed to delete task.", "error");
+    }
   }
 
   function handleEditTask(t) {
@@ -291,7 +345,10 @@ export default function MyActivity() {
       setEditingTask(null);
       fetchMyTasks();
       showToast("Task updated.", "success");
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err); 
+      showToast("Failed to update task.", "error");
+    }
   }
 
   function copyTaskApplicantEmail(email) {
@@ -382,7 +439,7 @@ export default function MyActivity() {
             </div>
           </header>
 
-          <main className="aa-content">
+          <div className="aa-content">
             <section className="aa-summary-banner">
               <div className="aa-summary-banner__content">
                 <span className="material-symbols-outlined">info</span>
@@ -494,8 +551,10 @@ export default function MyActivity() {
                         <p className="aa-task-card__desc">{t.description}</p>
                         <div className="aa-task-card__footer">
                           <div className="aa-task-card__meta">
-                            <span>
-                              <span className="material-symbols-outlined">calendar_today</span>
+                            <span className={toUiDeadline(t.deadlineDate, t.deadline) === "Overdue" ? "aa-text--danger" : ""}>
+                              <span className="material-symbols-outlined" style={{ fontSize: '14px', verticalAlign: 'middle' }}>
+                                {toUiDeadline(t.deadlineDate, t.deadline) === "Overdue" ? "warning" : "calendar_today"}
+                              </span>
                               {" "}
                               {toUiDeadline(t.deadlineDate, t.deadline)}
                             </span>
@@ -513,52 +572,101 @@ export default function MyActivity() {
                     </div>
                   )}
                 </div>
+
+                <div className="aa-section__header" style={{ marginTop: '30px' }}>
+                  <h3 className="aa-subsection-title">
+                    Active Conversations
+                    {conversations.some(c => c.unreadCount > 0) && <span className="aa-header-dot"></span>}
+                  </h3>
+                </div>
+                <div className="aa-conversations-list">
+                  {conversations.length > 0 ? (
+                    conversations.map((conv) => (
+                      <div className={`aa-convo-item ${conv.unreadCount > 0 ? 'aa-convo-item--unread' : ''}`} key={conv.user._id} onClick={() => setActiveChat({ peerId: conv.user._id, peerName: conv.user.name })}>
+                        <div className="aa-avatar aa-avatar--sm aa-initials aa-initials--primary">
+                          {conv.user.name?.charAt(0).toUpperCase()}
+                          {conv.unreadCount > 0 && <span className="aa-unread-badge">{conv.unreadCount}</span>}
+                        </div>
+                        <div className="aa-convo-info">
+                          <div className="aa-convo-name">{conv.user.name}</div>
+                          <div className="aa-convo-last-msg">{conv.lastMessage.content}</div>
+                        </div>
+                        <button className="aa-btn aa-btn--ghost aa-btn--sm">Open</button>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="aa-empty-state">
+                      <p>No active conversations.</p>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div className="aa-replies-section">
-                <h3 className="aa-subsection-title">Latest Replies</h3>
+            <section className="aa-section">
+              <div className="aa-section__header">
+                <div>
+                  <h2 className="aa-section__title">Reviews</h2>
+                  <p className="aa-section__sub">Feedback from students you've helped</p>
+                </div>
+              </div>
+
+              <div className="aa-subsection">
                 <div className="aa-replies-list">
-                  {taskApplications.map((app) => (
-                    <div key={`task-app-${app._id}`} className="aa-reply aa-reply--task-app">
-                      <div className="aa-avatar aa-avatar--md aa-initials aa-initials--secondary">
-                        {(app.senderName || "Peer")
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .slice(0, 2)
-                          .toUpperCase()}
-                      </div>
+                  {/* --- PEER REVIEWS RECEIVED --- */}
+                  {myReviews.map((rev) => (
+                    <div className="aa-reply" key={rev._id} style={{ borderLeft: '4px solid #f59e0b' }}>
                       <div className="aa-reply__body">
                         <div className="aa-reply__top">
-                          <span className="aa-reply__name">{app.senderName || "Peer"} applied to help</span>
-                          <span className="aa-reply__time">{new Date(app.createdAt || app.date || Date.now()).toLocaleString()}</span>
+                          <span className="aa-reply__name">{rev.reviewerName}</span>
+                          <span className="aa-reply__time">{new Date(rev.createdAt).toLocaleDateString()}</span>
                         </div>
-                        <p className="aa-reply__preview">
-                          "{app.senderName || "A peer"} applied for your task: {app.taskTitle || app.skill || "Untitled task"}."
-                        </p>
-                        <div className="aa-reply__actions">
-                          <button className="aa-action-btn aa-action-btn--primary" onClick={() => openTaskApplicationConversation(app)}>
-                            <span className="material-symbols-outlined" style={{ fontSize: "14px", marginRight: "4px" }}>forum</span>
-                            Contact
-                          </button>
-                          <button className="aa-action-btn aa-action-btn--primary" onClick={() => copyTaskApplicantEmail(app.senderEmail)}>
-                            <span className="material-symbols-outlined" style={{ fontSize: "14px", marginRight: "4px" }}>content_copy</span>
-                            Copy Email
-                          </button>
+                        <div style={{ marginBottom: '8px', color: '#f59e0b', fontSize: '14px' }}>
+                          {"★".repeat(rev.rating)}{"☆".repeat(5 - rev.rating)}
                         </div>
+                        <p className="aa-reply__preview">{rev.comment || "No comment provided."}</p>
                       </div>
                     </div>
                   ))}
 
-                  {taskApplications.length === 0 && (
+                  {/* --- TASK APPLICATIONS --- */}
+                  {taskApplications.length > 0 && (
+                    <>
+                      <h4 className="aa-subsection-title" style={{ marginTop: '20px', fontSize: '0.85rem' }}>Task Applications</h4>
+                      {taskApplications.map((app) => (
+                        <div className="aa-reply aa-reply--task-app" key={app._id}>
+                          <div className="aa-reply__body">
+                            <div className="aa-reply__top">
+                              <span className="aa-reply__name">{app.senderName}</span>
+                              <span className="aa-reply__time">
+                                {new Date(app.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="aa-reply__preview">{app.message}</p>
+                            <div className="aa-reply__actions">
+                              <button className="aa-action-btn aa-action-btn--chat" onClick={() => openConversation(app)}>
+                                Contact
+                              </button>
+                              <button className="aa-action-btn aa-action-btn--primary" onClick={() => copyTaskApplicantEmail(app.senderEmail)}>
+                                <span className="material-symbols-outlined" style={{ fontSize: "14px", marginRight: "4px" }}>content_copy</span>
+                                Copy Email
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {myReviews.length === 0 && taskApplications.length === 0 && (
                     <div className="aa-empty-state">
-                      <p>No any replies yet.</p>
+                      <p>No reviews or applications yet.</p>
                     </div>
                   )}
                 </div>
               </div>
             </section>
-          </main>
+          </section>
+        </div>
 
           {editingReq && (
             <div className="aa-modal-bg" onClick={() => setEditingReq(null)}>
@@ -579,6 +687,86 @@ export default function MyActivity() {
                 <div className="aa-modal__footer">
                   <button className="aa-btn aa-btn--ghost" onClick={() => setEditingReq(null)}>Cancel</button>
                   <button className="aa-btn aa-btn--primary" onClick={handleUpdate}>Update Message</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {editingTask && (
+            <div className="aa-modal-bg" onClick={() => setEditingTask(null)}>
+              <div className="aa-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="aa-modal__header">
+                  <h3>Edit Posted Task</h3>
+                  <button className="aa-modal__close" onClick={() => setEditingTask(null)}>×</button>
+                </div>
+                <div className="aa-modal__body">
+                  <div className="profile-field">
+                    <label className="aa-modal__label">Task Title</label>
+                    <input
+                      className="aa-modal__input"
+                      value={taskTitle}
+                      onChange={(e) => setTaskTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="profile-field" style={{ marginTop: '12px' }}>
+                    <label className="aa-modal__label">Task Description</label>
+                    <textarea
+                      className="aa-modal__textarea"
+                      value={taskDesc}
+                      onChange={(e) => setTaskDesc(e.target.value)}
+                      rows={4}
+                    />
+                  </div>
+                </div>
+                <div className="aa-modal__footer">
+                  <button className="aa-btn aa-btn--ghost" onClick={() => setEditingTask(null)}>Cancel</button>
+                  <button className="aa-btn aa-btn--primary" onClick={handleUpdateTask}>Save Changes</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {reviewingReq && (
+            <div className="aa-modal-bg" onClick={() => setReviewingReq(null)}>
+              <div className="aa-modal" onClick={(e) => e.stopPropagation()}>
+                <div className="aa-modal__header">
+                  <h3>Rate Your Experience</h3>
+                  <button className="aa-modal__close" onClick={() => setReviewingReq(null)}>×</button>
+                </div>
+                <div className="aa-modal__body">
+                  <p style={{ marginBottom: '20px', color: '#64748b' }}>
+                    How was your learning session with <strong>{reviewingReq.receiverName}</strong>?
+                  </p>
+                  
+                  <div className="profile-field">
+                    <label className="aa-modal__label">Rating (1-5 Stars)</label>
+                    <div style={{ display: 'flex', gap: '8px', fontSize: '24px', cursor: 'pointer', marginBottom: '16px' }}>
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <span 
+                          key={star} 
+                          onClick={() => setReviewRating(star)}
+                          style={{ color: star <= reviewRating ? '#f59e0b' : '#cbd5e1' }}
+                        >
+                          {star <= reviewRating ? '★' : '☆'}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="profile-field">
+                    <label className="aa-modal__label">Your Feedback</label>
+                    <textarea
+                      className="aa-modal__textarea"
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      placeholder="Share your thoughts on the collaboration..."
+                      rows={4}
+                    />
+                  </div>
+                </div>
+                <div className="aa-modal__footer">
+                  <button className="aa-btn aa-btn--ghost" onClick={() => setReviewingReq(null)}>Skip Review</button>
+                  <button className="aa-btn aa-btn--primary" onClick={handleSubmitReview}>Submit & Complete</button>
                 </div>
               </div>
             </div>
@@ -624,6 +812,17 @@ export default function MyActivity() {
                 </div>
               </div>
             </div>
+          )}
+          {activeChat && (
+            <Chat 
+                peerId={activeChat.peerId} 
+                peerName={activeChat.peerName} 
+                requestId={activeChat.requestId}
+                onClose={() => {
+                    setActiveChat(null);
+                    fetchConversations();
+                }} 
+            />
           )}
     </main>
   );

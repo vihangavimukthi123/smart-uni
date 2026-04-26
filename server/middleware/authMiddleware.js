@@ -12,7 +12,6 @@ const protect = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Not authorized, no token' });
     }
     const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
-    console.log(`[AUTH] Decoded ID: ${decoded.id}`);
     
     // Check User collection first
     let user = await User.findById(decoded.id).select('-password');
@@ -28,6 +27,8 @@ const protect = async (req, res, next) => {
         user.name = `${supplier.firstName} ${supplier.lastName}`.trim();
         user.email = supplier.semail; // Mapping semail to email for consistency
         user.isActive = !supplier.isBlocked;
+        user.phone = supplier.phone;
+        user.bio = supplier.description; // Mapping description to bio for profile page
       }
     }
 
@@ -47,6 +48,15 @@ const protect = async (req, res, next) => {
     req.user = user;
     if (user.role === 'supplier') req.supplier = user; // Compatibility for product routes
     if (user.role === 'student' || user.role === 'user') req.student = user; // Compatibility for review/order routes
+
+    // Update lastActiveAt (throttled to 2 mins)
+    const now = new Date();
+    const lastActive = user.lastActiveAt ? new Date(user.lastActiveAt) : null;
+    if (!lastActive || (now - lastActive) > 2 * 60 * 1000) {
+      // Fire and forget to avoid blocking the request
+      User.findByIdAndUpdate(user._id, { lastActiveAt: now }).catch(err => console.error('Activity track error:', err));
+    }
+
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {

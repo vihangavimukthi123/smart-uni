@@ -16,13 +16,17 @@ const eventRoutes = require('./routes/eventRoutes');
 const scheduleRoutes = require('./routes/scheduleRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const messageRoutes = require('./routes/messageRoutes');
+const reminderService = require('./services/reminderService');
 const momentumRoutes = require('./routes/momentumRoutes');
+
 
 // Rental Routes
 const productRoutes = require('./routes/productRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const reviewRoutes = require('./routes/reviewRoutes');
 const supplierRoutes = require('./routes/supplierRoutes');
+const packageRoutes = require('./routes/packageRoutes');
+const offerRoutes = require('./routes/offerRoutes');
 
 // Learning Routes
 const learningResourceRoutes = require('./routes/learningResourceRoutes');
@@ -30,6 +34,7 @@ const peerRoutes = require('./routes/peerRoutes');
 const peerReviewRoutes = require('./routes/peerReviewRoutes');
 const requestRoutes = require('./routes/requestRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+
 
 // ── Initialize App ──────────────────────────────────────────────────────────
 const app = express();
@@ -99,7 +104,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
-app.use(globalLimiter);
+// app.use(globalLimiter);
 
 // ── Body Parsing ─────────────────────────────────────────────────────────────
 app.use(express.json({ limit: '50mb' }));
@@ -129,7 +134,9 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/momentum', momentumRoutes);
 
-// Rental API
+// Rental routes (specific to general)
+app.use('/api/rental/packages', packageRoutes);
+app.use('/api/rental/offers', offerRoutes);
 app.use('/api/rental/products', productRoutes);
 app.use('/api/rental/orders', orderRoutes);
 app.use('/api/rental/reviews', reviewRoutes);
@@ -141,6 +148,8 @@ app.use('/api/learning/peers', peerRoutes);
 app.use('/api/learning/peerreviews', peerReviewRoutes);
 app.use('/api/learning/requests', requestRoutes);
 app.use('/api/learning/tasks', taskRoutes);
+app.use('/api/momentum', momentumRoutes);
+
 
 // ── 404 Handler ──────────────────────────────────────────────────────────────
 app.use((req, res) => {
@@ -152,10 +161,17 @@ app.use(errorHandler);
 
 // ── Start Server ─────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
   console.log(`\n🚀 Server running on port ${PORT} [${process.env.NODE_ENV}]`);
   console.log(`📡 Socket.io ready`);
   console.log(`🌐 API: http://localhost:${PORT}/api/health\n`);
+  
+  // Initialize Reminder Service (Agenda persistent jobs)
+  try {
+    await reminderService.start();
+  } catch (err) {
+    console.error("Failed to start reminder service:", err);
+  }
 });
 
 module.exports = { app, server, io };

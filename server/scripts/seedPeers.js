@@ -19,7 +19,7 @@ const baseStudents = [
   {
     studentId: "IT220101",
     name: "Nadeesha Fernando",
-    email: "nadeesha.fernando@campus.edu",
+    email: "nadeesha@campus.edu",
     year: 3,
     semester: 1,
     degree: "BSc IT - Year 3",
@@ -32,7 +32,7 @@ const baseStudents = [
   {
     studentId: "IT220102",
     name: "Ravindu Perera",
-    email: "ravindu.perera@campus.edu",
+    email: "ravindu@campus.edu",
     year: 3,
     semester: 2,
     degree: "BSc IT - Year 3",
@@ -45,7 +45,7 @@ const baseStudents = [
   {
     studentId: "IT220103",
     name: "Dulani Senanayake",
-    email: "dulani.senanayake@campus.edu",
+    email: "dulani@campus.edu",
     year: 2,
     semester: 2,
     degree: "BSc IT - Year 2",
@@ -58,13 +58,13 @@ const baseStudents = [
   {
     studentId: "IT220104",
     name: "Kasun Wijesinghe",
-    email: "kasun.wijesinghe@campus.edu",
+    email: "kasun@campus.edu",
     year: 1,
     semester: 2,
     degree: "BSc IT - Year 1",
     modules: ["IT1100", "IT1060"],
     skills: ["HTML", "CSS", "Scrum", "Git"],
-    rating: 4.5,
+    rating: 4.7,
     bio: "Happy to support web basics and teamwork tools.",
     profilePic: "https://randomuser.me/api/portraits/men/54.jpg"
   },

@@ -65,6 +65,11 @@ const peerSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    availability: {
+      type: String,
+      enum: ["Available Now", "Busy", "Away"],
+      default: "Available Now",
+    },
   },
   { timestamps: true }
 );

@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const { body } = require('express-validator');
-const { register, login, refreshToken, logout, getMe, getAllUsers, updateUserRole, updateProfile, updatePassword, updateSettings } = require('../controllers/authController');
+const { register, login, refreshToken, logout, getMe, getAllUsers, updateUserRole, deleteUser, updateProfile, updatePassword, updateSettings, getUserByEmail } = require('../controllers/authController');
+
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
 const { authLimiter } = require('../middleware/rateLimiter');
@@ -23,11 +24,13 @@ router.post('/login', authLimiter, loginValidation, login);
 router.post('/refresh', refreshToken);
 router.post('/logout', protect, logout);
 router.get('/me', protect, getMe);
+router.get('/find-user/:email', protect, getUserByEmail);
 router.put('/profile', protect, updateProfile);
 router.put('/password', protect, updatePassword);
 router.put('/settings', protect, updateSettings);
 router.get('/users', protect, authorize('admin'), getAllUsers);
 router.put('/users/:id/role', protect, authorize('admin'), updateUserRole);
+router.delete('/users/:id', protect, authorize('admin'), deleteUser);
 
 module.exports = router;
 

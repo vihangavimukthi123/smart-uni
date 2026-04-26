@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import "./FindPeers.css";
 import api from "../../../api/axios";
+import { useAuth } from "../../../context/AuthContext";
 
 
 // --- HELPERS ---
@@ -22,12 +23,42 @@ const getAvatarColor = (name) => {
   return colors[Math.abs(hash) % colors.length];
 };
 
+const formatLastSeen = (timestamp) => {
+  if (!timestamp) return "Never seen";
+  const ts = new Date(timestamp).getTime();
+  if (Number.isNaN(ts)) return "Last seen recently";
+
+  const now = new Date();
+  const diffMs = now.getTime() - ts;
+  
+  if (diffMs < 2 * 60 * 1000) return "Active now";
+
+  const mins = Math.floor(diffMs / (60 * 1000));
+  if (mins < 60) return `Last seen ${mins} min${mins !== 1 ? 's' : ''} ago`;
+
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) {
+    const tsDate = new Date(ts);
+    if (tsDate.getDate() !== now.getDate()) {
+      return "Last seen yesterday";
+    }
+    return `Last seen ${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  }
+
+  const days = Math.floor(hours / 24);
+  if (days === 1) return "Last seen yesterday";
+  if (days < 7) return `Last seen ${days} days ago`;
+
+  return `Last seen on ${new Date(ts).toLocaleDateString()}`;
+};
+
 const toUiPeer = (peer) => ({
   ...peer,
   degree: peer.degree || `BSc IT - Year ${peer.year || 1}`,
   skills: Array.isArray(peer.skills) ? peer.skills : [],
   modules: Array.isArray(peer.modules) ? peer.modules : [],
-  availability: "Available Now",
+  lastSeen: formatLastSeen(peer.lastActiveAt || peer.updatedAt),
+  isOnlineNow: Date.now() - new Date(peer.lastActiveAt || peer.updatedAt || 0).getTime() < 2 * 60 * 1000,
   reviews: Number(peer.reviewCount) || 0,
   rating: Number(peer.rating) || 0,
 });
@@ -57,6 +88,7 @@ function PeerCard({ peer, onRequest, onReadReviews, recommendedSkill, matchBadge
         <div className="peer-info">
           <h3 className="peer-name">{peer.name}</h3>
           <p className="degree">{peer.degree}</p>
+          <p className="peer-last-seen">{peer.lastSeen}</p>
         </div>
         <div className="rating-badge">
           <span className="rating-star">⭐</span>
@@ -75,12 +107,8 @@ function PeerCard({ peer, onRequest, onReadReviews, recommendedSkill, matchBadge
 
       <div className="status">
         <span className="review-count">
-          <span className="material-symbols-outlined" style={{fontSize:'14px',verticalAlign:'middle',marginRight:'3px'}}>reviews</span>
+          <span className="material-symbols-outlined" style={{ fontSize: '14px', verticalAlign: 'middle', marginRight: '3px' }}>reviews</span>
           {peer.reviews} review{peer.reviews !== 1 ? 's' : ''}
-        </span>
-        <span className={`availability ${peer.availability === "Available Now" ? "available" : "away"}`}>
-          <span className="avail-dot"></span>
-          {peer.availability}
         </span>
       </div>
 
@@ -106,6 +134,7 @@ function PeerTableRow({ peer, onRequest }) {
           <div className="student-info">
             <h4>{peer.name}</h4>
             <p>{peer.degree}</p>
+            <p className="table-last-seen">{peer.lastSeen}</p>
           </div>
         </div>
       </td>
@@ -116,10 +145,12 @@ function PeerTableRow({ peer, onRequest }) {
           ))}
         </div>
       </td>
-      <td className="table-rating">⭐ {peer.rating}</td>
       <td>
-        <span className={`table-status availability ${peer.availability === "Available Now" ? "available" : "away"}`}>
-          {peer.availability}
+        <span className="table-rating">⭐ {peer.rating}</span>
+      </td>
+      <td>
+        <span className={`table-status ${peer.isOnlineNow ? "online-now" : ""}`}>
+          {peer.lastSeen}
         </span>
       </td>
       <td>
@@ -149,11 +180,17 @@ export default function FindPeers() {
   const [searchName, setSearchName] = useState("");
   const [filterModule, setFilterModule] = useState("");
   const [filterSkill, setFilterSkill] = useState("");
+  const [filterYear, setFilterYear] = useState("");
+  const [filterSemester, setFilterSemester] = useState("");
+  const [filterSpecialization, setFilterSpecialization] = useState("");
+  const { user } = useAuth();
   const [dbPeers, setDbPeers] = useState([]);
+  const [apiUserProfile, setApiUserProfile] = useState(null);
   const [loadingPeers, setLoadingPeers] = useState(true);
+  const [isProfileComplete, setIsProfileComplete] = useState(true);
+  const [profileMessage, setProfileMessage] = useState("");
 
-  // Module to Skill Mapping for Advanced Recommendation
-  const moduleSkillMapping = {
+const moduleSkillMapping = {
     "Introduction to Programming": ["Python", "Java", "C++", "Logic", "Coding", "Programming"],
     "Mathematics for Computing": ["Math", "Discrete Math", "Logic", "Calculus"],
     "Object Oriented Concepts": ["Java", "OOP", "Design Patterns", "C++"],
@@ -191,22 +228,41 @@ export default function FindPeers() {
       moduleLabels: profile.moduleLabels || [],
       selectedYear: profile.selectedYear || "",
       selectedSemester: profile.selectedSemester || "",
+      degreeProgram: profile.degreeProgram || "",
     };
   };
 
   const currentProfile = getProfile();
 
   useEffect(() => {
+    setFilterYear(currentProfile.selectedYear ? String(currentProfile.selectedYear) : "");
+    setFilterSemester(currentProfile.selectedSemester ? String(currentProfile.selectedSemester) : "");
+    setFilterSpecialization(currentProfile.degreeProgram || "");
+  }, [currentProfile.selectedYear, currentProfile.selectedSemester, currentProfile.degreeProgram]);
+
+  useEffect(() => {
     const fetchPeers = async () => {
       try {
         const params = new URLSearchParams();
-        if (currentProfile.selectedYear) params.append("year", currentProfile.selectedYear);
-        if (currentProfile.selectedSemester) params.append("semester", currentProfile.selectedSemester);
         if (currentProfile.email) params.append("excludeEmail", currentProfile.email);
+        if (filterYear) params.append("year", filterYear);
+        if (filterSemester) params.append("semester", filterSemester);
+        if (filterSpecialization && (filterYear === "3" || filterYear === "4")) {
+          params.append("degreeProgram", filterSpecialization);
+        }
 
         const query = params.toString();
         const res = await api.get(`/learning/peers${query ? `?${query}` : ""}`);
-        setDbPeers((res.data || []).map(toUiPeer));
+        
+        if (res.data.profileComplete === false) {
+          setIsProfileComplete(false);
+          setProfileMessage(res.data.message);
+          setDbPeers([]);
+        } else {
+          setIsProfileComplete(true);
+          setDbPeers((res.data.peers || []).map(toUiPeer));
+          setApiUserProfile(res.data.userProfile);
+        }
       } catch (err) {
         console.error("Error fetching students:", err);
       } finally {
@@ -214,52 +270,71 @@ export default function FindPeers() {
       }
     };
     fetchPeers();
-  }, [currentProfile.selectedYear, currentProfile.selectedSemester, currentProfile.email]);
+  }, [currentProfile.email, filterYear, filterSemester, filterSpecialization]);
 
-  const allPeers = dbPeers.filter((p) => p && p.rating && p.rating > 0);
+  const allPeers = dbPeers.filter((p) => !!p);
   const [filteredPeers, setFilteredPeers] = useState([]);
 
   // Modified Recommendation logic: Match user's modules with others' skills
-  const recommendedPeers = allPeers
+  const rawRecommended = (dbPeers || [])
     .map(p => {
-      if (!p) return null;
-      const peerSkills = (p.skills || []).map(s => s.toLowerCase());
-      const userModules = currentProfile.moduleLabels || [];
+      if (!p || p.email === user?.email) return null;
+      
+      const userModules = apiUserProfile?.modules || currentProfile.moduleLabels || [];
+      const peerSkills = (p.skills || []).map(s => String(s || "").trim().toLowerCase());
 
       let bestMatch = null;
       let matchType = "";
 
-      // Check each user module for matching peer skills
-      for (const moduleLabel of userModules) {
-        // Direct match: peer has a skill that is exactly the module name
-        const directMatch = p.skills.find(s => s.toLowerCase() === moduleLabel.toLowerCase());
+      for (const rawModule of userModules) {
+        const moduleLabel = String(rawModule || "").trim();
+        if (!moduleLabel) continue;
+
+        // 1. Direct match
+        const directMatch = p.skills.find(s => 
+          String(s || "").trim().toLowerCase() === moduleLabel.toLowerCase()
+        );
+        
         if (directMatch) {
           bestMatch = directMatch;
-          matchType = "EXPERT IN " + moduleLabel.toUpperCase();
+          matchType = "Expert in " + moduleLabel;
           break;
         }
 
-        // Indirect match: peer has a skill mapping to this module
+        // 2. Mapping match
         const relatedSkills = moduleSkillMapping[moduleLabel] || [];
-        const foundRelated = p.skills.find(s => 
-          relatedSkills.some(rs => rs.toLowerCase() === s.toLowerCase())
+        const foundRelated = p.skills.find(s =>
+          relatedSkills.some(rs => rs.toLowerCase() === String(s || "").trim().toLowerCase())
         );
+
         if (foundRelated) {
           bestMatch = foundRelated;
-          matchType = `SKILLED IN ${foundRelated.toUpperCase()} (FOR ${moduleLabel.toUpperCase()})`;
+          matchType = `${foundRelated} (for ${moduleLabel})`;
           break;
         }
       }
 
       if (bestMatch) {
-         return { ...p, matchedBy: matchType, recommendedSkill: bestMatch };
+        return { ...p, matchedBy: matchType, recommendedSkill: bestMatch };
       }
       return null;
     })
-    .filter(Boolean)
-    // Sort by rating descending (User requirement: high ratings on that relevant skill)
-    .sort((a, b) => b.rating - a.rating)
-    .slice(0, 3);
+    .filter(Boolean);
+
+  // Fallback: If no module-based recommendations, suggest top-rated peers in the same year/semester
+  let recommendedPeers = rawRecommended;
+  if (recommendedPeers.length === 0 && apiUserProfile) {
+    const topPeers = (dbPeers || [])
+      .filter(p => p.email !== user?.email && p.year === apiUserProfile.year)
+      .map(p => ({ ...p, matchedBy: `Top Mentor in Year ${p.year}` }))
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 3);
+    recommendedPeers = topPeers;
+  } else {
+    recommendedPeers = recommendedPeers
+      .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+      .slice(0, 3);
+  }
 
   // Get unique modules and skills for dropdowns
   const modulesList = [...new Set(allPeers.flatMap(p => p?.modules || []))];
@@ -272,13 +347,21 @@ export default function FindPeers() {
       const nameMatch = (p.name || "").toLowerCase().includes((searchName || "").toLowerCase());
       const moduleMatch = filterModule ? (p.modules || []).some(m => m && m.includes(filterModule)) : true;
       const skillMatch = filterSkill ? (p.skills || []).some(s => s && s.includes(filterSkill)) : true;
-      return nameMatch && moduleMatch && skillMatch;
+      const yearMatch = filterYear ? String(p.year) === String(filterYear) : true;
+      const semMatch = filterSemester ? String(p.semester) === String(filterSemester) : true;
+      
+      // Specialization match (only for Year 3 & 4)
+      const specMatch = (filterSpecialization && (filterYear === "3" || filterYear === "4")) 
+        ? (p.degreeProgram || "").toUpperCase() === filterSpecialization.toUpperCase() 
+        : true;
+
+      return nameMatch && moduleMatch && skillMatch && yearMatch && semMatch && specMatch;
     });
     setFilteredPeers(temp);
-  }, [searchName, filterModule, filterSkill, dbPeers]);
+  }, [searchName, filterModule, filterSkill, filterYear, filterSemester, filterSpecialization, dbPeers]);
 
   // Get current datetime for min attribute
-  const nowISO = new Date().toISOString().slice(0,16);
+  const nowISO = new Date().toISOString().slice(0, 16);
 
   const openReviewsModal = async (peer) => {
     if (!peer?.email) {
@@ -306,95 +389,143 @@ export default function FindPeers() {
   return (
     <>
       <main className="peers-content">
-          {/* TOPBAR */}
-          <div className="topbar">
+        {/* TOPBAR */}
+        <div className="topbar">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <h1>Find Peers</h1>
+            {!isProfileComplete && (
+              <span className="incomplete-badge">
+                <span className="material-symbols-outlined">warning</span>
+                Profile Incomplete
+              </span>
+            )}
           </div>
+        </div>
 
-          {/* FILTER */}
-          <div className="filter">
-            <input
-              placeholder="Search by student name..."
-              value={searchName}
-              onChange={e => setSearchName(e.target.value)}
-            />
-            <select value={filterModule} onChange={e => setFilterModule(e.target.value)}>
-              <option value="">Select Module</option>
-              {modulesList.map(m => <option key={m} value={m}>{m}</option>)}
-            </select>
-            <select value={filterSkill} onChange={e => setFilterSkill(e.target.value)}>
-              <option value="">Select Skill</option>
-              {skillsList.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-            <button className="btn-primary" onClick={() => {}}>Search</button>
-          </div>
+        {/* FILTER */}
+        <div className="filter">
+          <input
+            placeholder="Search by student name..."
+            value={searchName}
+            onChange={e => setSearchName(e.target.value)}
+          />
+          <select value={filterYear} onChange={e => setFilterYear(e.target.value)}>
+            <option value="">All Years</option>
+            <option value="1">Year 1</option>
+            <option value="2">Year 2</option>
+            <option value="3">Year 3</option>
+            <option value="4">Year 4</option>
+          </select>
+          <select value={filterSemester} onChange={e => setFilterSemester(e.target.value)}>
+            <option value="">All Semesters</option>
+            <option value="1">Semester 1</option>
+            <option value="2">Semester 2</option>
+          </select>
 
-          {/* AI RECOMMENDED PEERS */}
-          {!searchName && !filterModule && !filterSkill && recommendedPeers.length > 0 && (
-            <div className="recommendations-section">
-               <div className="recommendation-header">
-                  <span className="material-symbols-outlined ai-icon">auto_awesome</span>
-                  <h2>Recommended Mentors for You</h2>
-               </div>
-               <div className="recommendation-grid">
-                  {recommendedPeers.map(p => (
-                     <div key={`rec-${p.id || p._id}`} className="recommended-card-wrapper">
-                         <PeerCard 
-                            peer={p} 
-                            matchBadge={`MATCHED TO ${p.matchedBy.toUpperCase()}`}
-                            onReadReviews={openReviewsModal}
-                            recommendedSkill={p.recommendedSkill}
-                            onRequest={(peer) => {
-                               setSelectedPeer(peer);
-                               setSkill(""); 
-                               setMsg("");
-                               setDate("");
-                               setShowModal(true);
-                            }} 
-                         />
-                     </div>
-                  ))}
-               </div>
-            </div>
+          {/* Conditional Specialization Filter */}
+          {(filterYear === "3" || filterYear === "4") && (
+            <select value={filterSpecialization} onChange={e => setFilterSpecialization(e.target.value)}>
+              <option value="">All Specializations</option>
+              <option value="IT">IT (Information Technology)</option>
+              <option value="SE">SE (Software Engineering)</option>
+              <option value="DS">DS (Data Science)</option>
+              <option value="CS">CS (Cyber Security)</option>
+            </select>
           )}
 
-          {/* LIST TABLE SECTION */}
-          <div className="peers-list-section">
-            <h2>All Available Peers</h2>
-            <div className="peer-table-container">
-              <table className="peer-table">
-                <thead>
-                  <tr>
-                    <th>Student</th>
-                    <th>Skills</th>
-                    <th>Rating</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredPeers.map((p) => (
-                    <PeerTableRow
-                      key={p.id || p._id}
-                      peer={p}
-                      onRequest={(peer) => {
-                        setSelectedPeer(peer);
-                        setSkill(""); 
-                        setMsg("");
-                        setDate("");
-                        setShowModal(true);
-                      }}
-                    />
-                  ))}
-                </tbody>
-              </table>
-              {filteredPeers.length === 0 && (
-                <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
-                  No peers found matching your filters.
+          <select value={filterModule} onChange={e => setFilterModule(e.target.value)}>
+            <option value="">Select Module</option>
+            {modulesList.map(m => <option key={m} value={m}>{m}</option>)}
+          </select>
+          <select value={filterSkill} onChange={e => setFilterSkill(e.target.value)}>
+            <option value="">Select Skill</option>
+            {skillsList.map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+          <button className="btn-primary" onClick={() => { }}>Search</button>
+        </div>
+
+        {/* AI RECOMMENDED PEERS */}
+        {!searchName && !filterModule && !filterSkill && recommendedPeers.length > 0 && (
+          <div className="recommendations-section">
+            <div className="recommendation-header">
+              <span className="material-symbols-outlined ai-icon">auto_awesome</span>
+              <h2>Recommended Mentors for You</h2>
+            </div>
+            <div className="recommendation-grid">
+              {recommendedPeers.map(p => (
+                <div key={`rec-${p.id || p._id}`} className="recommended-card-wrapper">
+                  <PeerCard
+                    peer={p}
+                    matchBadge={`MATCHED TO ${p.matchedBy.toUpperCase()}`}
+                    onReadReviews={openReviewsModal}
+                    recommendedSkill={p.recommendedSkill}
+                    onRequest={(peer) => {
+                      setSelectedPeer(peer);
+                      setSkill("");
+                      setMsg("");
+                      setDate("");
+                      setShowModal(true);
+                    }}
+                  />
                 </div>
-              )}
+              ))}
             </div>
           </div>
+        )}
+
+        {/* LIST TABLE SECTION */}
+        <div className="peers-list-section">
+          <h2>All Available Peers</h2>
+          <div className="peer-table-container">
+            {!isProfileComplete ? (
+              <div className="incomplete-profile-container">
+                <span className="material-symbols-outlined large-icon">account_circle_off</span>
+                <h3>Profile Incomplete</h3>
+                <p>{profileMessage || "Please complete your profile to find relevant peers."}</p>
+                <button 
+                  className="btn-primary" 
+                  onClick={() => window.location.href = '/learning/dash'}
+                >
+                  Go to Dashboard to Complete Profile
+                </button>
+              </div>
+            ) : (
+              <>
+                <table className="peer-table">
+                  <thead>
+                    <tr>
+                      <th>Student</th>
+                      <th>Skills</th>
+                      <th>Rating</th>
+                      <th>Last Seen</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredPeers.map((p) => (
+                      <PeerTableRow
+                        key={p.id || p._id}
+                        peer={p}
+                        onRequest={(peer) => {
+                          setSelectedPeer(peer);
+                          setSkill("");
+                          setMsg("");
+                          setDate("");
+                          setShowModal(true);
+                        }}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+                {filteredPeers.length === 0 && (
+                  <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+                    No peers found matching your filters.
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
       </main>
 
       {/* MODAL */}

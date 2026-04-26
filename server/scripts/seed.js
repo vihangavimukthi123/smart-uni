@@ -41,27 +41,27 @@ const seed = async () => {
   }
 
   // Create Shanilka user
-  const existingShanilka = await User.findOne({ email: 'shanilka.samarakoon@campus.edu' });
+  const existingShanilka = await User.findOne({ email: 'shanilka@campus.edu' });
   if (!existingShanilka) {
     await User.create({
       name: 'Shanilka Samarakoon',
-      email: 'shanilka.samarakoon@campus.edu',
+      email: 'shanilka@campus.edu',
       password: 'shani@1234',
       role: 'student',
     });
-    console.log('✅ Student user created: shanilka.samarakoon@campus.edu / shani@1234');
+    console.log('✅ Student user created: shanilka@campus.edu / shani@1234');
   }
 
   // Create Dinusha user
-  const existingDinusha = await User.findOne({ email: 'dinusha.fernando@campus.edu' });
+  const existingDinusha = await User.findOne({ email: 'nadeesha@campus.edu' });
   if (!existingDinusha) {
     await User.create({
-      name: 'Dinusha Fernando',
-      email: 'dinusha.fernando@campus.edu',
-      password: 'dinu@1234',
+      name: 'Nadeesha Fernando',
+      email: 'nadeesha@campus.edu',
+      password: 'nade@1234',
       role: 'student',
     });
-    console.log('✅ Student user created: dinusha.fernando@campus.edu / dinu@1234');
+    console.log('✅ Student user created: nadeesha@campus.edu / nade@1234');
   }
 
   // Create sample rooms

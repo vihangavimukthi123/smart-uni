@@ -57,7 +57,7 @@ const trackHistory = async (req, res) => {
   try {
     const { userId, query } = req.body;
     if (!userId || !query) return res.status(400).json({ message: "Missing required fields" });
-    
+
     await SearchHistory.create({ userId, query });
     res.status(201).json({ message: "Search history tracked" });
   } catch (err) {
@@ -70,7 +70,7 @@ const getRecommendedLearningResources = async (req, res) => {
   try {
     const { userId } = req.params;
     const { modules, year, semester, skills } = req.query;
-    
+
     // Parse query parameters
     const selectedModules = modules ? modules.split(",").map(m => m.trim()) : [];
     const userYear = year ? Number(year) : null;
@@ -97,13 +97,13 @@ const getRecommendedLearningResources = async (req, res) => {
       }
 
       // B. Keyword Match Score (+30)
-      const keywordMatch = historyQueries.some(query => 
-        resource.title.toLowerCase().includes(query) || 
+      const keywordMatch = historyQueries.some(query =>
+        resource.title.toLowerCase().includes(query) ||
         resource.description.toLowerCase().includes(query)
       );
       if (keywordMatch) {
-         score += 30;
-         reasons.push("Related to your recent search interest");
+        score += 30;
+        reasons.push("Related to your recent search interest");
       }
 
       // C. Year/Semester Match Score (+25) - NEW

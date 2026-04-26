@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useCart } from "../../context/CartContext";
+import { useSocket } from "../../context/SocketContext";
+import { useTheme } from "../../context/ThemeContext";
 // import Navbar from "../../components/layout/Navbar";
 // import Sidebar from "../../components/layout/Sidebar";
 import api from "../../api/axios";
@@ -38,9 +40,25 @@ const CloseIcon = () => (
   </svg>
 );
 
+import OrderChatModal from "./components/OrderChatModal";
+
 // ── Order Details Modal ───────────────────────────────────────────────────────
 function OrderDetailsModal({ order, onClose }) {
+  const [chatSupplier, setChatSupplier] = useState(null);
   if (!order) return null;
+
+  // Group items by supplier
+  const suppliers = order.items?.reduce((acc, item) => {
+    if (!acc[item.supplierEmail]) {
+      acc[item.supplierEmail] = {
+        email: item.supplierEmail,
+        items: []
+      };
+    }
+    acc[item.supplierEmail].items.push(item);
+    return acc;
+  }, {});
+
   return (
     <div style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
       <div style={{ backgroundColor: "#fff", borderRadius: "16px", width: "100%", maxWidth: "600px", maxHeight: "90vh", overflowY: "auto", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}>
@@ -89,39 +107,77 @@ function OrderDetailsModal({ order, onClose }) {
               </div>
             </div>
           </div>
+          
           <div style={{ height: "1px", backgroundColor: "#F3F4F6", marginBottom: "24px" }} />
+
+          
           <div style={{ marginBottom: "32px" }}>
-            <div style={{ fontSize: "11px", fontWeight: "800", color: "#9CA3AF", letterSpacing: "0.05em", marginBottom: "16px" }}>RENTED ITEMS</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              {order.items?.map((item, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                  <img src={item.image} alt="" style={{ width: "52px", height: "52px", borderRadius: "10px", objectFit: "cover", backgroundColor: "#F9FAFB" }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: "14px", fontWeight: "700", color: "#111827" }}>{item.name}</div>
-                    <div style={{ fontSize: "12px", color: "#6B7280" }}>Qty: {item.qty} · Rs.{item.price}/day · <span style={{ color: "#1E40AF", fontWeight: "600" }}>{item.status}</span></div>
-                    {item.supplierNote && (
-                      <div style={{ marginTop: "6px", padding: "6px 10px", backgroundColor: "#F9FAFB", border: "1px dashed #BFDBFE", borderRadius: "6px", fontSize: "12px", color: "#1D4ED8" }}>
-                        <strong>Supplier Note:</strong> "{item.supplierNote}"
-                      </div>
-                    )}
-                  </div>
-                  <div style={{ fontSize: "15px", fontWeight: "700", color: "#111827" }}>Rs.{(item.price * item.qty).toFixed(2)}</div>
+            <div style={{ fontSize: "11px", fontWeight: "800", color: "#9CA3AF", letterSpacing: "0.05em", marginBottom: "16px" }}>ORDER ITEMS BY SUPPLIER</div>
+            {Object.values(suppliers || {}).map((sup, idx) => (
+              <div key={idx} style={{ marginBottom: "24px", padding: "16px", backgroundColor: "#F9FAFB", borderRadius: "12px", border: "1px solid #F3F4F6" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                  <div style={{ fontSize: "12px", fontWeight: "700", color: "#1E40AF" }}>Supplier: {sup.email}</div>
+                  <button 
+                    onClick={() => setChatSupplier(sup.email)}
+                    style={{ 
+                      padding: "6px 12px", backgroundColor: "#E0E7FF", color: "#4338CA", 
+                      border: "none", borderRadius: "6px", fontSize: "11px", fontWeight: "700", 
+                      cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" 
+                    }}
+                  >
+                    Chat with Supplier
+                  </button>
                 </div>
-              ))}
-            </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "12px" }}>
+                  {sup.items.map((item, i) => (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "14px", fontWeight: "600", color: "#374151" }}>{item.name}</div>
+                          <div style={{ fontSize: "12px", color: "#6B7280" }}>Qty: {item.qty} × LKR {item.price.toLocaleString()}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: "14px", fontWeight: "700", color: "#111827" }}>LKR {(item.qty * item.price).toLocaleString()}</div>
+                          <div style={{ 
+                            fontSize: "10px", 
+                            fontWeight: "800", 
+                            textTransform: "uppercase", 
+                            marginTop: "4px",
+                            color: item.status === "Cancelled" ? "#EF4444" : item.status === "Delivered" ? "#10B981" : "#6366f1",
+                            backgroundColor: item.status === "Cancelled" ? "#FEE2E2" : item.status === "Delivered" ? "#DCFCE7" : "#EEF2FF",
+                            padding: "2px 8px",
+                            borderRadius: "4px",
+                            display: "inline-block"
+                          }}>
+                            {item.status || "Pending"}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ))}
           </div>
+
           <div style={{ backgroundColor: "#F9FAFB", borderRadius: "12px", padding: "20px" }}>
              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                 <span style={{ fontSize: "14px", color: "#6B7280" }}>Total Amount</span>
                 <span style={{ fontSize: "20px", fontWeight: "800", color: "#1E40AF" }}>Rs.{order.totalAmount?.toFixed(2)}</span>
              </div>
-             <p style={{ fontSize: "11px", color: "#9CA3AF", margin: 0 }}>* Includes delivery and service fees.</p>
           </div>
         </div>
       </div>
+      {chatSupplier && (
+        <OrderChatModal 
+          orderId={order._id} 
+          supplierEmail={chatSupplier} 
+          onClose={() => setChatSupplier(null)} 
+        />
+      )}
     </div>
   );
 }
+
 
 // ── Main Page ────────────────────────────────────────────────────────────────
 export default function HistoryPage() {
@@ -132,10 +188,27 @@ export default function HistoryPage() {
   const [cancelConfirmationId, setCancelConfirmationId] = useState(null);
   const navigate = useNavigate();
   const { loadOrderIntoCart, reorderIntoCart } = useCart();
+  const { socket } = useSocket();
+  const { darkMode } = useTheme();
 
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  useEffect(() => {
+    if (!socket) return;
+    
+    const handleStatusUpdate = (data) => {
+      toast.success(data.message || "An order status has been updated", {
+        icon: '📦',
+        style: { borderRadius: '12px', background: darkMode ? '#1e293b' : '#fff', color: darkMode ? '#fff' : '#0f172a' }
+      });
+      fetchOrders();
+    };
+
+    socket.on('order_status_update', handleStatusUpdate);
+    return () => socket.off('order_status_update', handleStatusUpdate);
+  }, [socket, darkMode]);
 
   async function fetchOrders() {
     try {
@@ -247,14 +320,25 @@ export default function HistoryPage() {
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
-                    <span style={{
-                      fontSize: "11px", fontWeight: "700", letterSpacing: "0.5px",
-                      color: order.status === "Cancelled" ? "#991B1B" : (order.status === "Completed") ? "#166534" : (order.status === "Active") ? "#1E40AF" : "#854D0E", 
-                      backgroundColor: order.status === "Cancelled" ? "#FEE2E2" : (order.status === "Completed") ? "#DCFCE7" : (order.status === "Active") ? "#DBEAFE" : "#FFF9DB",
-                      padding: "3px 10px", borderRadius: "20px",
-                    }}>
-                      {(order.status || "PENDING").toUpperCase()}
-                    </span>
+                    {(() => {
+                      const anyCancelled = (order.items || []).some(i => i.status === "Cancelled");
+                      const allCancelled = order.status === "Cancelled";
+                      
+                      const statusLabel = allCancelled ? "CANCELLED" : anyCancelled ? "PARTIALLY CANCELLED" : (order.status || "PENDING").toUpperCase();
+                      const statusColor = allCancelled ? "#991B1B" : anyCancelled ? "#C2410C" : (order.status === "Completed") ? "#166534" : (order.status === "Active") ? "#1E40AF" : "#854D0E";
+                      const statusBg = allCancelled ? "#FEE2E2" : anyCancelled ? "#FFEDD5" : (order.status === "Completed") ? "#DCFCE7" : (order.status === "Active") ? "#DBEAFE" : "#FFF9DB";
+
+                      return (
+                        <span style={{ 
+                          fontSize: "11px", fontWeight: "900", letterSpacing: "0.05em",
+                          color: statusColor, 
+                          backgroundColor: statusBg,
+                          padding: "3px 10px", borderRadius: "20px",
+                        }}>
+                          {statusLabel}
+                        </span>
+                      );
+                    })()}
                     <span style={{ fontSize: "13px", fontWeight: "600", color: "#374151" }}>Order #{order._id?.slice(-6)}</span>
                     <span style={{ fontSize: "13px", color: "#6B7280" }}>{order.createdAt ? new Date(order.createdAt).toLocaleDateString() : "Date unknown"}</span>
                   </div>
@@ -270,14 +354,6 @@ export default function HistoryPage() {
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div style={{ display: "flex", gap: "-10px" }}>
-                      {(order.items || []).slice(0, 3).map((item, i) => (
-                        <img key={i} src={item.image} alt="" style={{ width: "40px", height: "40px", border: "2px solid #FFF", borderRadius: "8px", objectFit: "cover", backgroundColor: "#F3F4F6", position: "relative", zIndex: 3-i }} />
-                      ))}
-                      {(order.items || []).length > 3 && (
-                        <div style={{ width: "40px", height: "40px", border: "2px solid #FFF", borderRadius: "8px", backgroundColor: "#F9FAFB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "600", color: "#374151" }}>+{(order.items || []).length - 3}</div>
-                      )}
-                    </div>
                     <span style={{ fontSize: "13px", color: "#6B7280" }}>{(order.items || []).length} items · {order.rentalDates?.pickup ? `${new Date(order.rentalDates.pickup).toLocaleDateString()} at ${order.rentalDates.pickupTime || "09:00"}` : ""} to {order.rentalDates?.return ? new Date(order.rentalDates.return).toLocaleDateString() : ""}</span>
                   </div>
 
@@ -289,48 +365,62 @@ export default function HistoryPage() {
                       <EyeIcon /> Details
                     </button>
 
-                    {order.status !== "Cancelled" && (
-                      <>
-                        <button 
-                          onClick={() => {
-                            if (isEditable(order.rentalDates?.pickup)) {
-                              handleEditOrder(order);
-                            } else {
-                              toast.error("Deadline passed: Cannot edit order within 24 hours of rental start");
-                            }
-                          }}
-                          style={{ 
-                            height: "38px", padding: "0 14px", 
-                            backgroundColor: isEditable(order.rentalDates?.pickup) ? "#E0E7FF" : "#F3F4F6", 
-                            border: `1px solid ${isEditable(order.rentalDates?.pickup) ? "#C7D2FE" : "#E5E7EB"}`, 
-                            borderRadius: "8px", cursor: isEditable(order.rentalDates?.pickup) ? "pointer" : "not-allowed", 
-                            fontSize: "13px", fontWeight: "600", 
-                            color: isEditable(order.rentalDates?.pickup) ? "#4338CA" : "#9CA3AF", 
-                            display: "flex", alignItems: "center", gap: "6px" 
-                          }}
-                          title={!isEditable(order.rentalDates?.pickup) ? "Cannot edit within 24h of rental" : "Edit this order"}
-                        >
-                          <EditIcon /> Edit
-                        </button>
-                        <button 
-                          onClick={() => handleCancelOrder(order._id)}
-                          style={{ 
-                            height: "38px", padding: "0 14px", 
-                            backgroundColor: isEditable(order.rentalDates?.pickup) ? "#FEF2F2" : "#F3F4F6", 
-                            border: `1px solid ${isEditable(order.rentalDates?.pickup) ? "#FECACA" : "#E5E7EB"}`, 
-                            borderRadius: "8px", cursor: isEditable(order.rentalDates?.pickup) ? "pointer" : "not-allowed", 
-                            fontSize: "13px", fontWeight: "600", 
-                            color: isEditable(order.rentalDates?.pickup) ? "#B91C1C" : "#9CA3AF", 
-                            display: "flex", alignItems: "center", gap: "6px",
-                            opacity: isEditable(order.rentalDates?.pickup) ? 1 : 0.6,
-                            pointerEvents: "auto"
-                          }}
-                          title={!isEditable(order.rentalDates?.pickup) ? "Cannot cancel within 24h of rental" : "Cancel this order"}
-                        >
-                          <CancelIcon /> Cancel
-                        </button>
-                      </>
-                    )}
+                    {(() => {
+                      const anyCancelled = (order.items || []).some(i => i.status === "Cancelled");
+                      const allCancelled = order.status === "Cancelled";
+                      const isModifiable = !allCancelled && !anyCancelled && isEditable(order.rentalDates?.pickup);
+
+                      return (
+                        <>
+                          <button 
+                            onClick={() => {
+                              if (isModifiable) {
+                                handleEditOrder(order);
+                              } else if (allCancelled || anyCancelled) {
+                                toast.error("Cannot edit an order with cancelled items");
+                              } else {
+                                toast.error("Deadline passed: Cannot edit order within 24 hours of rental start");
+                              }
+                            }}
+                            style={{ 
+                              height: "38px", padding: "0 14px", 
+                              backgroundColor: isModifiable ? "#E0E7FF" : "#F3F4F6", 
+                              border: `1px solid ${isModifiable ? "#C7D2FE" : "#E5E7EB"}`, 
+                              borderRadius: "8px", cursor: isModifiable ? "pointer" : "not-allowed", 
+                              fontSize: "13px", fontWeight: "600", 
+                              color: isModifiable ? "#4338CA" : "#9CA3AF", 
+                              display: "flex", alignItems: "center", gap: "6px",
+                              opacity: isModifiable ? 1 : 0.6
+                            }}
+                            title={!isModifiable ? "Cannot edit this order" : "Edit this order"}
+                          >
+                            <EditIcon /> Edit
+                          </button>
+                          <button 
+                            onClick={() => {
+                              if (isModifiable) {
+                                handleCancelOrder(order._id);
+                              }
+                            }}
+                            style={{ 
+                              height: "38px", padding: "0 14px", 
+                              backgroundColor: isModifiable ? "#FEF2F2" : "#F3F4F6", 
+                              border: `1px solid ${isModifiable ? "#FECACA" : "#E5E7EB"}`, 
+                              borderRadius: "8px", cursor: isModifiable ? "pointer" : "not-allowed", 
+                              fontSize: "13px", fontWeight: "600", 
+                              color: isModifiable ? "#B91C1C" : "#9CA3AF", 
+                              display: "flex", alignItems: "center", gap: "6px",
+                              opacity: isModifiable ? 1 : 0.6,
+                              pointerEvents: isModifiable ? "auto" : "none"
+                            }}
+                            title={!isModifiable ? "Cannot cancel this order" : "Cancel this order"}
+                          >
+                            <CancelIcon /> Cancel
+                          </button>
+                        </>
+                      );
+                    })()}
+
 
                     {canReorder(order) && (
                       <button 
@@ -419,5 +509,3 @@ export default function HistoryPage() {
     </div>
   );
 }
-
-

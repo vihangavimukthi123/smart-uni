@@ -17,9 +17,11 @@ const adminNav = [
     { label: 'Support Messages', to: '/messages', icon: <MdChat /> },
   ]},
   { section: 'Rental Admin', items: [
-    { label: 'Products', to: '/supplier', icon: <MdPeople /> },
-    { label: 'Orders', to: '/supplier/orders', icon: <MdHistory /> },
-    { label: 'Reviews', to: '/supplier/reviews', icon: <MdBarChart /> },
+    { label: 'Products', to: '/admin/rental/products', icon: <MdPeople /> },
+    { label: 'Orders', to: '/admin/rental/orders', icon: <MdHistory /> },
+    { label: 'Packages', to: '/admin/rental/packages', icon: <MdDashboard /> },
+    { label: 'Offers', to: '/admin/rental/offers', icon: <MdBarChart /> },
+    { label: 'Reviews', to: '/admin/rental/reviews', icon: <MdBarChart /> },
   ]},
   { section: 'Learning Admin', items: [
     { label: 'Dashboard', to: '/learning', icon: <MdSchool /> },
@@ -45,7 +47,9 @@ const studentNav = [
     { label: 'Support Messages', to: '/messages', icon: <MdChat /> },
   ]},
   { section: 'Rental Store', items: [
-    { label: 'Browse Rentals', to: '/rental', icon: <MdDashboard /> },
+    { label: 'Browse Rentals', to: '/rental/items', icon: <MdDashboard /> },
+    { label: 'Bundles & Deals', to: '/rental/packages', icon: <MdDashboard /> },
+    { label: 'Special Offers', to: '/rental/offers', icon: <MdBarChart /> },
     { label: 'My Cart', to: '/rental/cart', icon: <MdDashboard /> },
     { label: 'Kit Generator', to: '/rental/kit-generator/input', icon: <MdDashboard /> },
     { label: 'Order History', to: '/rental/history', icon: <MdHistory /> },
@@ -70,10 +74,13 @@ const studentNav = [
 const supplierNav = [
   { section: 'Supplier Portal', items: [
     { label: 'My Products', to: '/supplier', icon: <MdDashboard />, end: true },
+    { label: 'My Packages', to: '/supplier/packages', icon: <MdDashboard /> },
+    { label: 'Special Offers', to: '/supplier/offers', icon: <MdBarChart /> },
     { label: 'Manage Orders', to: '/supplier/orders', icon: <MdHistory /> },
     { label: 'Reviews', to: '/supplier/reviews', icon: <MdBarChart /> },
     { label: 'Profile Settings', to: '/supplier/users', icon: <MdPerson /> },
     { label: 'Messages', to: '/messages', icon: <MdChat /> },
+
   ]}
 ];
 
@@ -84,8 +91,7 @@ export default function Sidebar({ collapsed, onToggle }) {
   if (isAdminOrScheduler) {
     navSections = adminNav;
   } else if (isSupplier) {
-    // Only allow access to 'Rental Admin' sections as requested
-    navSections = adminNav.filter(section => section.section === 'Rental Admin');
+    navSections = supplierNav;
   }
 
 

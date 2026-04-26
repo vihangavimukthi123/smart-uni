@@ -47,6 +47,7 @@ const userSchema = new mongoose.Schema({
   passwordResetExpires: { type: Date, select: false },
   isActive: { type: Boolean, default: true },
   lastLogin: { type: Date },
+  lastActiveAt: { type: Date },
   phone: { type: String, trim: true },
   bio: { type: String, maxlength: 200 },
   avatar: { type: String },

@@ -129,6 +129,7 @@ export default function LoginPage() {
                       onChange={handleChange('email')}
                       autoComplete="none"
                     />
+
                   </div>
                   <AnimatePresence>
                     {errors.email && (
