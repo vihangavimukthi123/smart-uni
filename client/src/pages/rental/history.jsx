@@ -132,7 +132,6 @@ function OrderDetailsModal({ order, onClose }) {
                 <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "12px" }}>
                   {sup.items.map((item, i) => (
                     <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                      <img src={item.image} alt="" style={{ width: "40px", height: "40px", borderRadius: "8px", objectFit: "cover" }} />
                         <div style={{ flex: 1 }}>
                           <div style={{ fontSize: "14px", fontWeight: "600", color: "#374151" }}>{item.name}</div>
                           <div style={{ fontSize: "12px", color: "#6B7280" }}>Qty: {item.qty} × LKR {item.price.toLocaleString()}</div>
@@ -355,14 +354,6 @@ export default function HistoryPage() {
 
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                    <div style={{ display: "flex", gap: "-10px" }}>
-                      {(order.items || []).slice(0, 3).map((item, i) => (
-                        <img key={i} src={item.image} alt="" style={{ width: "40px", height: "40px", border: "2px solid #FFF", borderRadius: "8px", objectFit: "cover", backgroundColor: "#F3F4F6", position: "relative", zIndex: 3-i }} />
-                      ))}
-                      {(order.items || []).length > 3 && (
-                        <div style={{ width: "40px", height: "40px", border: "2px solid #FFF", borderRadius: "8px", backgroundColor: "#F9FAFB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: "600", color: "#374151" }}>+{(order.items || []).length - 3}</div>
-                      )}
-                    </div>
                     <span style={{ fontSize: "13px", color: "#6B7280" }}>{(order.items || []).length} items · {order.rentalDates?.pickup ? `${new Date(order.rentalDates.pickup).toLocaleDateString()} at ${order.rentalDates.pickupTime || "09:00"}` : ""} to {order.rentalDates?.return ? new Date(order.rentalDates.return).toLocaleDateString() : ""}</span>
                   </div>
 

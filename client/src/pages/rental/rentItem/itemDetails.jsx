@@ -128,15 +128,21 @@ export default function ItemDetails() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
             <div style={{ backgroundColor: bgColor, borderRadius: '32px', border: `1px solid ${borderColor}`, padding: '16px', boxShadow: darkMode ? '0 25px 50px -12px rgba(0,0,0,0.5)' : '0 10px 30px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
               <img 
-                src={product.images?.[0] ? `/images/${product.images[0].split('/').pop()}` : "/images/placeholder.jpg"} 
-                style={{ width: '100%', aspectRatio: '1.4 / 1', borderRadius: '20px', objectFit: 'cover' }} 
+                src={(() => {
+                  const img = product.images?.[0];
+                  if (!img) return "https://images.unsplash.com/photo-1545167622-3a6ac756afa4?w=800&h=800&fit=crop";
+                  if (img.startsWith('http')) return img;
+                  const normalized = img.replace(/\\/g, '/');
+                  return normalized.startsWith('/') ? normalized : `/${normalized}`;
+                })()} 
+                style={{ width: '100%', aspectRatio: '1 / 1', borderRadius: '20px', objectFit: 'cover', objectPosition: 'top' }} 
                 alt={product.name} 
               />
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
               {product.images?.slice(1, 5).map((img, i) => (
                 <div key={i} style={{ backgroundColor: bgColor, borderRadius: '16px', border: `1px solid ${borderColor}`, padding: '8px', cursor: 'pointer', transition: 'all 0.3s ease' }} onMouseEnter={(e) => e.currentTarget.style.borderColor = '#6366f1'} onMouseLeave={(e) => e.currentTarget.style.borderColor = borderColor}>
-                  <img src={`/images/${img.split('/').pop()}`} style={{ width: '100%', aspectRatio: '1', borderRadius: '10px', objectFit: 'cover' }} alt="" />
+                  <img src={img.startsWith('http') ? img : (img.startsWith('/') ? img : `/${img}`)} style={{ width: '100%', aspectRatio: '1', borderRadius: '10px', objectFit: 'cover' }} alt="" />
                 </div>
               ))}
             </div>
